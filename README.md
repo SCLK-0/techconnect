@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# TechConnect - Online Tutoring Platform
 
-## Project info
+A modern, real-time tutoring platform connecting learners with tutors for personalized educational sessions.
 
-**URL**: https://lovable.dev/projects/fb53b03b-5277-49b6-9b7b-67739c76cd87
+## Features
 
-## How can I edit this code?
+### For Learners
+- 🔍 Browse and find qualified tutors by subject
+- 📅 Book scheduled tutoring sessions
+- ⚡ Request instant tutoring sessions
+- 💬 Real-time video sessions with chat, whiteboard, and file sharing
+- ⭐ Rate and provide feedback on sessions
+- 📚 Access learning resources
 
-There are several ways of editing your application.
+### For Tutors
+- 📊 Comprehensive dashboard with session analytics
+- 🗓️ Manage availability and schedule
+- 🔔 Receive instant session requests
+- 👥 Track tutees and session history
+- 💰 Donation system for voluntary contributions
+- 📝 View learner feedback
 
-**Use Lovable**
+### For Administrators
+- 👤 User management and tutor approvals
+- 📈 Platform analytics and monitoring
+- 📢 Announcement system
+- 💵 Donation tracking
+- 📋 Session logs and monitoring
+- 🎯 Live session monitoring
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fb53b03b-5277-49b6-9b7b-67739c76cd87) and start prompting.
+## Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase (PostgreSQL, Authentication, Realtime, Storage)
+- **Video**: WebRTC for peer-to-peer video sessions
+- **State Management**: React Hooks + Context API
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js 18+ and npm
+- Supabase account
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Clone the repository:
+```bash
+git clone https://github.com/SCLK-0/techconnect.git
+cd techconnect
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. Install dependencies:
+```bash
+npm install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. Set up environment variables:
+   - Copy `.env` to create your environment file
+   - Add your Supabase credentials:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Set up the database:
+   - Run the migrations in `supabase/migrations/` in your Supabase project
+   - Or use the `database-schema.sql` file for the complete schema
+
+5. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Project Structure
 
-**Use GitHub Codespaces**
+```
+techconnect/
+├── src/
+│   ├── components/       # Reusable UI components
+│   │   ├── admin/       # Admin-specific components
+│   │   ├── learner/     # Learner-specific components
+│   │   ├── tutor/       # Tutor-specific components
+│   │   ├── ui/          # shadcn/ui components
+│   │   └── video-session/ # Video session components
+│   ├── hooks/           # Custom React hooks
+│   ├── integrations/    # Supabase integration
+│   ├── pages/           # Page components
+│   │   ├── admin/       # Admin pages
+│   │   ├── learner/     # Learner pages
+│   │   └── tutor/       # Tutor pages
+│   ├── lib/             # Utility functions
+│   └── utils/           # Helper utilities
+├── supabase/
+│   ├── functions/       # Edge functions
+│   └── migrations/      # Database migrations
+└── public/              # Static assets
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Available Scripts
 
-## What technologies are used for this project?
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-This project is built with:
+## Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Vercel (Recommended)
 
-## How can I deploy this project?
+1. Push your code to GitHub
+2. Import the project in Vercel
+3. Add environment variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy
 
-Simply open [Lovable](https://lovable.dev/projects/fb53b03b-5277-49b6-9b7b-67739c76cd87) and click on Share -> Publish.
+### Other Platforms
 
-## Can I connect a custom domain to my Lovable project?
+The app can be deployed to any static hosting service that supports Vite:
+- Netlify
+- Cloudflare Pages
+- AWS Amplify
+- GitHub Pages
 
-Yes, you can!
+## Documentation
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- `MIGRATION-INSTRUCTIONS.md` - Guide for migrating to external Supabase
+- `SETUP-AUTH-HOOKS.md` - Authentication hooks setup
+- `SETUP-RESEND-EMAILS.md` - Email system configuration
+- `SYSTEM-ARCHITECTURE.md` - System architecture overview
+- `TESTING-GUIDE.md` - Testing guidelines
+- `storage-setup-guide.md` - Storage bucket configuration
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For issues and questions, please open an issue on GitHub.
