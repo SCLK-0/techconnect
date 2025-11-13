@@ -3,26 +3,34 @@ export const displayConsoleMessage = () => {
   // Check if console is available
   if (typeof console === 'undefined') return;
 
-  // ASCII Art Banner
+  // ASCII Art Banner - Compact version
   const banner = `
-  ████████╗███████╗ ██████╗██╗  ██╗     ██████╗ ██████╗ ███╗   ███╗███╗   ██╗███████╗ ██████╗████████╗
-  ╚══██╔══╝██╔════╝██╔════╝██║  ██║    ██╔════╝██╔═══██╗████╗ ████║████╗  ██║██╔════╝██╔════╝╚══██╔══╝
-     ██║   █████╗  ██║     ███████║    ██║     ██║   ██║██╔████╔██║██╔██╗ ██║█████╗  ██║        ██║   
-     ██║   ██╔══╝  ██║     ██╔══██║    ██║     ██║   ██║██║╚██╔╝██║██║╚██╗██║██╔══╝  ██║        ██║   
-     ██║   ███████╗╚██████╗██║  ██║    ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚████║███████╗╚██████╗   ██║   
-     ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝     ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═╝   
+ ████████╗███████╗ ██████╗██╗  ██╗
+ ╚══██╔══╝██╔════╝██╔════╝██║  ██║
+    ██║   █████╗  ██║     ███████║
+    ██║   ██╔══╝  ██║     ██╔══██║
+    ██║   ███████╗╚██████╗██║  ██║
+    ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝
+  ██████╗ ██████╗ ███╗   ██╗███╗   ██╗███████╗ ██████╗████████╗
+ ██╔════╝██╔═══██╗████╗  ██║████╗  ██║██╔════╝██╔════╝╚══██╔══╝
+ ██║     ██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██║        ██║   
+ ██║     ██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██║        ██║   
+ ╚██████╗╚██████╔╝██║ ╚████║██║ ╚████║███████╗╚██████╗   ██║   
+  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═╝   
   `;
 
   // Styled messages
   const styles = {
-    banner: 'color: #10b981; font-weight: bold; font-family: monospace;',
-    message: 'color: #6366f1; font-size: 14px;',
+    banner: 'color: #10b981; font-weight: bold; font-family: monospace; font-size: 11px;',
+    mainMessage: 'color: #6366f1; font-size: 18px; font-weight: bold;',
+    message: 'color: #8b5cf6; font-size: 13px;',
     warning: 'color: #ef4444; font-size: 14px; font-weight: bold;',
   };
 
   // Display the messages
   console.log('%c' + banner, styles.banner);
-  console.log('%cWe catch bugs and intruders.', styles.message);
+  console.log('%c', '');
+  console.log('%cWe catch bugs and intruders.', styles.mainMessage);
   console.log('%c', '');
   console.log('%cBuilt with React + TypeScript + Vite + Supabase', styles.message);
   console.log('%c', '');
