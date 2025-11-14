@@ -32,7 +32,10 @@ const AdminLogin = () => {
             title: "Welcome Admin!",
             description: "Access granted.",
           });
-          navigate("/admin/dashboard");
+          // Delay navigation to show toast
+          setTimeout(() => {
+            navigate("/admin/dashboard");
+          }, 800);
         } else if (isCallback) {
           // Only show error and sign out if this was a new login attempt
           toast({
@@ -40,7 +43,10 @@ const AdminLogin = () => {
             description: "You don't have admin privileges.",
             variant: "destructive",
           });
-          await supabase.auth.signOut();
+          // Delay sign out to show toast
+          setTimeout(async () => {
+            await supabase.auth.signOut();
+          }, 1500);
         }
       }
     };
