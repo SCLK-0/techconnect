@@ -157,8 +157,8 @@ const TutorRegistration = () => {
         description: "Please check your email (and spam folder) to confirm your account. Your tutor profile will be pending approval after confirmation.",
       });
       
-      // Redirect to confirmation page
-      navigate("/confirm-email");
+      // Redirect to confirmation page with state flag
+      navigate("/confirm-email", { state: { fromRegistration: true } });
     } catch (error: any) {
       console.error("Registration error:", error);
       

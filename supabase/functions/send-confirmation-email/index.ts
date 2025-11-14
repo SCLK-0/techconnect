@@ -175,7 +175,7 @@ serve(async (req) => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "TechConnect <onboarding@resend.dev>",
+      from: "TechConnect <noreply@cit-techconnect.org>",
       to: [user.email],
       subject: "Confirm Your Email - TechConnect",
       html: emailHtml,

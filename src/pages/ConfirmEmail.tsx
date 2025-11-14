@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
@@ -7,30 +7,42 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const ConfirmEmail = () => {
-  const [status, setStatus] = useState<"waiting" | "confirmed" | "error" | "redirecting">("waiting");
+  const [status, setStatus] = useState<"waiting" | "confirmed" | "error">("waiting");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
     let pollInterval: NodeJS.Timeout;
     
     const checkConfirmation = async () => {
-      // Check if this is a redirect from email confirmation
+      // Check if this is a redirect from email confirmation link
+      const hasTokenParams = searchParams.get('token_hash') || searchParams.get('type') || searchParams.get('access_token');
       const error = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
-      const hasTokenParams = searchParams.get('token_hash') || searchParams.get('type') || searchParams.get('access_token');
       
-      // Check if user has a session (came from registration or email link)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Check if user came from registration (has state)
+      const cameFromRegistration = location.state?.fromRegistration;
       
+      // BLOCK DIRECT ACCESS: Must have token params OR come from registration
+      if (!hasTokenParams && !cameFromRegistration) {
+        console.log("Direct access blocked - redirecting to home");
+        navigate('/', { replace: true });
+        return;
+      }
+      
+      // Handle errors from email confirmation
       if (error) {
         console.error("Email confirmation error:", error, errorDescription);
         setStatus("error");
         setErrorMessage(errorDescription || "Failed to confirm email");
         return;
       }
+      
+      // Get current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
         console.error("Session error:", sessionError);
@@ -39,31 +51,28 @@ const ConfirmEmail = () => {
         return;
       }
 
+      // If user has session and email is confirmed
       if (session?.user) {
-        // Check if email is confirmed
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user?.email_confirmed_at || user?.confirmed_at) {
-          // User is signed in and confirmed
           setStatus("confirmed");
           
-          // Check which role they registered as and redirect accordingly
+          // Check user role and redirect
           const { data: roles } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", session.user.id);
           
-          if (roles && roles.length > 0) {
-            const role = roles[0].role;
-            
-            toast({
-              title: "Email confirmed!",
-              description: "Redirecting to your dashboard...",
-              duration: 800,
-            });
+          toast({
+            title: "Email confirmed!",
+            description: "Redirecting to your dashboard...",
+            duration: 800,
+          });
 
-            // Redirect immediately
-            setTimeout(() => {
+          setTimeout(() => {
+            if (roles && roles.length > 0) {
+              const role = roles[0].role;
               if (role === "learner") {
                 navigate("/learner/dashboard", { replace: true });
               } else if (role === "tutor") {
@@ -71,18 +80,11 @@ const ConfirmEmail = () => {
               } else {
                 navigate("/login", { replace: true });
               }
-            }, 1000);
-          } else {
-            // No role yet, redirect to role selection
-            toast({
-              title: "Email confirmed!",
-              description: "Please select your role to continue...",
-              duration: 800,
-            });
-            setTimeout(() => {
+            } else {
+              // No role yet, redirect to role selection
               navigate("/role-selection", { replace: true });
-            }, 1000);
-          }
+            }
+          }, 1000);
         }
       }
     };
@@ -92,8 +94,10 @@ const ConfirmEmail = () => {
     // Poll every 2 seconds to check if email was confirmed
     pollInterval = setInterval(checkConfirmation, 2000);
 
-    // Also listen for auth state changes
+    // Listen for auth state changes (when user clicks email link)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      
       if (event === "SIGNED_IN" && session) {
         setStatus("confirmed");
         
@@ -103,20 +107,25 @@ const ConfirmEmail = () => {
           .select("role")
           .eq("user_id", session.user.id);
         
-        if (roles && roles.length > 0) {
-          const role = roles[0].role;
-          
-          if (role === "learner") {
-            navigate("/learner/dashboard", { replace: true });
-          } else if (role === "tutor") {
-            navigate("/tutor/dashboard", { replace: true });
+        toast({
+          title: "Email confirmed!",
+          description: "Redirecting to your dashboard...",
+        });
+
+        setTimeout(() => {
+          if (roles && roles.length > 0) {
+            const role = roles[0].role;
+            if (role === "learner") {
+              navigate("/learner/dashboard", { replace: true });
+            } else if (role === "tutor") {
+              navigate("/tutor/dashboard", { replace: true });
+            } else {
+              navigate("/login", { replace: true });
+            }
           } else {
-            navigate("/login", { replace: true });
+            navigate("/role-selection", { replace: true });
           }
-        } else {
-          // No role yet, redirect to role selection
-          navigate("/role-selection", { replace: true });
-        }
+        }, 1000);
       }
     });
 
@@ -124,12 +133,7 @@ const ConfirmEmail = () => {
       subscription.unsubscribe();
       if (pollInterval) clearInterval(pollInterval);
     };
-  }, [searchParams, navigate, toast]);
-
-  // Show nothing while redirecting
-  if (status === "redirecting") {
-    return null;
-  }
+  }, [searchParams, location, navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
@@ -192,12 +196,6 @@ const ConfirmEmail = () => {
               <div className="space-y-2 text-center">
                 <p className="text-xs text-muted-foreground">
                   📧 Didn't receive the email? <strong>Check your spam/junk folder!</strong>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ Note: During testing, emails can only be sent to verified addresses.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  If you used an unverified email, please contact support or register with a verified email.
                 </p>
               </div>
             </div>
