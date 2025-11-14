@@ -61,6 +61,7 @@ const ConfirmEmail = () => {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user?.email_confirmed_at || user?.confirmed_at) {
+          console.log("✅ Email confirmed! Setting status to confirmed");
           setStatus("confirmed");
           
           // Check user role and redirect
@@ -72,12 +73,14 @@ const ConfirmEmail = () => {
           toast({
             title: "Email confirmed!",
             description: "Redirecting to your dashboard...",
-            duration: 800,
+            duration: 2000,
           });
 
+          // Wait 2 seconds to show the green confirmation state
           setTimeout(() => {
             if (roles && roles.length > 0) {
               const role = roles[0].role;
+              console.log("Redirecting to dashboard for role:", role);
               if (role === "learner") {
                 navigate("/learner/dashboard", { replace: true });
               } else if (role === "tutor") {
@@ -87,9 +90,10 @@ const ConfirmEmail = () => {
               }
             } else {
               // No role yet, redirect to role selection
+              console.log("No role found, redirecting to role selection");
               navigate("/role-selection", { replace: true });
             }
-          }, 1000);
+          }, 2000);
         }
       }
     };
@@ -101,9 +105,10 @@ const ConfirmEmail = () => {
 
     // Listen for auth state changes (when user clicks email link)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event);
+      console.log("🔔 Auth state changed:", event);
       
       if (event === "SIGNED_IN" && session) {
+        console.log("✅ User signed in! Setting status to confirmed");
         setStatus("confirmed");
         
         // Check role and redirect
@@ -115,11 +120,14 @@ const ConfirmEmail = () => {
         toast({
           title: "Email confirmed!",
           description: "Redirecting to your dashboard...",
+          duration: 2000,
         });
 
+        // Wait 2 seconds to show the green confirmation state
         setTimeout(() => {
           if (roles && roles.length > 0) {
             const role = roles[0].role;
+            console.log("Redirecting to dashboard for role:", role);
             if (role === "learner") {
               navigate("/learner/dashboard", { replace: true });
             } else if (role === "tutor") {
@@ -128,9 +136,10 @@ const ConfirmEmail = () => {
               navigate("/login", { replace: true });
             }
           } else {
+            console.log("No role found, redirecting to role selection");
             navigate("/role-selection", { replace: true });
           }
-        }, 1000);
+        }, 2000);
       }
     });
 
