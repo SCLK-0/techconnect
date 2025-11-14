@@ -147,7 +147,7 @@ serve(async (req) => {
                 <p>Thank you for registering with TechConnect! To complete your registration and start connecting with tutors, please confirm your email address.</p>
                 
                 <div style="text-align: center;">
-                  <a href="${confirmationUrl}" class="button">Confirm Email Address</a>
+                  <a href="${confirmationUrl}" class="button" target="_self">Confirm Email Address</a>
                 </div>
                 
                 <p style="margin-top: 30px; font-size: 14px; color: #666;">
