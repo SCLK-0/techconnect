@@ -10,24 +10,32 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Handle OAuth callback and email confirmations
+    // Handle OAuth callback, email confirmations, and password resets
     const handleAuthCallback = async () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const searchParams = new URLSearchParams(window.location.search);
       
-      // Check for ANY auth-related parameters
+      // Check for auth-related parameters
       const hasAuthToken = hashParams.has('access_token') || searchParams.has('access_token');
       const hasTokenHash = hashParams.has('token_hash') || searchParams.has('token_hash');
       const hasType = hashParams.has('type') || searchParams.has('type');
       const hasError = hashParams.has('error') || searchParams.has('error');
       
-      // If ANY auth parameter exists, redirect to confirm-email page
-      // This catches ALL email confirmations regardless of how Supabase redirects
+      // Check if this is a password reset (type=recovery)
+      const type = hashParams.get('type') || searchParams.get('type');
+      const isPasswordReset = type === 'recovery';
+      
       if (hasAuthToken || hasTokenHash || hasType || hasError) {
-        console.log("Auth parameters detected, redirecting to confirm-email");
         const fullHash = window.location.hash;
         const fullSearch = window.location.search;
-        navigate(`/confirm-email${fullSearch}${fullHash}`, { replace: true });
+        
+        if (isPasswordReset) {
+          console.log("Password reset detected, redirecting to reset-password");
+          navigate(`/reset-password${fullSearch}${fullHash}`, { replace: true });
+        } else {
+          console.log("Auth parameters detected, redirecting to confirm-email");
+          navigate(`/confirm-email${fullSearch}${fullHash}`, { replace: true });
+        }
         return;
       }
     };
