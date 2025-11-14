@@ -18,15 +18,6 @@ const ConfirmEmail = () => {
     let pollInterval: NodeJS.Timeout;
     let isConfirmed = false;
     
-    // Listen for storage events from other tabs (when email is confirmed in another tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'email_confirmed' && e.newValue === 'true') {
-        console.log("📨 Email confirmed in another tab!");
-        window.location.reload();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    
     const checkConfirmation = async () => {
       // Don't check again if already confirmed
       if (isConfirmed) return;
@@ -80,10 +71,6 @@ const ConfirmEmail = () => {
           isConfirmed = true;
           setStatus("confirmed");
           
-          // Notify other tabs that email is confirmed
-          localStorage.setItem('email_confirmed', 'true');
-          setTimeout(() => localStorage.removeItem('email_confirmed'), 1000);
-          
           // Stop polling
           if (pollInterval) clearInterval(pollInterval);
           
@@ -135,10 +122,6 @@ const ConfirmEmail = () => {
         isConfirmed = true;
         setStatus("confirmed");
         
-        // Notify other tabs that email is confirmed
-        localStorage.setItem('email_confirmed', 'true');
-        setTimeout(() => localStorage.removeItem('email_confirmed'), 1000);
-        
         // Stop polling
         if (pollInterval) clearInterval(pollInterval);
         
@@ -177,7 +160,6 @@ const ConfirmEmail = () => {
     return () => {
       subscription.unsubscribe();
       if (pollInterval) clearInterval(pollInterval);
-      window.removeEventListener('storage', handleStorageChange);
     };
   }, [searchParams, location, navigate, toast]);
 
