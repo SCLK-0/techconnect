@@ -15,44 +15,20 @@ const Index = () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const searchParams = new URLSearchParams(window.location.search);
       
-      // Check if this is an email confirmation or OAuth callback
-      const hasAuthToken = hashParams.has('access_token');
-      const isEmailConfirmation = hashParams.get('type') === 'signup' || 
-                                  searchParams.get('type') === 'signup' ||
-                                  hashParams.has('token_hash');
+      // Check for ANY auth-related parameters
+      const hasAuthToken = hashParams.has('access_token') || searchParams.has('access_token');
+      const hasTokenHash = hashParams.has('token_hash') || searchParams.has('token_hash');
+      const hasType = hashParams.has('type') || searchParams.has('type');
+      const hasError = hashParams.has('error') || searchParams.has('error');
       
-      if (hasAuthToken || isEmailConfirmation) {
-        // If it's email confirmation, redirect to confirm-email page
-        if (isEmailConfirmation) {
-          // Preserve all URL parameters
-          const fullHash = window.location.hash;
-          const fullSearch = window.location.search;
-          navigate(`/confirm-email${fullSearch}${fullHash}`, { replace: true });
-          return;
-        }
-        
-        // Otherwise, handle OAuth login
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          const { data: roleData } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .single();
-
-          if (roleData?.role === "admin") {
-            // Redirect admin users to admin dashboard
-            navigate("/admin/dashboard", { replace: true });
-            return;
-          } else if (roleData?.role === "learner") {
-            navigate("/learner/dashboard", { replace: true });
-            return;
-          } else if (roleData?.role === "tutor") {
-            navigate("/tutor/dashboard", { replace: true });
-            return;
-          }
-        }
+      // If ANY auth parameter exists, redirect to confirm-email page
+      // This catches ALL email confirmations regardless of how Supabase redirects
+      if (hasAuthToken || hasTokenHash || hasType || hasError) {
+        console.log("Auth parameters detected, redirecting to confirm-email");
+        const fullHash = window.location.hash;
+        const fullSearch = window.location.search;
+        navigate(`/confirm-email${fullSearch}${fullHash}`, { replace: true });
+        return;
       }
     };
 

@@ -19,9 +19,14 @@ const ConfirmEmail = () => {
     
     const checkConfirmation = async () => {
       // Check if this is a redirect from email confirmation link
-      const hasTokenParams = searchParams.get('token_hash') || searchParams.get('type') || searchParams.get('access_token');
-      const error = searchParams.get('error');
-      const errorDescription = searchParams.get('error_description');
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hasTokenParams = searchParams.get('token_hash') || 
+                            searchParams.get('type') || 
+                            searchParams.get('access_token') ||
+                            hashParams.get('access_token') ||
+                            hashParams.get('token_hash');
+      const error = searchParams.get('error') || hashParams.get('error');
+      const errorDescription = searchParams.get('error_description') || hashParams.get('error_description');
       
       // Check if user came from registration (has state)
       const cameFromRegistration = location.state?.fromRegistration;
