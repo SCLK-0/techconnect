@@ -215,60 +215,45 @@ export default function Donate() {
                                 <Info className="h-4 w-4 text-muted-foreground hover:text-primary" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
+                            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                  <Info className="h-5 w-5 text-primary" />
+                                <DialogTitle className="flex items-center gap-2 text-base">
+                                  <Info className="h-4 w-4 text-primary" />
                                   About Donations
                                 </DialogTitle>
                               </DialogHeader>
-                              <div className="space-y-4 text-sm">
-                                <div>
-                                  <h3 className="font-semibold text-base mb-2">How We Monitor Donations</h3>
-                                  <p className="text-muted-foreground">
-                                    All donations are carefully tracked and verified by our admin team. Each donation requires proof of payment and goes through a verification process before being marked as completed.
+                              <div className="space-y-3 text-xs sm:text-sm">
+                                <div className="space-y-1">
+                                  <h3 className="font-semibold text-sm">Monitoring</h3>
+                                  <p className="text-muted-foreground leading-relaxed">
+                                    All donations are verified by our admin team with proof of payment.
                                   </p>
                                 </div>
 
-                                <div>
-                                  <h3 className="font-semibold text-base mb-2">Platform Development Donations</h3>
-                                  <p className="text-muted-foreground">
-                                    Donations to platform development help us maintain and improve TechConnect. These funds are used for:
-                                  </p>
-                                  <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground ml-4">
-                                    <li>Server hosting and maintenance</li>
-                                    <li>New feature development</li>
-                                    <li>Platform security and updates</li>
-                                    <li>Technical support and improvements</li>
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h3 className="font-semibold text-base mb-2">Tutor-Specific Donations</h3>
-                                  <p className="text-muted-foreground">
-                                    When you donate to a specific tutor, 100% of the donation goes directly to that tutor as a token of appreciation for their teaching efforts. This helps support tutors who dedicate their time to helping learners.
+                                <div className="space-y-1">
+                                  <h3 className="font-semibold text-sm">Platform Development</h3>
+                                  <p className="text-muted-foreground leading-relaxed">
+                                    Funds support hosting, features, security, and improvements.
                                   </p>
                                 </div>
 
-                                <div className="border-t pt-4">
-                                  <h3 className="font-semibold text-base mb-2">Future Payment Integration</h3>
-                                  <p className="text-muted-foreground mb-2">
-                                    We are planning to integrate <span className="font-semibold">PayMongo</span> for automated payment processing in the future. Currently, we use InstaPay with manual verification because:
-                                  </p>
-                                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-                                    <li>PayMongo requires business verification and setup time</li>
-                                    <li>InstaPay is widely accessible to all Filipino users</li>
-                                    <li>Manual verification ensures transparency during our testing phase</li>
-                                    <li>We want to establish trust with our community first</li>
-                                  </ul>
-                                  <p className="text-muted-foreground mt-2">
-                                    Once we integrate PayMongo, donations will be processed automatically with instant confirmation, making the process even more seamless.
+                                <div className="space-y-1">
+                                  <h3 className="font-semibold text-sm">Tutor Donations</h3>
+                                  <p className="text-muted-foreground leading-relaxed">
+                                    100% goes directly to the tutor as appreciation for their teaching.
                                   </p>
                                 </div>
 
-                                <div className="bg-primary/10 p-3 rounded-lg">
-                                  <p className="text-sm font-medium">
-                                    💙 Thank you for supporting TechConnect and our tutors! Your generosity helps us build a better learning community.
+                                <div className="border-t pt-3 space-y-1">
+                                  <h3 className="font-semibold text-sm">Future: PayMongo Integration</h3>
+                                  <p className="text-muted-foreground leading-relaxed">
+                                    We're planning automated payments via PayMongo. Currently using InstaPay because it's accessible, transparent, and helps build trust during testing.
+                                  </p>
+                                </div>
+
+                                <div className="bg-primary/10 p-2.5 rounded-lg">
+                                  <p className="text-xs font-medium leading-relaxed">
+                                    💙 Thank you for supporting TechConnect!
                                   </p>
                                 </div>
                               </div>
