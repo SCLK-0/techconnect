@@ -10,7 +10,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
 import { TutorSidebar } from "@/components/tutor/TutorSidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Heart } from "lucide-react";
+import { Heart, Info } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -20,6 +20,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 import { Upload } from "lucide-react";
 import instapayQR from "@/assets/instapay-qr-code.jpg";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const donationSchema = z.object({
   amount: z.number().min(10, "Minimum donation is ₱10").max(100000, "Maximum donation is ₱100,000"),
@@ -35,6 +43,7 @@ export default function Donate() {
   const [amount, setAmount] = useState("");
   const [donorName, setDonorName] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const { data: tutors = [] } = useQuery({
     queryKey: ["approved-tutors"],
@@ -195,6 +204,76 @@ export default function Donate() {
                           <Label htmlFor="tutor" className="cursor-pointer">
                             Specific Tutor
                           </Label>
+                          <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+                            <DialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 ml-1"
+                              >
+                                <Info className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <Info className="h-5 w-5 text-primary" />
+                                  About Donations
+                                </DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4 text-sm">
+                                <div>
+                                  <h3 className="font-semibold text-base mb-2">How We Monitor Donations</h3>
+                                  <p className="text-muted-foreground">
+                                    All donations are carefully tracked and verified by our admin team. Each donation requires proof of payment and goes through a verification process before being marked as completed.
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <h3 className="font-semibold text-base mb-2">Platform Development Donations</h3>
+                                  <p className="text-muted-foreground">
+                                    Donations to platform development help us maintain and improve TechConnect. These funds are used for:
+                                  </p>
+                                  <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground ml-4">
+                                    <li>Server hosting and maintenance</li>
+                                    <li>New feature development</li>
+                                    <li>Platform security and updates</li>
+                                    <li>Technical support and improvements</li>
+                                  </ul>
+                                </div>
+
+                                <div>
+                                  <h3 className="font-semibold text-base mb-2">Tutor-Specific Donations</h3>
+                                  <p className="text-muted-foreground">
+                                    When you donate to a specific tutor, 100% of the donation goes directly to that tutor as a token of appreciation for their teaching efforts. This helps support tutors who dedicate their time to helping learners.
+                                  </p>
+                                </div>
+
+                                <div className="border-t pt-4">
+                                  <h3 className="font-semibold text-base mb-2">Future Payment Integration</h3>
+                                  <p className="text-muted-foreground mb-2">
+                                    We are planning to integrate <span className="font-semibold">PayMongo</span> for automated payment processing in the future. Currently, we use InstaPay with manual verification because:
+                                  </p>
+                                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
+                                    <li>PayMongo requires business verification and setup time</li>
+                                    <li>InstaPay is widely accessible to all Filipino users</li>
+                                    <li>Manual verification ensures transparency during our testing phase</li>
+                                    <li>We want to establish trust with our community first</li>
+                                  </ul>
+                                  <p className="text-muted-foreground mt-2">
+                                    Once we integrate PayMongo, donations will be processed automatically with instant confirmation, making the process even more seamless.
+                                  </p>
+                                </div>
+
+                                <div className="bg-primary/10 p-3 rounded-lg">
+                                  <p className="text-sm font-medium">
+                                    💙 Thank you for supporting TechConnect and our tutors! Your generosity helps us build a better learning community.
+                                  </p>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </RadioGroup>
                     </div>
