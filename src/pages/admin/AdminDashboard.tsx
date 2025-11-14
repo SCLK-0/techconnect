@@ -13,8 +13,8 @@ export default function AdminDashboard() {
   const { data: stats } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
-      const [profiles, sessions, tutorProfiles] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
+      const [userRoles, sessions, tutorProfiles] = await Promise.all([
+        supabase.from("user_roles").select("*", { count: "exact", head: true }),
         supabase.from("sessions").select("*"),
         supabase.from("tutor_profiles").select("*", { count: "exact" }).eq("status", "pending"),
       ]);
@@ -24,7 +24,7 @@ export default function AdminDashboard() {
       ).length || 0;
 
       return {
-        totalUsers: profiles.count || 0,
+        totalUsers: userRoles.count || 0,
         pendingApprovals: tutorProfiles.count || 0,
         activeSessions,
         totalSessions: sessions.data?.length || 0,
