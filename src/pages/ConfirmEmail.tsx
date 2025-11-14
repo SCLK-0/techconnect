@@ -47,8 +47,11 @@ const ConfirmEmail = () => {
       // Check if user came from registration (has state)
       const cameFromRegistration = location.state?.fromRegistration;
       
-      // BLOCK DIRECT ACCESS: Must have token params OR come from registration
-      if (!hasTokenParams && !cameFromRegistration) {
+      // Allow access if: has token params OR came from registration OR already has a session
+      // (The session check allows Tab B to work when opened from email link)
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!hasTokenParams && !cameFromRegistration && !currentSession) {
         console.log("Direct access blocked - redirecting to home");
         navigate('/', { replace: true });
         return;
@@ -132,6 +135,12 @@ const ConfirmEmail = () => {
     // Listen for auth state changes (when user clicks email link)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("🔔 Auth state changed:", event);
+      
+      // Don't process if we should stop checking (Tab A showing "can close")
+      if (shouldStopChecking.current) {
+        console.log("Ignoring auth state change - already showing 'can close' message");
+        return;
+      }
       
       if (event === "SIGNED_IN" && session && !isConfirmed) {
         console.log("✅ User signed in! Setting status to confirmed");
