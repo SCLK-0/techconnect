@@ -16,8 +16,12 @@ const ConfirmEmail = () => {
 
   useEffect(() => {
     let pollInterval: NodeJS.Timeout;
+    let isConfirmed = false;
     
     const checkConfirmation = async () => {
+      // Don't check again if already confirmed
+      if (isConfirmed) return;
+      
       // Check if this is a redirect from email confirmation link
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const hasTokenParams = searchParams.get('token_hash') || 
@@ -43,6 +47,7 @@ const ConfirmEmail = () => {
         console.error("Email confirmation error:", error, errorDescription);
         setStatus("error");
         setErrorMessage(errorDescription || "Failed to confirm email");
+        if (pollInterval) clearInterval(pollInterval);
         return;
       }
       
@@ -53,6 +58,7 @@ const ConfirmEmail = () => {
         console.error("Session error:", sessionError);
         setStatus("error");
         setErrorMessage(sessionError.message);
+        if (pollInterval) clearInterval(pollInterval);
         return;
       }
 
@@ -62,7 +68,11 @@ const ConfirmEmail = () => {
         
         if (user?.email_confirmed_at || user?.confirmed_at) {
           console.log("✅ Email confirmed! Setting status to confirmed");
+          isConfirmed = true;
           setStatus("confirmed");
+          
+          // Stop polling
+          if (pollInterval) clearInterval(pollInterval);
           
           // Check user role and redirect
           const { data: roles } = await supabase
@@ -73,10 +83,10 @@ const ConfirmEmail = () => {
           toast({
             title: "Email confirmed!",
             description: "Redirecting to your dashboard...",
-            duration: 2000,
+            duration: 3000,
           });
 
-          // Wait 2 seconds to show the green confirmation state
+          // Wait 3 seconds to show the green confirmation state
           setTimeout(() => {
             if (roles && roles.length > 0) {
               const role = roles[0].role;
@@ -93,7 +103,7 @@ const ConfirmEmail = () => {
               console.log("No role found, redirecting to role selection");
               navigate("/role-selection", { replace: true });
             }
-          }, 2000);
+          }, 3000);
         }
       }
     };
@@ -107,9 +117,13 @@ const ConfirmEmail = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("🔔 Auth state changed:", event);
       
-      if (event === "SIGNED_IN" && session) {
+      if (event === "SIGNED_IN" && session && !isConfirmed) {
         console.log("✅ User signed in! Setting status to confirmed");
+        isConfirmed = true;
         setStatus("confirmed");
+        
+        // Stop polling
+        if (pollInterval) clearInterval(pollInterval);
         
         // Check role and redirect
         const { data: roles } = await supabase
@@ -120,10 +134,10 @@ const ConfirmEmail = () => {
         toast({
           title: "Email confirmed!",
           description: "Redirecting to your dashboard...",
-          duration: 2000,
+          duration: 3000,
         });
 
-        // Wait 2 seconds to show the green confirmation state
+        // Wait 3 seconds to show the green confirmation state
         setTimeout(() => {
           if (roles && roles.length > 0) {
             const role = roles[0].role;
@@ -139,7 +153,7 @@ const ConfirmEmail = () => {
             console.log("No role found, redirecting to role selection");
             navigate("/role-selection", { replace: true });
           }
-        }, 2000);
+        }, 3000);
       }
     });
 
