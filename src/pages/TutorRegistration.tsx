@@ -132,20 +132,34 @@ const TutorRegistration = () => {
       // Redirect to confirmation page
       navigate("/confirm-email");
     } catch (error: any) {
-      // Check if it's an email sending error
-      const isEmailError = error.message?.includes("email") || error.message?.includes("Error sending");
+      console.error("Registration error:", error);
       
-      toast({
-        title: isEmailError ? "Email was not sent" : "Registration failed",
-        description: isEmailError 
-          ? "This may be because the email address is not verified in our system during testing. Please use a verified email address or contact support."
-          : error.message || "Something went wrong. Please try again.",
-        variant: isEmailError ? "default" : "destructive",
-      });
+      // Check for specific error types
+      const isUserExists = error.message?.toLowerCase().includes("already") || 
+                          error.message?.toLowerCase().includes("registered") ||
+                          error.message?.toLowerCase().includes("exists");
+      const isEmailError = error.message?.includes("Error sending") || 
+                          error.message?.includes("email") && !isUserExists;
       
-      // If it's just an email error, still redirect to confirmation page
-      if (isEmailError) {
+      if (isUserExists) {
+        toast({
+          title: "Email already registered",
+          description: "This email is already registered. Please sign in instead.",
+          variant: "destructive",
+        });
+      } else if (isEmailError) {
+        toast({
+          title: "Email was not sent",
+          description: "This may be because the email address is not verified in our system during testing. Please use a verified email address or contact support.",
+        });
+        // If it's just an email error, still redirect to confirmation page
         navigate("/confirm-email");
+      } else {
+        toast({
+          title: "Registration failed",
+          description: error.message || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
       }
     } finally {
       setLoading(false);
