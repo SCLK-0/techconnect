@@ -10,12 +10,28 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Handle OAuth callback for admin login
-    const handleAdminCallback = async () => {
+    // Handle OAuth callback and email confirmations
+    const handleAuthCallback = async () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const hasAuthToken = hashParams.has('access_token');
+      const searchParams = new URLSearchParams(window.location.search);
       
-      if (hasAuthToken) {
+      // Check if this is an email confirmation or OAuth callback
+      const hasAuthToken = hashParams.has('access_token');
+      const isEmailConfirmation = hashParams.get('type') === 'signup' || 
+                                  searchParams.get('type') === 'signup' ||
+                                  hashParams.has('token_hash');
+      
+      if (hasAuthToken || isEmailConfirmation) {
+        // If it's email confirmation, redirect to confirm-email page
+        if (isEmailConfirmation) {
+          // Preserve all URL parameters
+          const fullHash = window.location.hash;
+          const fullSearch = window.location.search;
+          navigate(`/confirm-email${fullSearch}${fullHash}`, { replace: true });
+          return;
+        }
+        
+        // Otherwise, handle OAuth login
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
@@ -29,12 +45,18 @@ const Index = () => {
             // Redirect admin users to admin dashboard
             navigate("/admin/dashboard", { replace: true });
             return;
+          } else if (roleData?.role === "learner") {
+            navigate("/learner/dashboard", { replace: true });
+            return;
+          } else if (roleData?.role === "tutor") {
+            navigate("/tutor/dashboard", { replace: true });
+            return;
           }
         }
       }
     };
 
-    handleAdminCallback();
+    handleAuthCallback();
   }, [navigate]);
 
   return (
