@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ const ConfirmEmail = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { toast } = useToast();
+  const shouldStopChecking = useRef(false);
 
   useEffect(() => {
     let pollInterval: NodeJS.Timeout;
@@ -21,7 +22,8 @@ const ConfirmEmail = () => {
     // Listen for confirmation from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'email_confirmed' && e.newValue === 'true') {
-        console.log("📨 Email confirmed in another tab!");
+        console.log("📨 Email confirmed in another tab! Showing 'can close' message.");
+        shouldStopChecking.current = true;
         setStatus("can_close");
         if (pollInterval) clearInterval(pollInterval);
       }
@@ -29,8 +31,8 @@ const ConfirmEmail = () => {
     window.addEventListener('storage', handleStorageChange);
     
     const checkConfirmation = async () => {
-      // Don't check again if already confirmed
-      if (isConfirmed) return;
+      // Don't check again if already confirmed or if we should stop checking
+      if (isConfirmed || shouldStopChecking.current) return;
       
       // Check if this is a redirect from email confirmation link
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -97,10 +99,10 @@ const ConfirmEmail = () => {
           toast({
             title: "Email confirmed!",
             description: "Redirecting to your dashboard...",
-            duration: 3000,
+            duration: 5000,
           });
 
-          // Wait 3 seconds to show the green confirmation state
+          // Wait 5 seconds to show the green confirmation state
           setTimeout(() => {
             if (roles && roles.length > 0) {
               const role = roles[0].role;
@@ -117,7 +119,7 @@ const ConfirmEmail = () => {
               console.log("No role found, redirecting to role selection");
               navigate("/role-selection", { replace: true });
             }
-          }, 3000);
+          }, 5000);
         }
       }
     };
@@ -152,10 +154,10 @@ const ConfirmEmail = () => {
         toast({
           title: "Email confirmed!",
           description: "Redirecting to your dashboard...",
-          duration: 3000,
+          duration: 5000,
         });
 
-        // Wait 3 seconds to show the green confirmation state
+        // Wait 5 seconds to show the green confirmation state
         setTimeout(() => {
           if (roles && roles.length > 0) {
             const role = roles[0].role;
@@ -171,7 +173,7 @@ const ConfirmEmail = () => {
             console.log("No role found, redirecting to role selection");
             navigate("/role-selection", { replace: true });
           }
-        }, 3000);
+        }, 5000);
       }
     });
 
