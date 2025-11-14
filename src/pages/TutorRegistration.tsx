@@ -125,7 +125,7 @@ const TutorRegistration = () => {
       }
 
       // Sign up with metadata - profile and tutor data will be created after email confirmation
-      const { error: authError } = await supabase.auth.signUp({
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -140,6 +140,17 @@ const TutorRegistration = () => {
       });
 
       if (authError) throw authError;
+
+      // Check if user already exists (Supabase returns user but with identities: [])
+      if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
+        toast({
+          title: "Email already registered",
+          description: "This email is already registered. Please sign in instead.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       toast({
         title: "Application submitted!",
