@@ -1,13 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
-import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
-const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET") as string;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-auth-token",
 };
 
 serve(async (req) => {
@@ -16,29 +14,26 @@ serve(async (req) => {
   }
 
   try {
-    const payload = await req.text();
-    const headers = Object.fromEntries(req.headers);
-    const wh = new Webhook(hookSecret);
+    // Get the authorization header
+    const authHeader = req.headers.get("authorization");
+    console.log("Auth header present:", !!authHeader);
+    
+    const payload = await req.json();
+    console.log("Received payload:", JSON.stringify(payload, null, 2));
 
     const {
       user,
-      email_data: { token, token_hash, redirect_to, email_action_type },
-    } = wh.verify(payload, headers) as {
-      user: {
-        email: string;
-        user_metadata?: {
-          full_name?: string;
-        };
-      };
-      email_data: {
-        token: string;
-        token_hash: string;
-        redirect_to: string;
-        email_action_type: string;
-      };
-    };
+      email_data,
+    } = payload;
 
-    const confirmationUrl = `${Deno.env.get("SUPABASE_URL")}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`;
+    if (!user || !email_data) {
+      throw new Error("Missing user or email_data in payload");
+    }
+
+    const { token, token_hash, redirect_to, email_action_type } = email_data;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://frozkocrdudvtqhhgqzl.supabase.co";
+    const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -120,13 +115,6 @@ serve(async (req) => {
               text-align: center;
               margin: 20px 0;
             }
-            .code {
-              font-family: 'Courier New', monospace;
-              font-size: 24px;
-              font-weight: bold;
-              color: #6366f1;
-              letter-spacing: 2px;
-            }
             .footer {
               margin-top: 30px;
               padding-top: 20px;
@@ -195,7 +183,7 @@ serve(async (req) => {
 
     console.log("Confirmation email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ success: true, ...emailResponse }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -205,7 +193,7 @@ serve(async (req) => {
   } catch (error: any) {
     console.error("Error sending confirmation email:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, stack: error.stack }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

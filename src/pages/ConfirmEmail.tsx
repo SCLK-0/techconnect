@@ -22,12 +22,6 @@ const ConfirmEmail = () => {
       const errorDescription = searchParams.get('error_description');
       const hasTokenParams = searchParams.get('token_hash') || searchParams.get('type') || searchParams.get('access_token');
       
-      // BLOCK DIRECT ACCESS: Must have token params OR error params from email link
-      if (!hasTokenParams && !error) {
-        navigate('/', { replace: true });
-        return;
-      }
-      
       // Check if user has a session (came from registration or email link)
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       

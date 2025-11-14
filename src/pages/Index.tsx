@@ -1,10 +1,42 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap, Users, BookOpen, Video, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.png";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Handle OAuth callback for admin login
+    const handleAdminCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hasAuthToken = hashParams.has('access_token');
+      
+      if (hasAuthToken) {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const { data: roleData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single();
+
+          if (roleData?.role === "admin") {
+            // Redirect admin users to admin dashboard
+            navigate("/admin/dashboard", { replace: true });
+            return;
+          }
+        }
+      }
+    };
+
+    handleAdminCallback();
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
       {/* Navigation */}
