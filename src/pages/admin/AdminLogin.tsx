@@ -28,25 +28,26 @@ const AdminLogin = () => {
           .single();
 
         if (roleData?.role === "admin") {
+          // Show toast first
           toast({
             title: "Welcome Admin!",
             description: "Access granted.",
+            duration: 2000,
           });
-          // Delay navigation to show toast
-          setTimeout(() => {
-            navigate("/admin/dashboard");
-          }, 800);
+          // Wait longer to ensure toast is visible
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          navigate("/admin/dashboard", { replace: true });
         } else if (isCallback) {
           // Only show error and sign out if this was a new login attempt
           toast({
             title: "Access Denied",
             description: "You don't have admin privileges.",
             variant: "destructive",
+            duration: 3000,
           });
-          // Delay sign out to show toast
-          setTimeout(async () => {
-            await supabase.auth.signOut();
-          }, 1500);
+          // Wait to show toast before signing out
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await supabase.auth.signOut();
         }
       }
     };
