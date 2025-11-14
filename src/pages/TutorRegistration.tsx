@@ -107,6 +107,23 @@ const TutorRegistration = () => {
     setLoading(true);
 
     try {
+      // Check if email already exists
+      const { data: existingUsers } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .limit(1);
+
+      if (existingUsers && existingUsers.length > 0) {
+        toast({
+          title: "Email already registered",
+          description: "This email is already registered. Please sign in instead.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Sign up with metadata - profile and tutor data will be created after email confirmation
       const { error: authError } = await supabase.auth.signUp({
         email,
