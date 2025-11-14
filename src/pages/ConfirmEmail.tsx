@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const ConfirmEmail = () => {
-  const [status, setStatus] = useState<"waiting" | "confirmed" | "error">("waiting");
+  const [status, setStatus] = useState<"waiting" | "confirmed" | "error" | "can_close">("waiting");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -17,6 +17,16 @@ const ConfirmEmail = () => {
   useEffect(() => {
     let pollInterval: NodeJS.Timeout;
     let isConfirmed = false;
+    
+    // Listen for confirmation from other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'email_confirmed' && e.newValue === 'true') {
+        console.log("📨 Email confirmed in another tab!");
+        setStatus("can_close");
+        if (pollInterval) clearInterval(pollInterval);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
     
     const checkConfirmation = async () => {
       // Don't check again if already confirmed
@@ -71,6 +81,10 @@ const ConfirmEmail = () => {
           isConfirmed = true;
           setStatus("confirmed");
           
+          // Notify other tabs that email is confirmed
+          localStorage.setItem('email_confirmed', 'true');
+          setTimeout(() => localStorage.removeItem('email_confirmed'), 2000);
+          
           // Stop polling
           if (pollInterval) clearInterval(pollInterval);
           
@@ -122,6 +136,10 @@ const ConfirmEmail = () => {
         isConfirmed = true;
         setStatus("confirmed");
         
+        // Notify other tabs that email is confirmed
+        localStorage.setItem('email_confirmed', 'true');
+        setTimeout(() => localStorage.removeItem('email_confirmed'), 2000);
+        
         // Stop polling
         if (pollInterval) clearInterval(pollInterval);
         
@@ -160,6 +178,7 @@ const ConfirmEmail = () => {
     return () => {
       subscription.unsubscribe();
       if (pollInterval) clearInterval(pollInterval);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [searchParams, location, navigate, toast]);
 
@@ -179,6 +198,11 @@ const ConfirmEmail = () => {
                 <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
             )}
+            {status === "can_close" && (
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-white" />
+              </div>
+            )}
             {status === "error" && (
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
                 <AlertCircle className="w-8 h-8 text-white" />
@@ -188,6 +212,7 @@ const ConfirmEmail = () => {
           <CardTitle className="text-2xl font-bold">
             {status === "waiting" && "Check Your Email"}
             {status === "confirmed" && "Email Confirmed!"}
+            {status === "can_close" && "All Set!"}
             {status === "error" && "Confirmation Error"}
           </CardTitle>
           <CardDescription className="text-base">
@@ -203,6 +228,13 @@ const ConfirmEmail = () => {
                 Your email has been successfully confirmed!
                 <br />
                 Redirecting to your dashboard...
+              </>
+            )}
+            {status === "can_close" && (
+              <>
+                Your email has been confirmed in another tab.
+                <br />
+                You can safely close this tab now.
               </>
             )}
             {status === "error" && (
@@ -234,6 +266,16 @@ const ConfirmEmail = () => {
                 ✅ Your account has been confirmed! Redirecting...
               </p>
               <Loader2 className="w-6 h-6 animate-spin text-green-600" />
+            </div>
+          )}
+          {status === "can_close" && (
+            <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
+              <p className="text-sm text-center font-medium text-blue-700 dark:text-blue-300">
+                ✅ Email confirmed successfully in another tab!
+              </p>
+              <p className="text-xs text-center text-muted-foreground">
+                You can close this tab now. The other tab will redirect you to your dashboard.
+              </p>
             </div>
           )}
           {status === "error" && (
