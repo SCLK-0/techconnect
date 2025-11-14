@@ -19,8 +19,8 @@ const AdminLogin = () => {
       
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Only auto-redirect if this is an OAuth callback or explicitly authenticated
-      if (session?.user && isCallback) {
+      // Check if user is already authenticated (callback or existing session)
+      if (session?.user) {
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
@@ -33,7 +33,8 @@ const AdminLogin = () => {
             description: "Access granted.",
           });
           navigate("/admin/dashboard");
-        } else {
+        } else if (isCallback) {
+          // Only show error and sign out if this was a new login attempt
           toast({
             title: "Access Denied",
             description: "You don't have admin privileges.",
