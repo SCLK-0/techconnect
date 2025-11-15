@@ -889,12 +889,35 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       // Enable interaction
       canvas.selection = true;
       canvas.isDrawingMode = activeTool === "draw";
+      canvas.defaultCursor = activeTool === "select" ? "default" : "crosshair";
+      canvas.hoverCursor = activeTool === "select" ? "move" : "crosshair";
+      
+      // Re-enable all objects
+      canvas.forEachObject((obj) => {
+        if (!(obj as any).isIndicator && !(obj as any).isRemoteDrawing) {
+          obj.selectable = true;
+          obj.evented = true;
+        }
+      });
+      
       console.log("✅ Both users present AND peer connected - whiteboard enabled");
     } else {
-      // Disable interaction until both conditions are met
+      // Completely disable interaction until both conditions are met
       canvas.selection = false;
       canvas.isDrawingMode = false;
+      canvas.defaultCursor = "not-allowed";
+      canvas.hoverCursor = "not-allowed";
+      canvas.moveCursor = "not-allowed";
       canvas.discardActiveObject();
+      
+      // Make all objects non-selectable and non-interactive
+      canvas.forEachObject((obj) => {
+        if (!(obj as any).isIndicator && !(obj as any).isRemoteDrawing) {
+          obj.selectable = false;
+          obj.evented = false;
+        }
+      });
+      
       canvas.renderAll();
       console.log("⏳ Waiting for connection - whiteboard disabled (bothUsers:", bothUsersPresent, "peerConnected:", isPeerConnected, ")");
     }
@@ -1259,6 +1282,27 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       return;
     }
 
+    // Check if whiteboard is enabled (both users present AND peer connected)
+    const isEnabled = bothUsersPresent && isPeerConnected;
+    
+    if (!isEnabled) {
+      // Completely disable when not connected
+      canvas.isDrawingMode = false;
+      canvas.selection = false;
+      canvas.defaultCursor = "not-allowed";
+      canvas.hoverCursor = "not-allowed";
+      canvas.moveCursor = "not-allowed";
+      canvas.forEachObject((obj) => {
+        if (!(obj as any).isIndicator && !(obj as any).isRemoteDrawing) {
+          obj.selectable = false;
+          obj.evented = false;
+        }
+      });
+      canvas.renderAll();
+      return;
+    }
+
+    // Only apply tool settings when whiteboard is enabled
     if (activeTool === "draw") {
       canvas.isDrawingMode = true;
       canvas.selection = false;
@@ -1280,14 +1324,14 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       canvas.defaultCursor = "default";
     }
     
-    // Re-enable object interactions for non-monitor mode
+    // Enable object interactions when whiteboard is enabled
     canvas.forEachObject((obj) => {
       if (!(obj as any).isIndicator && !(obj as any).isRemoteDrawing) {
-        obj.selectable = !isMonitorMode;
-        obj.evented = !isMonitorMode;
+        obj.selectable = true;
+        obj.evented = true;
       }
     });
-  }, [activeTool, canvas, drawColor, brushSize, isMonitorMode]);
+  }, [activeTool, canvas, drawColor, brushSize, isMonitorMode, bothUsersPresent, isPeerConnected]);
 
   // Clean up stale cursors when users leave
   useEffect(() => {
