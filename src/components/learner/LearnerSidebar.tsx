@@ -45,8 +45,8 @@ export const LearnerSidebar = () => {
   };
 
   return (
-    <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
-      <SidebarContent className="p-0 pt-2 px-2">
+    <Sidebar collapsible="icon">
+      <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>

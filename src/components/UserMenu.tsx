@@ -220,13 +220,26 @@ export function UserMenu() {
     }
   };
 
+  const getRoleColor = () => {
+    switch (role) {
+      case "admin":
+        return "bg-red-600 hover:bg-red-700";
+      case "tutor":
+        return "bg-blue-600 hover:bg-blue-700";
+      case "learner":
+        return "bg-green-600 hover:bg-green-700";
+      default:
+        return "bg-primary hover:bg-primary/90";
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-full">
-          <Avatar className="h-9 w-9 cursor-pointer border-2 border-border shadow-sm hover:shadow-md transition-shadow">
+        <button className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-full mr-2">
+          <Avatar className="h-10 w-10 cursor-pointer border-2 border-border shadow-sm hover:shadow-md transition-all">
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary text-primary-foreground font-semibold">{getInitials()}</AvatarFallback>
+            <AvatarFallback className={`${getRoleColor()} text-white font-semibold transition-colors`}>{getInitials()}</AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
