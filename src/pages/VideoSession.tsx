@@ -36,42 +36,66 @@ function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
   const [isVideoOff, setIsVideoOff] = useState(() => {
     // Initialize state immediately based on video track
     const videoTrack = stream.getVideoTracks()[0];
-    return !videoTrack || !videoTrack.enabled;
+    const initialState = !videoTrack || !videoTrack.enabled;
+    console.log("🎥 RemoteCameraOffIndicator initial state:", initialState, "track:", videoTrack?.label, "enabled:", videoTrack?.enabled);
+    return initialState;
   });
 
   useEffect(() => {
     const videoTrack = stream.getVideoTracks()[0];
     
     if (!videoTrack) {
+      console.log("🎥 No video track found - showing camera off");
       setIsVideoOff(true);
       return;
     }
 
-    // Set initial state immediately
-    setIsVideoOff(!videoTrack.enabled);
+    // Set initial state immediately and log it
+    const initialEnabled = videoTrack.enabled;
+    console.log("🎥 Video track on mount:", videoTrack.label, "enabled:", initialEnabled);
+    setIsVideoOff(!initialEnabled);
 
     // Listen for changes
-    const checkState = () => setIsVideoOff(!videoTrack.enabled);
+    const checkState = () => {
+      const currentState = !videoTrack.enabled;
+      if (currentState !== isVideoOff) {
+        console.log("🎥 Video track state changed:", videoTrack.enabled);
+      }
+      setIsVideoOff(currentState);
+    };
     
-    videoTrack.addEventListener('ended', () => setIsVideoOff(true));
-    videoTrack.addEventListener('mute', () => setIsVideoOff(true));
-    videoTrack.addEventListener('unmute', () => setIsVideoOff(false));
+    const handleEnded = () => {
+      console.log("🎥 Video track ended");
+      setIsVideoOff(true);
+    };
+    const handleMute = () => {
+      console.log("🎥 Video track muted");
+      setIsVideoOff(true);
+    };
+    const handleUnmute = () => {
+      console.log("🎥 Video track unmuted");
+      setIsVideoOff(false);
+    };
     
-    // Poll every 100ms to catch any state changes
-    const interval = setInterval(checkState, 100);
+    videoTrack.addEventListener('ended', handleEnded);
+    videoTrack.addEventListener('mute', handleMute);
+    videoTrack.addEventListener('unmute', handleUnmute);
+    
+    // Poll every 50ms for faster detection
+    const interval = setInterval(checkState, 50);
 
     return () => {
       clearInterval(interval);
-      videoTrack.removeEventListener('ended', checkState);
-      videoTrack.removeEventListener('mute', checkState);
-      videoTrack.removeEventListener('unmute', checkState);
+      videoTrack.removeEventListener('ended', handleEnded);
+      videoTrack.removeEventListener('mute', handleMute);
+      videoTrack.removeEventListener('unmute', handleUnmute);
     };
   }, [stream]);
 
   if (!isVideoOff) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black rounded-lg pointer-events-none z-10">
+    <div className="absolute inset-0 flex items-center justify-center bg-black rounded-lg pointer-events-none z-20">
       <VideoOff className="w-8 h-8 text-white opacity-75" />
     </div>
   );
