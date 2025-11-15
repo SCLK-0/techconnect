@@ -224,9 +224,9 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-full">
-          <Avatar className="h-9 w-9 cursor-pointer">
+          <Avatar className="h-9 w-9 cursor-pointer border-2 border-background">
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback>{getInitials()}</AvatarFallback>
+            <AvatarFallback className="bg-primary text-primary-foreground">{getInitials()}</AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
