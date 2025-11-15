@@ -205,7 +205,7 @@ export default function VideoSession() {
           toast.info("This session has ended");
           setIsLoadingMedia(false);
           setHasTestedDevices(true);
-          if (!logModalShown) {
+          if (!logModalShown && !isMonitorMode) {
             setShowLogModal(true);
             setLogModalShown(true);
           }
@@ -2227,13 +2227,15 @@ export default function VideoSession() {
       )}
 
       {/* Modals */}
-      <SessionLogModal
-        open={showLogModal}
-        onOpenChange={setShowLogModal}
-        sessionId={sessionId!}
-        userRole={role}
-        onComplete={handleLogComplete}
-      />
+      {!isMonitorMode && (
+        <SessionLogModal
+          open={showLogModal}
+          onOpenChange={setShowLogModal}
+          sessionId={sessionId!}
+          userRole={role}
+          onComplete={handleLogComplete}
+        />
+      )}
       <SessionFeedbackModal
         open={showFeedbackModal}
         onOpenChange={setShowFeedbackModal}
