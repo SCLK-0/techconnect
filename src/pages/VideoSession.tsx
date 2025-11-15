@@ -32,74 +32,24 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAudioLevel } from "@/hooks/useAudioLevel";
 
 // Component to show profile picture when remote video is disabled
-function RemoteCameraOffIndicator({ stream, profilePicture, userName }: { stream: MediaStream; profilePicture?: string; userName?: string }) {
-  const [isVideoOff, setIsVideoOff] = useState(() => {
-    const videoTrack = stream.getVideoTracks()[0];
-    if (!videoTrack) return true;
-    
-    // If it's a screen share track, don't show overlay (screen share is always "on")
-    const isScreenShare = videoTrack.label.toLowerCase().includes('screen') || 
-                          videoTrack.label.toLowerCase().includes('display') ||
-                          videoTrack.label.toLowerCase().includes('window');
-    
-    if (isScreenShare) {
-      console.log("🖥️ Screen share detected - hiding overlay");
-      return false;
-    }
-    
-    const initialState = !videoTrack.enabled;
-    console.log("🎥 Camera track initial:", initialState, "enabled:", videoTrack.enabled);
-    return initialState;
-  });
-
-  useEffect(() => {
-    const checkVideoState = () => {
-      const videoTrack = stream.getVideoTracks()[0];
-      
-      if (!videoTrack) {
-        console.log("🎥 No video track - showing profile pic");
-        setIsVideoOff(true);
-        return;
-      }
-
-      // Check if it's a screen share by track label
-      const isScreenShare = videoTrack.label.toLowerCase().includes('screen') || 
-                            videoTrack.label.toLowerCase().includes('display') ||
-                            videoTrack.label.toLowerCase().includes('window');
-      
-      if (isScreenShare) {
-        // Screen share is active - don't show overlay
-        if (isVideoOff) {
-          console.log("🖥️ Screen share active - hiding overlay");
-          setIsVideoOff(false);
-        }
-        return;
-      }
-
-      // Regular camera track - check if enabled
-      const newState = !videoTrack.enabled;
-      if (newState !== isVideoOff) {
-        console.log("🎥 Camera state changed:", videoTrack.enabled);
-        setIsVideoOff(newState);
-      }
-    };
-
-    // Initial check
-    checkVideoState();
-
-    // Poll every 100ms to detect track changes (including screen share start/stop)
-    const interval = setInterval(checkVideoState, 100);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [stream]);
-
-  if (!isVideoOff) {
-    return null; // Camera is on OR screen sharing, show video
+// Uses props to know the actual state (camera on/off, screen sharing)
+function RemoteCameraOffIndicator({ 
+  isCameraOn, 
+  isScreenSharing, 
+  profilePicture, 
+  userName 
+}: { 
+  isCameraOn: boolean; 
+  isScreenSharing: boolean; 
+  profilePicture?: string; 
+  userName?: string;
+}) {
+  // Show video if camera is on OR screen sharing
+  if (isCameraOn || isScreenSharing) {
+    return null;
   }
 
-  // Camera is off and not screen sharing, show profile picture
+  // Camera is off and not screen sharing - show profile picture
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg z-20">
       {profilePicture ? (
@@ -179,6 +129,8 @@ export default function VideoSession() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hasNotifiedMonitoring, setHasNotifiedMonitoring] = useState(false);
+  const [remoteCameraOn, setRemoteCameraOn] = useState(true); // Remote user's camera state
+  const [remoteScreenSharing, setRemoteScreenSharing] = useState(false); // Remote user's screen share state
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
 
@@ -972,15 +924,21 @@ export default function VideoSession() {
           "broadcast",
           { event: "media_state" },
           (payload) => {
-            // Log media state broadcasts for debugging
+            // Update remote user's camera and screen share state
             if (payload.payload.userId !== user!.id) {
               console.log("📡 Received media_state broadcast:", payload.payload);
+              if (payload.payload.camera !== undefined) {
+                setRemoteCameraOn(payload.payload.camera);
+              }
+              if (payload.payload.screenSharing !== undefined) {
+                setRemoteScreenSharing(payload.payload.screenSharing);
+              }
             }
           }
         )
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
-            // Broadcast initial camera/mic state after subscription is confirmed
+            // Broadcast initial camera/mic/screen share state after subscription is confirmed
             const videoTrack = stream.getVideoTracks()[0];
             const audioTrack = stream.getAudioTracks()[0];
             const cameraState = videoTrack?.enabled ?? true;
@@ -992,10 +950,11 @@ export default function VideoSession() {
               payload: { 
                 userId: user!.id, 
                 camera: cameraState,
-                mic: micState
+                mic: micState,
+                screenSharing: false
               }
             });
-            console.log("📡 Broadcast initial media state - camera:", cameraState, "mic:", micState);
+            console.log("📡 Broadcast initial media state - camera:", cameraState, "mic:", micState, "screenSharing: false");
           }
         });
 
@@ -1176,10 +1135,29 @@ export default function VideoSession() {
           screenStreamRef.current = null;
           setIsScreenSharing(false);
           toast.info("Screen sharing stopped");
+          
+          // Broadcast screen sharing stopped
+          if (sessionChannelRef.current) {
+            sessionChannelRef.current.send({
+              type: 'broadcast',
+              event: 'media_state',
+              payload: { userId: user!.id, screenSharing: false, camera: isCameraOn }
+            });
+            console.log("📡 Broadcast screen sharing stopped, camera:", isCameraOn);
+          }
         };
 
         setIsScreenSharing(true);
-        // toast.success("Screen sharing started"); // Removed - visual feedback is enough
+        
+        // Broadcast screen sharing state
+        if (sessionChannelRef.current) {
+          sessionChannelRef.current.send({
+            type: 'broadcast',
+            event: 'media_state',
+            payload: { userId: user!.id, screenSharing: true }
+          });
+          console.log("📡 Broadcast screen sharing started");
+        }
       } else {
         // Switch back to camera
         const videoTrack = localStream?.getVideoTracks()[0];
@@ -1200,16 +1178,15 @@ export default function VideoSession() {
         screenStreamRef.current?.getTracks().forEach((track) => track.stop());
         screenStreamRef.current = null;
         setIsScreenSharing(false);
-        // toast.info("Screen sharing stopped"); // Removed - visual feedback is enough
         
-        // Broadcast camera state after stopping screen share using existing channel
+        // Broadcast screen sharing stopped and camera state
         if (sessionChannelRef.current) {
           sessionChannelRef.current.send({
             type: 'broadcast',
             event: 'media_state',
-            payload: { userId: user!.id, camera: isCameraOn }
+            payload: { userId: user!.id, screenSharing: false, camera: isCameraOn }
           });
-          console.log("📡 Broadcast camera state after stopping screen share:", isCameraOn);
+          console.log("📡 Broadcast screen sharing stopped (manual), camera:", isCameraOn);
         }
       }
     } catch (error) {
@@ -1709,7 +1686,8 @@ export default function VideoSession() {
                     {/* Camera Off Overlay */}
                     {remoteStream && isConnected && (
                       <RemoteCameraOffIndicator 
-                        stream={remoteStream}
+                        isCameraOn={remoteCameraOn}
+                        isScreenSharing={remoteScreenSharing}
                         profilePicture={role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url}
                         userName={role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name}
                       />
