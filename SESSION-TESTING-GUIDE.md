@@ -12,12 +12,12 @@ Run the automated script in Supabase SQL Editor:
 -- File: supabase/test-upcoming-sessions-auto.sql
 ```
 
-This will create 5 test sessions:
-1. **10 minutes from now** - Test missed session (after 15 min grace period)
-2. **2 minutes from now** - Test timeout scenario
-3. **5 minutes from now** - Test cancellation
-4. **1 minute from now** - Test immediate join
-5. **15 minutes from now** - Test normal flow
+This will create 5 test sessions with different durations:
+1. **Starting now** - 3 minute duration (immediate test)
+2. **Starting in 1 minute** - 10 minute duration (test timeout/completion)
+3. **Starting in 2 minutes** - 2 minute duration (quick test)
+4. **Starting in 3 minutes** - 5 minute duration (test cancellation/mid-length)
+5. **Starting in 5 minutes** - 15 minute duration (normal flow test)
 
 ### Step 2: Verify Sessions Created
 
@@ -25,87 +25,96 @@ Check your sessions page to see the newly created test sessions.
 
 ## Testing Scenarios
 
-### Scenario 1: Test Missed Session (10-minute session)
+### Scenario 1: Test Immediate Join (3-minute duration)
 
 **What to test:**
-- Session should show "Join Session" button 15 minutes before scheduled time
-- If no one joins within 15 minutes after scheduled time, session should be marked as "missed"
+- Immediate session join
+- Session auto-end after 3 minutes
+- Quick session completion
 
 **Steps:**
-1. Wait for the 10-minute session to become available
-2. Do NOT join the session
-3. Wait 15 minutes after the scheduled time
-4. Session should automatically be marked as "missed"
+1. Join the session immediately (it starts now)
+2. Stay in the session for the full 3 minutes
+3. Observe what happens when time runs out
 
 **Expected behavior:**
-- Session status changes to "missed"
-- Both learner and tutor receive notification
-- Session appears in "Past Sessions" with "Missed" status
-
-### Scenario 2: Test Timeout (2-minute session)
-
-**What to test:**
-- Session timeout after 60 minutes of inactivity
-- Automatic session end
-
-**Steps:**
-1. Join the 2-minute session when it becomes available
-2. Leave the session idle (no activity)
-3. Wait for timeout (or manually test timeout logic)
-
-**Expected behavior:**
-- Session ends automatically after timeout period
-- Session status changes to "completed" or "timed_out"
-- Session data is saved
-
-### Scenario 3: Test Cancellation (5-minute session)
-
-**What to test:**
-- Ability to cancel session before it starts
-- Cancellation notifications
-
-**Steps:**
-1. Navigate to the 5-minute session
-2. Click "Cancel Session" button
-3. Confirm cancellation
-
-**Expected behavior:**
-- Session status changes to "cancelled"
-- Other participant receives cancellation notification
-- Session appears in "Past Sessions" with "Cancelled" status
-
-### Scenario 4: Test Immediate Join (1-minute session)
-
-**What to test:**
-- Quick join functionality
-- Session start process
-
-**Steps:**
-1. Wait for the 1-minute session to become available
-2. Click "Join Session" immediately
-3. Verify video session starts correctly
-
-**Expected behavior:**
-- Video session loads successfully
-- Both participants can see each other
-- Session status changes to "in_progress"
-
-### Scenario 5: Test Normal Flow (15-minute session)
-
-**What to test:**
-- Normal session flow from start to finish
-- All features working correctly
-
-**Steps:**
-1. Wait for the 15-minute session
-2. Join when available
-3. Use all features (video, audio, chat, whiteboard)
-4. End session normally
-
-**Expected behavior:**
-- All features work as expected
-- Session ends cleanly
+- Session starts immediately
+- Timer counts down from 3 minutes
+- Session automatically ends when time expires
 - Session marked as "completed"
+
+### Scenario 2: Test Session Timeout (10-minute duration)
+
+**What to test:**
+- Session behavior during full 10-minute duration
+- Timeout if left idle
+- Normal completion
+
+**Steps:**
+1. Join the session when it starts (in 1 minute)
+2. Option A: Stay active for full 10 minutes
+3. Option B: Leave session idle to test timeout
+
+**Expected behavior:**
+- Session runs for full 10 minutes
+- Timer shows remaining time
+- Session ends automatically after 10 minutes
+- If idle, may trigger timeout warning
+
+### Scenario 3: Test Quick Session (2-minute duration)
+
+**What to test:**
+- Very short session handling
+- Quick completion
+- Data saving for short sessions
+
+**Steps:**
+1. Join the session when it starts (in 2 minutes)
+2. Use basic features (video, audio)
+3. Let it run for the full 2 minutes
+
+**Expected behavior:**
+- Session completes quickly
+- All data is saved despite short duration
+- Session marked as "completed"
+
+### Scenario 4: Test Mid-Length Session & Cancellation (5-minute duration)
+
+**What to test:**
+- Cancellation before session starts
+- OR join and test 5-minute duration
+
+**Steps:**
+Option A - Test Cancellation:
+1. Before the session starts (within 3 minutes), cancel it
+2. Verify cancellation notification
+
+Option B - Test Duration:
+1. Join when session starts
+2. Stay for full 5 minutes
+3. Observe completion
+
+**Expected behavior:**
+- If cancelled: Status changes to "cancelled", notification sent
+- If completed: Session runs for 5 minutes and ends properly
+
+### Scenario 5: Test Missed Session (15-minute duration)
+
+**What to test:**
+- What happens if no one joins
+- Missed session marking
+- Grace period handling
+
+**Steps:**
+1. Do NOT join this session
+2. Wait 15 minutes after scheduled time
+3. Check if session is marked as "missed"
+
+**Expected behavior:**
+- Session shows as available for 15 minutes
+- After grace period, marked as "missed"
+- Both participants notified
+- Session appears in "Past Sessions" with "Missed" status
 
 ## Monitoring
 
@@ -164,10 +173,16 @@ After testing, run the cleanup script:
 
 ## Notes
 
-- All test sessions have "Test" in the subject name for easy identification
-- Sessions are created with "accepted" status
-- Times are relative to NOW(), so they adjust automatically
+- All test sessions have duration in the subject name for easy identification
+- Sessions are created with "accepted" status and start immediately or within 5 minutes
+- **Session Durations:**
+  - 2 minutes - Quick test
+  - 3 minutes - Immediate test
+  - 5 minutes - Mid-length test
+  - 10 minutes - Standard test
+  - 15 minutes - Long test (for missed session testing)
 - Grace period for joining is 15 minutes before scheduled time
+- Sessions auto-end when duration expires
 - Missed session check happens 15 minutes after scheduled time
 
 ## Additional Test Cases

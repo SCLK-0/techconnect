@@ -27,7 +27,7 @@ BEGIN
     RAISE EXCEPTION 'Could not find learner or tutor. Please ensure you have users with these roles.';
   END IF;
 
-  -- Session 1: 10 minutes from now (test missed session)
+  -- Session 1: Starting in 1 minute, Duration: 10 minutes
   INSERT INTO sessions (
     learner_id,
     tutor_id,
@@ -40,78 +40,15 @@ BEGIN
   ) VALUES (
     v_learner_id,
     v_tutor_id,
-    'Mathematics - Test Missed',
-    NOW() + INTERVAL '10 minutes',
-    60,
-    'accepted',
-    'scheduled',
-    NOW()
-  );
-
-  -- Session 2: 2 minutes from now (test immediate join and timeout)
-  INSERT INTO sessions (
-    learner_id,
-    tutor_id,
-    subject,
-    scheduled_at,
-    duration_minutes,
-    status,
-    session_type,
-    created_at
-  ) VALUES (
-    v_learner_id,
-    v_tutor_id,
-    'Physics - Test Timeout',
-    NOW() + INTERVAL '2 minutes',
-    45,
-    'accepted',
-    'scheduled',
-    NOW()
-  );
-
-  -- Session 3: 5 minutes from now (test cancellation)
-  INSERT INTO sessions (
-    learner_id,
-    tutor_id,
-    subject,
-    scheduled_at,
-    duration_minutes,
-    status,
-    session_type,
-    created_at
-  ) VALUES (
-    v_learner_id,
-    v_tutor_id,
-    'Chemistry - Test Cancel',
-    NOW() + INTERVAL '5 minutes',
-    30,
-    'accepted',
-    'scheduled',
-    NOW()
-  );
-
-  -- Session 4: 1 minute from now (test immediate scenarios)
-  INSERT INTO sessions (
-    learner_id,
-    tutor_id,
-    subject,
-    scheduled_at,
-    duration_minutes,
-    status,
-    session_type,
-    created_at
-  ) VALUES (
-    v_learner_id,
-    v_tutor_id,
-    'Computer Science - Test Immediate',
+    'Mathematics - 10min Duration',
     NOW() + INTERVAL '1 minute',
-    60,
+    10,
     'accepted',
     'scheduled',
     NOW()
   );
 
-  -- Session 5: 15 minutes from now (test normal flow)
+  -- Session 2: Starting in 2 minutes, Duration: 2 minutes (quick test)
   INSERT INTO sessions (
     learner_id,
     tutor_id,
@@ -124,15 +61,80 @@ BEGIN
   ) VALUES (
     v_learner_id,
     v_tutor_id,
-    'Biology - Test Normal',
-    NOW() + INTERVAL '15 minutes',
-    45,
+    'Physics - 2min Duration',
+    NOW() + INTERVAL '2 minutes',
+    2,
     'accepted',
     'scheduled',
     NOW()
   );
 
-  RAISE NOTICE 'Successfully created 5 test sessions for learner % and tutor %', v_learner_id, v_tutor_id;
+  -- Session 3: Starting in 3 minutes, Duration: 5 minutes
+  INSERT INTO sessions (
+    learner_id,
+    tutor_id,
+    subject,
+    scheduled_at,
+    duration_minutes,
+    status,
+    session_type,
+    created_at
+  ) VALUES (
+    v_learner_id,
+    v_tutor_id,
+    'Chemistry - 5min Duration',
+    NOW() + INTERVAL '3 minutes',
+    5,
+    'accepted',
+    'scheduled',
+    NOW()
+  );
+
+  -- Session 4: Starting now (immediate), Duration: 3 minutes
+  INSERT INTO sessions (
+    learner_id,
+    tutor_id,
+    subject,
+    scheduled_at,
+    duration_minutes,
+    status,
+    session_type,
+    created_at
+  ) VALUES (
+    v_learner_id,
+    v_tutor_id,
+    'Computer Science - 3min Duration',
+    NOW(),
+    3,
+    'accepted',
+    'scheduled',
+    NOW()
+  );
+
+  -- Session 5: Starting in 5 minutes, Duration: 15 minutes (longer test)
+  INSERT INTO sessions (
+    learner_id,
+    tutor_id,
+    subject,
+    scheduled_at,
+    duration_minutes,
+    status,
+    session_type,
+    created_at
+  ) VALUES (
+    v_learner_id,
+    v_tutor_id,
+    'Biology - 15min Duration',
+    NOW() + INTERVAL '5 minutes',
+    15,
+    'accepted',
+    'scheduled',
+    NOW()
+  );
+
+  RAISE NOTICE 'Successfully created 5 test sessions with different durations for learner % and tutor %', v_learner_id, v_tutor_id;
+  RAISE NOTICE 'Session durations: 10min, 2min, 5min, 3min, 15min';
+  RAISE NOTICE 'Sessions start immediately and within the next 5 minutes';
 END $$;
 
 -- Verify the sessions were created
