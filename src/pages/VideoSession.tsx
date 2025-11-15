@@ -1622,6 +1622,10 @@ export default function VideoSession() {
                       playsInline
                       className="w-full h-full object-cover"
                     />
+                    {/* Camera Off Overlay */}
+                    {tutorStream && (
+                      <RemoteCameraOffIndicator stream={tutorStream} />
+                    )}
                     {!tutorStream && (
                       <div className="absolute inset-0 w-full h-full flex items-center justify-center text-white bg-gradient-to-br from-gray-900 to-gray-800">
                         <div className="text-center">
@@ -1661,6 +1665,10 @@ export default function VideoSession() {
                       playsInline
                       className="w-full h-full object-cover"
                     />
+                    {/* Camera Off Overlay */}
+                    {learnerStream && (
+                      <RemoteCameraOffIndicator stream={learnerStream} />
+                    )}
                     {!learnerStream && (
                       <div className="absolute inset-0 w-full h-full flex items-center justify-center text-white bg-gradient-to-br from-gray-800 to-gray-700">
                         <div className="text-center">
