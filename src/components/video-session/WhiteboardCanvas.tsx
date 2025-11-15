@@ -1538,7 +1538,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40 pointer-events-none">
               <div className="bg-white/90 rounded-lg px-6 py-4 shadow-lg">
                 <p className="text-sm font-medium text-gray-700">
-                  Waiting for both users to connect...
+                  Connecting whiteboard...
                 </p>
               </div>
             </div>

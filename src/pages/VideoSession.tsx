@@ -725,7 +725,7 @@ export default function VideoSession() {
               });
             }
           });
-        }, 500); // Wait 500ms to ensure other user is connected and listening
+        }, 100); // Wait 100ms to ensure other user is connected and listening
         
         // For both tutor and learner: Check if session is already in progress and the other party is present
         // This handles rejoining scenarios
