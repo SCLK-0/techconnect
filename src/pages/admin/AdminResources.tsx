@@ -159,7 +159,7 @@ export default function AdminResources() {
           </header>
 
           <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-7xl">
+            <div className="space-y-6 w-full max-w-5xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold mb-2">Pending Resources</h2>

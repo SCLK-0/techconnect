@@ -187,7 +187,7 @@ export default function TutorAvailability() {
         <TutorSidebar />
         <div className="flex-1 flex flex-col">
           <header className="h-14 border-b flex items-center justify-center px-3">
-            <div className="w-full max-w-7xl flex items-center justify-between">
+            <div className="w-full max-w-5xl flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
                 <h1 className="text-xl font-semibold">Availability</h1>
@@ -200,7 +200,7 @@ export default function TutorAvailability() {
           </header>
 
           <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-7xl">
+            <div className="space-y-6 w-full max-w-5xl">
               <Card>
                 <CardHeader>
                   <CardTitle>Weekly Recurring Schedule</CardTitle>
