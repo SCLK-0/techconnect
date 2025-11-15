@@ -31,8 +31,8 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAudioLevel } from "@/hooks/useAudioLevel";
 
-// Component to show camera-off icon when remote video is disabled
-function RemoteCameraOffIndicator({ stream, isEnabled }: { stream: MediaStream; isEnabled?: boolean }) {
+// Component to show profile picture when remote video is disabled
+function RemoteCameraOffIndicator({ stream, isEnabled, profilePicture, userName }: { stream: MediaStream; isEnabled?: boolean; profilePicture?: string; userName?: string }) {
   const [isVideoOff, setIsVideoOff] = useState(() => {
     // If isEnabled prop is provided, use it; otherwise check video track
     if (isEnabled !== undefined) {
@@ -109,10 +109,26 @@ function RemoteCameraOffIndicator({ stream, isEnabled }: { stream: MediaStream; 
     return null;
   }
 
-  console.log("🎥 Camera is OFF - showing overlay");
+  console.log("🎥 Camera is OFF - showing overlay with profile picture");
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black rounded-lg pointer-events-none z-20">
-      <VideoOff className="w-8 h-8 text-white opacity-75" />
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg pointer-events-none z-20">
+      {profilePicture ? (
+        <img 
+          src={profilePicture} 
+          alt={userName || "User"} 
+          className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-lg"
+        />
+      ) : (
+        <div className="w-24 h-24 rounded-full bg-primary/20 border-4 border-white/20 flex items-center justify-center">
+          <span className="text-4xl font-bold text-white">
+            {userName?.charAt(0).toUpperCase() || "?"}
+          </span>
+        </div>
+      )}
+      {userName && (
+        <p className="mt-3 text-white text-sm font-medium">{userName}</p>
+      )}
+      <VideoOff className="w-5 h-5 text-white/50 mt-2" />
     </div>
   );
 }
@@ -1676,7 +1692,11 @@ export default function VideoSession() {
                     />
                     {/* Camera Off Overlay */}
                     {tutorStream && (
-                      <RemoteCameraOffIndicator stream={tutorStream} />
+                      <RemoteCameraOffIndicator 
+                        stream={tutorStream}
+                        profilePicture={sessionData?.tutor_profiles?.profile_picture_url}
+                        userName={sessionData?.tutor_profiles?.full_name}
+                      />
                     )}
                     {!tutorStream && (
                       <div className="absolute inset-0 w-full h-full flex items-center justify-center text-white bg-gradient-to-br from-gray-900 to-gray-800">
@@ -1719,7 +1739,11 @@ export default function VideoSession() {
                     />
                     {/* Camera Off Overlay */}
                     {learnerStream && (
-                      <RemoteCameraOffIndicator stream={learnerStream} />
+                      <RemoteCameraOffIndicator 
+                        stream={learnerStream}
+                        profilePicture={sessionData?.learner_profiles?.profile_picture_url}
+                        userName={sessionData?.learner_profiles?.full_name}
+                      />
                     )}
                     {!learnerStream && (
                       <div className="absolute inset-0 w-full h-full flex items-center justify-center text-white bg-gradient-to-br from-gray-800 to-gray-700">
@@ -1762,7 +1786,12 @@ export default function VideoSession() {
                     />
                     {/* Camera Off Overlay */}
                     {remoteStream && isConnected && (
-                      <RemoteCameraOffIndicator stream={remoteStream} isEnabled={remoteVideoEnabled} />
+                      <RemoteCameraOffIndicator 
+                        stream={remoteStream} 
+                        isEnabled={remoteVideoEnabled}
+                        profilePicture={role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url}
+                        userName={role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name}
+                      />
                     )}
                     {!isConnected && (
                       <div className="absolute inset-0 w-full h-full flex flex-col text-white bg-gradient-to-br from-gray-900 to-gray-800">
