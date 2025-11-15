@@ -131,11 +131,12 @@ export default function VideoSession() {
   const [hasNotifiedMonitoring, setHasNotifiedMonitoring] = useState(false);
   const [remoteCameraOn, setRemoteCameraOn] = useState(false); // Remote user's camera state - default to false to show profile pic until broadcast received
   const [remoteScreenSharing, setRemoteScreenSharing] = useState(false); // Remote user's screen share state
+  const [hasReceivedRemoteState, setHasReceivedRemoteState] = useState(false); // Track if we've received any broadcast
   
   // Debug logging
   useEffect(() => {
-    console.log("🔴 remoteCameraOn changed to:", remoteCameraOn);
-  }, [remoteCameraOn]);
+    console.log("🔴 remoteCameraOn changed to:", remoteCameraOn, "hasReceivedRemoteState:", hasReceivedRemoteState);
+  }, [remoteCameraOn, hasReceivedRemoteState]);
   
   useEffect(() => {
     console.log("🟢 remoteScreenSharing changed to:", remoteScreenSharing);
@@ -984,6 +985,7 @@ export default function VideoSession() {
             // Update remote user's camera and screen share state
             if (payload.payload.userId !== user!.id) {
               console.log("📡 Received media_state broadcast from other user:", payload.payload);
+              setHasReceivedRemoteState(true); // Mark that we've received a broadcast
               if (payload.payload.camera !== undefined) {
                 console.log("🔴 Setting remoteCameraOn to:", payload.payload.camera);
                 setRemoteCameraOn(payload.payload.camera);
@@ -1722,10 +1724,10 @@ export default function VideoSession() {
                       ref={remoteVideoRef}
                       autoPlay
                       playsInline
-                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''} ${remoteCameraOn || remoteScreenSharing ? 'opacity-100' : 'opacity-0'}`}
+                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''} ${hasReceivedRemoteState && (remoteCameraOn || remoteScreenSharing) ? 'opacity-100' : 'opacity-0'}`}
                     />
-                    {/* Camera Off Overlay - Always show when connected and camera is off */}
-                    {isConnected && !remoteCameraOn && !remoteScreenSharing && (
+                    {/* Camera Off Overlay - Show when connected AND (haven't received state OR camera is off) */}
+                    {isConnected && (!hasReceivedRemoteState || (!remoteCameraOn && !remoteScreenSharing)) && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg z-20">
                         {(role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url) ? (
                           <img 
