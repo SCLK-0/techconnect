@@ -278,18 +278,10 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             console.log(`✅ ${displayName} processing remote event:`, payload.type);
             
             if (payload.type === "cursor:move") {
-              setRemoteCursors(prev => {
-                const updated = {
-                  ...prev,
-                  [payload.userId]: payload.data
-                };
-                // Check if both users are now present (we have at least one remote cursor)
-                if (Object.keys(updated).length > 0 && !bothUsersPresent) {
-                  setBothUsersPresent(true);
-                  // toast.success("Both users connected - whiteboard enabled"); // Removed - too noisy
-                }
-                return updated;
-              });
+              setRemoteCursors(prev => ({
+                ...prev,
+                [payload.userId]: payload.data
+              }));
             } else if (payload.type === "drawing:progress") {
               handleDrawingProgress(fabricCanvas, payload);
             } else {
@@ -343,6 +335,18 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
           })
           .on("presence", { event: "leave" }, ({ leftPresences }) => {
             console.log(`👋 ${displayName} saw user leave whiteboard:`, leftPresences);
+            
+            // Update userPresences to remove left users
+            setUserPresences(prev => {
+              const updated = { ...prev };
+              leftPresences.forEach((presence: any) => {
+                if (presence.userId && presence.userId !== user.id) {
+                  delete updated[presence.userId];
+                }
+              });
+              return updated;
+            });
+            
             // Check if we still have other users present
             const state = channel.presenceState();
             const remainingUsers = Object.keys(state).filter(key => {
@@ -1264,6 +1268,24 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
       }
     });
   }, [activeTool, canvas, drawColor, brushSize, isMonitorMode]);
+
+  // Clean up stale cursors when users leave
+  useEffect(() => {
+    setRemoteCursors(prev => {
+      const updated = { ...prev };
+      let hasChanges = false;
+      
+      // Remove cursors for users who are no longer present
+      Object.keys(updated).forEach(userId => {
+        if (!userPresences[userId]) {
+          delete updated[userId];
+          hasChanges = true;
+        }
+      });
+      
+      return hasChanges ? updated : prev;
+    });
+  }, [userPresences]);
 
   // Update indicators when user presences change
   useEffect(() => {
