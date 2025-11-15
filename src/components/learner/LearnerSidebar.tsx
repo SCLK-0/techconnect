@@ -47,7 +47,7 @@ export const LearnerSidebar = () => {
   return (
     <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
       <SidebarContent>
-        <SidebarGroup className="bg-primary/5">
+        <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -58,8 +58,8 @@ export const LearnerSidebar = () => {
                       to={item.url}
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-white text-primary font-medium shadow-sm"
-                          : "hover:bg-white/50"
+                          ? "bg-primary text-white font-medium"
+                          : "hover:bg-muted/50"
                       }
                     >
                       <item.icon className="h-4 w-4" />
@@ -72,7 +72,7 @@ export const LearnerSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="bg-background">
+        <SidebarGroup>
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

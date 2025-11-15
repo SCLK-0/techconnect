@@ -33,7 +33,7 @@ export const AdminSidebar = () => {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        <SidebarGroup className="bg-primary/5">
+        <SidebarGroup>
           <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -44,8 +44,8 @@ export const AdminSidebar = () => {
                       to={item.url} 
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-white text-primary font-medium shadow-sm flex items-center gap-3"
-                          : "hover:bg-white/50 flex items-center gap-3"
+                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          : "hover:bg-muted/50 flex items-center gap-3"
                       }
                     >
                       <item.icon className="h-4 w-4" />
@@ -58,7 +58,7 @@ export const AdminSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="bg-background">
+        <SidebarGroup>
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

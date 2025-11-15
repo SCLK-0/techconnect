@@ -133,11 +133,15 @@ export default function MySessions() {
         <LearnerSidebar />
         <main className="flex-1">
           {/* Header */}
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-            <SidebarTrigger />
-            <div className="flex-1" />
-            <NotificationBell />
-            <UserMenu />
+          <header className="h-16 border-b flex items-center justify-between px-6 bg-card">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <h1 className="text-xl font-semibold">My Sessions</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <NotificationBell />
+              <UserMenu />
+            </div>
           </header>
 
           {/* Content */}
