@@ -239,7 +239,7 @@ export default function MySessions() {
                                 
                                 return (
                                   <Button
-                                    onClick={() => navigate(`/session/${session.id}`)}
+                                    onClick={() => navigate(`/video-session/${session.id}`)}
                                     disabled={!canJoin}
                                     variant={minutesUntilStart < 0 && canJoin ? "outline" : "default"}
                                     title={hasExpired ? 'Session has expired (duration + 20 min grace period passed)' : !canJoin ? `Available ${Math.abs(minutesUntilStart)} minutes before session` : ''}
