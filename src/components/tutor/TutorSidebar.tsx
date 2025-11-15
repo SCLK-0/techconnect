@@ -150,10 +150,10 @@ export function TutorSidebar() {
                       to={item.url}
                       className={({ isActive: linkActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50"
+                          ? "opacity-50 flex items-center gap-3"
                           : linkActive
-                          ? "bg-primary text-white font-medium"
-                          : "hover:bg-muted/50"
+                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          : "hover:bg-muted/50 flex items-center gap-3"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -167,7 +167,7 @@ export function TutorSidebar() {
                       }}
                     >
                       <item.icon className="h-4 w-4" />
-                      {state !== "collapsed" && <span>{item.title}</span>}
+                      {state === "expanded" && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -186,10 +186,10 @@ export function TutorSidebar() {
                       to="/edit-profile"
                       className={({ isActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50"
+                          ? "opacity-50 flex items-center gap-3"
                           : isActive
-                          ? "bg-primary text-white font-medium"
-                          : "hover:bg-muted/50"
+                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          : "hover:bg-muted/50 flex items-center gap-3"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -203,7 +203,7 @@ export function TutorSidebar() {
                       }}
                     >
                       <User className="h-4 w-4" />
-                      {state !== "collapsed" && <span>Edit Profile</span>}
+                      {state === "expanded" && <span>Profile</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -213,10 +213,10 @@ export function TutorSidebar() {
                       to="/settings"
                       className={({ isActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50"
+                          ? "opacity-50 flex items-center gap-3"
                           : isActive
-                          ? "bg-primary text-white font-medium"
-                          : "hover:bg-muted/50"
+                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          : "hover:bg-muted/50 flex items-center gap-3"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -230,14 +230,14 @@ export function TutorSidebar() {
                       }}
                     >
                       <Settings className="h-4 w-4" />
-                      {state !== "collapsed" && <span>Settings</span>}
+                      {state === "expanded" && <span>Settings</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout}>
+                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3">
                   <LogOut className="h-4 w-4" />
-                  {state !== "collapsed" && <span>Log Out</span>}
+                  {state === "expanded" && <span>Log Out</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
