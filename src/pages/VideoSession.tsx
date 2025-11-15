@@ -111,24 +111,24 @@ function RemoteCameraOffIndicator({ stream, isEnabled, profilePicture, userName 
 
   console.log("🎥 Camera is OFF - showing overlay with profile picture");
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg pointer-events-none z-20">
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg z-20">
       {profilePicture ? (
         <img 
           src={profilePicture} 
           alt={userName || "User"} 
-          className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-lg"
+          className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
         />
       ) : (
-        <div className="w-24 h-24 rounded-full bg-primary/20 border-4 border-white/20 flex items-center justify-center">
-          <span className="text-4xl font-bold text-white">
+        <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-white/20 flex items-center justify-center">
+          <span className="text-2xl font-bold text-white">
             {userName?.charAt(0).toUpperCase() || "?"}
           </span>
         </div>
       )}
       {userName && (
-        <p className="mt-3 text-white text-sm font-medium">{userName}</p>
+        <p className="mt-2 text-white text-xs font-medium">{userName}</p>
       )}
-      <VideoOff className="w-5 h-5 text-white/50 mt-2" />
+      <VideoOff className="w-4 h-4 text-white/50 mt-1" />
     </div>
   );
 }
@@ -1848,29 +1848,29 @@ export default function VideoSession() {
                       {isScreenSharing ? "Your Screen" : "You"}
                     </div>
                     {!isCameraOn && !isScreenSharing && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-700 rounded-lg z-20">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-700 rounded-lg pointer-events-none">
                         {(role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url) ? (
                           <img 
                             src={role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url} 
                             alt="You" 
-                            className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-lg"
+                            className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
                           />
                         ) : (
-                          <div className="w-24 h-24 rounded-full bg-primary/20 border-4 border-white/20 flex items-center justify-center">
-                            <span className="text-4xl font-bold text-white">
+                          <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-white/20 flex items-center justify-center">
+                            <span className="text-2xl font-bold text-white">
                               {(role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name)?.charAt(0).toUpperCase() || "?"}
                             </span>
                           </div>
                         )}
                         {(role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name) && (
-                          <p className="mt-3 text-white text-sm font-medium">
+                          <p className="mt-2 text-white text-xs font-medium">
                             {role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name}
                           </p>
                         )}
-                        <VideoOff className="w-5 h-5 text-white/50 mt-2" />
+                        <VideoOff className="w-4 h-4 text-white/50 mt-1" />
                       </div>
                     )}
-                    <div className="absolute bottom-1 right-1 flex gap-1">
+                    <div className="absolute bottom-1 right-1 flex gap-1 pointer-events-auto z-30">
                       <Button
                         variant="ghost"
                         size="icon"
