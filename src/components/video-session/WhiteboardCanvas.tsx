@@ -56,6 +56,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
   const [userColor, setUserColor] = useState<string>("");
   const [userPresences, setUserPresences] = useState<Record<string, UserPresence>>({});
   const [remoteCursors, setRemoteCursors] = useState<Record<string, CursorPosition>>({});
+  const [bothUsersPresent, setBothUsersPresent] = useState(false);
   const isRemoteUpdate = useRef(false);
   const channelRef = useRef<any>(null);
   const isChannelReady = useRef(false);
@@ -269,10 +270,18 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             console.log(`✅ ${displayName} processing remote event:`, payload.type);
             
             if (payload.type === "cursor:move") {
-              setRemoteCursors(prev => ({
-                ...prev,
-                [payload.userId]: payload.data
-              }));
+              setRemoteCursors(prev => {
+                const updated = {
+                  ...prev,
+                  [payload.userId]: payload.data
+                };
+                // Check if both users are now present (we have at least one remote cursor)
+                if (Object.keys(updated).length > 0 && !bothUsersPresent) {
+                  setBothUsersPresent(true);
+                  toast.success("Both users connected - whiteboard enabled");
+                }
+                return updated;
+              });
             } else if (payload.type === "drawing:progress") {
               handleDrawingProgress(fabricCanvas, payload);
             } else {
@@ -806,6 +815,25 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
 
     initCanvas();
   }, [sessionId]);
+
+  // Enable/disable canvas interaction based on both users being present
+  useEffect(() => {
+    if (!canvas || isMonitorMode) return;
+
+    if (bothUsersPresent) {
+      // Enable interaction
+      canvas.selection = true;
+      canvas.isDrawingMode = activeTool === "draw";
+      console.log("✅ Both users present - whiteboard enabled");
+    } else {
+      // Disable interaction until both users are present
+      canvas.selection = false;
+      canvas.isDrawingMode = false;
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      console.log("⏳ Waiting for both users - whiteboard disabled");
+    }
+  }, [bothUsersPresent, canvas, isMonitorMode, activeTool]);
 
   const updateObjectIndicators = (fabricCanvas: Canvas, presences: Record<string, UserPresence>) => {
     const existingIndicators = fabricCanvas.getObjects().filter((obj) => (obj as any).isIndicator);
@@ -1390,7 +1418,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "select" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("select")}
-              title="Select"
+              disabled={!bothUsersPresent}
+              title={bothUsersPresent ? "Select" : "Waiting for both users..."}
               className="h-8 w-8"
             >
               <MousePointer2 className="h-4 w-4" />
@@ -1399,7 +1428,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "draw" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("draw")}
-              title="Draw"
+              disabled={!bothUsersPresent}
+              title={bothUsersPresent ? "Draw" : "Waiting for both users..."}
               className="h-8 w-8"
             >
               <Minus className="h-4 w-4" />
@@ -1408,7 +1438,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "text" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("text")}
-              title="Text - Click on canvas to place"
+              disabled={!bothUsersPresent}
+              title={bothUsersPresent ? "Text - Click on canvas to place" : "Waiting for both users..."}
               className="h-8 w-8"
             >
               <Type className="h-4 w-4" />
@@ -1417,7 +1448,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "eraser" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("eraser")}
-              title="Eraser"
+              disabled={!bothUsersPresent}
+              title={bothUsersPresent ? "Eraser" : "Waiting for both users..."}
               className="h-8 w-8"
             >
               <Eraser className="h-4 w-4" />
@@ -1433,8 +1465,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
                 type="color"
                 value={drawColor}
                 onChange={(e) => setDrawColor(e.target.value)}
-                className="w-8 h-8 rounded border cursor-pointer"
-                title="Color"
+                disabled={!bothUsersPresent}
+                className="w-8 h-8 rounded border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title={bothUsersPresent ? "Color" : "Waiting for both users..."}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -1445,8 +1478,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
                 max="20"
                 value={brushSize}
                 onChange={(e) => setBrushSize(Number(e.target.value))}
-                className="w-24"
-                title="Brush size"
+                disabled={!bothUsersPresent}
+                className="w-24 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={bothUsersPresent ? "Brush size" : "Waiting for both users..."}
               />
               <span className="text-xs font-medium w-6">{brushSize}</span>
             </div>
@@ -1459,7 +1493,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            title="Upload image"
+            disabled={!bothUsersPresent}
+            title={bothUsersPresent ? "Upload image" : "Waiting for both users..."}
             className="h-8"
           >
             <Image className="h-4 w-4 mr-1" />
@@ -1476,7 +1511,14 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
           <div className="flex-1" />
 
           {/* Clear */}
-          <Button variant="destructive" size="sm" onClick={clearCanvas} title="Clear all" className="h-8">
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={clearCanvas} 
+            disabled={!bothUsersPresent}
+            title={bothUsersPresent ? "Clear all" : "Waiting for both users..."}
+            className="h-8"
+          >
             <Trash2 className="h-4 w-4 mr-1" />
             Clear
           </Button>
@@ -1487,6 +1529,17 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
       <div className="flex-1 relative overflow-hidden" ref={canvasContainerRef}>
         <div className="absolute inset-0 flex items-center justify-center">
           <canvas ref={canvasRef} className="shadow-lg" />
+          
+          {/* Waiting for both users overlay */}
+          {!isMonitorMode && !bothUsersPresent && (
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40 pointer-events-none">
+              <div className="bg-white/90 rounded-lg px-6 py-4 shadow-lg">
+                <p className="text-sm font-medium text-gray-700">
+                  Waiting for both users to connect...
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* Remote Cursors */}
           {canvas && canvasContainerRef.current && Object.values(remoteCursors).map((cursor) => {
