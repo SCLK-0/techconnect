@@ -32,8 +32,13 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAudioLevel } from "@/hooks/useAudioLevel";
 
 // Component to show camera-off icon when remote video is disabled
-function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
+function RemoteCameraOffIndicator({ stream, isEnabled }: { stream: MediaStream; isEnabled?: boolean }) {
   const [isVideoOff, setIsVideoOff] = useState(() => {
+    // If isEnabled prop is provided, use it; otherwise check video track
+    if (isEnabled !== undefined) {
+      console.log("🎥 RemoteCameraOffIndicator using isEnabled prop:", !isEnabled);
+      return !isEnabled;
+    }
     // Initialize state immediately based on video track
     const videoTrack = stream.getVideoTracks()[0];
     const initialState = !videoTrack || !videoTrack.enabled;
@@ -42,6 +47,12 @@ function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
   });
 
   useEffect(() => {
+    // If isEnabled prop is provided, use it directly
+    if (isEnabled !== undefined) {
+      setIsVideoOff(!isEnabled);
+      return;
+    }
+
     const videoTrack = stream.getVideoTracks()[0];
     
     if (!videoTrack) {
@@ -90,7 +101,7 @@ function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
       videoTrack.removeEventListener('mute', handleMute);
       videoTrack.removeEventListener('unmute', handleUnmute);
     };
-  }, [stream]);
+  }, [stream, isEnabled]);
 
   if (!isVideoOff) return null;
 
@@ -1738,7 +1749,7 @@ export default function VideoSession() {
                     />
                     {/* Camera Off Overlay */}
                     {remoteStream && isConnected && (
-                      <RemoteCameraOffIndicator stream={remoteStream} />
+                      <RemoteCameraOffIndicator stream={remoteStream} isEnabled={remoteVideoEnabled} />
                     )}
                     {!isConnected && (
                       <div className="absolute inset-0 w-full h-full flex flex-col text-white bg-gradient-to-br from-gray-900 to-gray-800">
