@@ -503,7 +503,7 @@ const FindTutors = () => {
                 </p>
               </div>
 
-            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -589,8 +589,8 @@ const FindTutors = () => {
               </div>
             </div>
 
-            {loading ? (
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {loading ? (
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <Card key={i}>
                     <CardHeader>
@@ -606,23 +606,23 @@ const FindTutors = () => {
                       <Skeleton className="h-20 w-full" />
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            ) : filteredTutors.length === 0 ? (
-              <Card className="p-6 sm:p-12 text-center">
-                <UserCircle className="h-12 sm:h-16 w-12 sm:w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-base sm:text-lg font-semibold mb-2">No tutors found</h3>
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  {searchQuery
-                    ? "Try adjusting your search criteria"
-                    : "No approved tutors available at the moment"}
-                </p>
-              </Card>
-            ) : (
-              <>
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {paginatedTutors.map((tutor) => (
-                    <Card key={tutor.id} className="hover:shadow-lg transition-shadow">
+                  ))}
+                </div>
+              ) : filteredTutors.length === 0 ? (
+                <Card className="p-6 sm:p-12 text-center">
+                  <UserCircle className="h-12 sm:h-16 w-12 sm:w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">No tutors found</h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    {searchQuery
+                      ? "Try adjusting your search criteria"
+                      : "No approved tutors available at the moment"}
+                  </p>
+                </Card>
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {paginatedTutors.map((tutor) => (
+                      <Card key={tutor.id} className="hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                           <Avatar className="h-14 w-14 sm:h-16 sm:w-16">
@@ -712,13 +712,13 @@ const FindTutors = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-                
-                {renderPagination()}
-              </>
-            )}
-          </div>
+                    ))}
+                  </div>
+                  
+                  {renderPagination()}
+                </>
+              )}
+            </div>
           </main>
         </div>
       </div>
