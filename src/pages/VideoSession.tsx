@@ -983,37 +983,21 @@ export default function VideoSession() {
           (payload) => {
             // Update remote user's camera and screen share state
             if (payload.payload.userId !== user!.id) {
-              console.log("📡 Received media_state broadcast:", payload.payload);
+              console.log("📡 Received media_state broadcast from other user:", payload.payload);
               if (payload.payload.camera !== undefined) {
+                console.log("🔴 Setting remoteCameraOn to:", payload.payload.camera);
                 setRemoteCameraOn(payload.payload.camera);
               }
               if (payload.payload.screenSharing !== undefined) {
+                console.log("🟢 Setting remoteScreenSharing to:", payload.payload.screenSharing);
                 setRemoteScreenSharing(payload.payload.screenSharing);
               }
+            } else {
+              console.log("📡 Ignoring own broadcast:", payload.payload);
             }
           }
         )
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            // Broadcast initial camera/mic/screen share state after subscription is confirmed
-            const videoTrack = stream.getVideoTracks()[0];
-            const audioTrack = stream.getAudioTracks()[0];
-            const cameraState = videoTrack?.enabled ?? true;
-            const micState = audioTrack?.enabled ?? true;
-            
-            await sessionChannel.send({
-              type: 'broadcast',
-              event: 'media_state',
-              payload: { 
-                userId: user!.id, 
-                camera: cameraState,
-                mic: micState,
-                screenSharing: false
-              }
-            });
-            console.log("📡 Broadcast initial media state - camera:", cameraState, "mic:", micState, "screenSharing: false");
-          }
-        });
+        .subscribe();
 
       // Subscribe to new chat messages for unread count (mobile only)
       const chatChannel = supabase
