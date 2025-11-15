@@ -58,12 +58,12 @@ export const LearnerSidebar = () => {
                       to={item.url}
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-primary text-white flex items-center gap-3"
-                          : "hover:bg-muted/50 flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
                       }
                     >
                       <item.icon className="h-4 w-4" />
-                      {state === "expanded" && <span>{item.title}</span>}
+                      {state === "expanded" && <span className="font-normal">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -82,12 +82,12 @@ export const LearnerSidebar = () => {
                     to="/edit-profile"
                     className={({ isActive }) =>
                       isActive
-                        ? "bg-primary text-white flex items-center gap-3"
-                        : "hover:bg-muted/50 flex items-center gap-3"
+                        ? "bg-primary text-white flex items-center gap-3 font-normal"
+                        : "hover:bg-muted/50 flex items-center gap-3 font-normal"
                     }
                   >
                     <User className="h-4 w-4" />
-                    {state === "expanded" && <span>Profile</span>}
+                    {state === "expanded" && <span className="font-normal">Profile</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -97,19 +97,19 @@ export const LearnerSidebar = () => {
                     to="/settings"
                     className={({ isActive }) =>
                       isActive
-                        ? "bg-primary text-white flex items-center gap-3"
-                        : "hover:bg-muted/50 flex items-center gap-3"
+                        ? "bg-primary text-white flex items-center gap-3 font-normal"
+                        : "hover:bg-muted/50 flex items-center gap-3 font-normal"
                     }
                   >
                     <Settings className="h-4 w-4" />
-                    {state === "expanded" && <span>Settings</span>}
+                    {state === "expanded" && <span className="font-normal">Settings</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3">
+                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal">
                   <LogOut className="h-4 w-4" />
-                  {state === "expanded" && <span>Log Out</span>}
+                  {state === "expanded" && <span className="font-normal">Log Out</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

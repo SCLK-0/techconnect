@@ -150,10 +150,10 @@ export function TutorSidebar() {
                       to={item.url}
                       className={({ isActive: linkActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3"
+                          ? "opacity-50 flex items-center gap-3 font-normal"
                           : linkActive
-                          ? "bg-primary text-white flex items-center gap-3"
-                          : "hover:bg-muted/50 flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -167,7 +167,7 @@ export function TutorSidebar() {
                       }}
                     >
                       <item.icon className="h-4 w-4" />
-                      {state === "expanded" && <span>{item.title}</span>}
+                      {state === "expanded" && <span className="font-normal">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -186,10 +186,10 @@ export function TutorSidebar() {
                       to="/edit-profile"
                       className={({ isActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3"
+                          ? "opacity-50 flex items-center gap-3 font-normal"
                           : isActive
-                          ? "bg-primary text-white flex items-center gap-3"
-                          : "hover:bg-muted/50 flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -203,7 +203,7 @@ export function TutorSidebar() {
                       }}
                     >
                       <User className="h-4 w-4" />
-                      {state === "expanded" && <span>Profile</span>}
+                      {state === "expanded" && <span className="font-normal">Profile</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -213,10 +213,10 @@ export function TutorSidebar() {
                       to="/settings"
                       className={({ isActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3"
+                          ? "opacity-50 flex items-center gap-3 font-normal"
                           : isActive
-                          ? "bg-primary text-white flex items-center gap-3"
-                          : "hover:bg-muted/50 flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -230,14 +230,14 @@ export function TutorSidebar() {
                       }}
                     >
                       <Settings className="h-4 w-4" />
-                      {state === "expanded" && <span>Settings</span>}
+                      {state === "expanded" && <span className="font-normal">Settings</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3">
+                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal">
                   <LogOut className="h-4 w-4" />
-                  {state === "expanded" && <span>Log Out</span>}
+                  {state === "expanded" && <span className="font-normal">Log Out</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
