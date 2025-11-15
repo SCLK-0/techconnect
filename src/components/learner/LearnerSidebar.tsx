@@ -59,7 +59,7 @@ export const LearnerSidebar = () => {
                       className={({ isActive }) =>
                         isActive
                           ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
                       }
                     >
                       <item.icon className="h-4 w-4" />
@@ -83,7 +83,7 @@ export const LearnerSidebar = () => {
                     className={({ isActive }) =>
                       isActive
                         ? "bg-primary text-white flex items-center gap-3 font-normal"
-                        : "hover:bg-muted/50 flex items-center gap-3 font-normal"
+                        : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
                     }
                   >
                     <User className="h-4 w-4" />
@@ -98,7 +98,7 @@ export const LearnerSidebar = () => {
                     className={({ isActive }) =>
                       isActive
                         ? "bg-primary text-white flex items-center gap-3 font-normal"
-                        : "hover:bg-muted/50 flex items-center gap-3 font-normal"
+                        : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
                     }
                   >
                     <Settings className="h-4 w-4" />
@@ -107,7 +107,7 @@ export const LearnerSidebar = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal">
+                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal text-foreground">
                   <LogOut className="h-4 w-4" />
                   {state === "expanded" && <span className="font-normal">Log Out</span>}
                 </SidebarMenuButton>

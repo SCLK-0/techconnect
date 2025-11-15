@@ -150,10 +150,10 @@ export function TutorSidebar() {
                       to={item.url}
                       className={({ isActive: linkActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3 font-normal"
+                          ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : linkActive
                           ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -186,10 +186,10 @@ export function TutorSidebar() {
                       to="/edit-profile"
                       className={({ isActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3 font-normal"
+                          ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : isActive
                           ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -213,10 +213,10 @@ export function TutorSidebar() {
                       to="/settings"
                       className={({ isActive }) =>
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3 font-normal"
+                          ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : isActive
                           ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal"
+                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -235,7 +235,7 @@ export function TutorSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal">
+                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal text-foreground">
                   <LogOut className="h-4 w-4" />
                   {state === "expanded" && <span className="font-normal">Log Out</span>}
                 </SidebarMenuButton>
