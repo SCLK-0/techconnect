@@ -1807,7 +1807,7 @@ export default function VideoSession() {
                         <div className="flex-1 bg-black/50" />
                       </div>
                     )}
-                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-white text-[10px]">
+                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-white text-[10px] z-30">
                       {role === "tutor" ? "Learner" : "Tutor"}
                     </div>
                     {isConnected && remoteStream && (
@@ -1844,23 +1844,28 @@ export default function VideoSession() {
                       muted
                       className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''}`}
                     />
-                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-white text-[10px]">
+                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-white text-[10px] z-30">
                       {isScreenSharing ? "Your Screen" : "You"}
                     </div>
                     {!isCameraOn && !isScreenSharing && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-700 rounded-lg">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-700 rounded-lg z-20">
                         {(role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url) ? (
                           <img 
                             src={role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url} 
                             alt="You" 
-                            className="w-20 h-20 rounded-full object-cover border-4 border-white/20 shadow-lg"
+                            className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-lg"
                           />
                         ) : (
-                          <div className="w-20 h-20 rounded-full bg-primary/20 border-4 border-white/20 flex items-center justify-center">
-                            <span className="text-3xl font-bold text-white">
+                          <div className="w-24 h-24 rounded-full bg-primary/20 border-4 border-white/20 flex items-center justify-center">
+                            <span className="text-4xl font-bold text-white">
                               {(role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name)?.charAt(0).toUpperCase() || "?"}
                             </span>
                           </div>
+                        )}
+                        {(role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name) && (
+                          <p className="mt-3 text-white text-sm font-medium">
+                            {role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name}
+                          </p>
                         )}
                         <VideoOff className="w-5 h-5 text-white/50 mt-2" />
                       </div>
