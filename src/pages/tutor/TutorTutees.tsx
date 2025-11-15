@@ -173,8 +173,8 @@ export default function TutorTutees() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-7xl">
+          <main className="flex-1 px-4 py-4 overflow-auto flex justify-center">
+            <div className="space-y-4 w-full max-w-7xl">
               {/* Search Bar */}
               <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

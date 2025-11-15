@@ -51,8 +51,8 @@ export default function AdminDashboard() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-7xl">
+          <main className="flex-1 px-4 py-4 overflow-auto flex justify-center">
+            <div className="space-y-4 w-full max-w-7xl">
               <div>
                 <h2 className="text-3xl font-bold tracking-tight mb-2">Platform Overview</h2>
                 <p className="text-muted-foreground">

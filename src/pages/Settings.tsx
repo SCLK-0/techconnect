@@ -37,10 +37,10 @@ export default function Settings() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-7xl">
+          <main className="flex-1 px-4 py-4 overflow-auto flex justify-center">
+            <div className="space-y-4 w-full max-w-7xl">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Settings</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-1">Settings</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">
                   Customize how the app looks and manage preferences
                 </p>

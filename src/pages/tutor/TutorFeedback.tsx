@@ -214,8 +214,8 @@ export default function TutorFeedback() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-7xl">
+          <main className="flex-1 px-4 py-4 overflow-auto flex justify-center">
+            <div className="space-y-4 w-full max-w-7xl">
               {/* Search Bar */}
               {!loading && feedback.length > 0 && (
                 <div className="relative max-w-md">
