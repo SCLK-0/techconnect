@@ -1643,11 +1643,24 @@ export default function VideoSession() {
                       playsInline
                       className="w-full h-full object-cover"
                     />
-                    {remoteStream && isConnected && !remoteVideoEnabled && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
-                        <VideoOff className="w-8 h-8 text-white opacity-75" />
-                      </div>
-                    )}
+                    {/* Camera Off Overlay - Check both state and actual track */}
+                    {remoteStream && isConnected && (() => {
+                      const videoTrack = remoteStream.getVideoTracks()[0];
+                      const shouldShowIcon = !remoteVideoEnabled || !videoTrack || !videoTrack.enabled;
+                      console.log("Camera off check:", { 
+                        hasStream: !!remoteStream, 
+                        isConnected, 
+                        remoteVideoEnabled, 
+                        hasTrack: !!videoTrack, 
+                        trackEnabled: videoTrack?.enabled,
+                        shouldShowIcon 
+                      });
+                      return shouldShowIcon ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
+                          <VideoOff className="w-8 h-8 text-white opacity-75" />
+                        </div>
+                      ) : null;
+                    })()}
                     {!isConnected && (
                       <div className="absolute inset-0 w-full h-full flex flex-col text-white bg-gradient-to-br from-gray-900 to-gray-800">
                         <div className="flex items-center justify-center gap-2 p-4 bg-background/20">
