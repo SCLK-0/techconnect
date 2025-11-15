@@ -32,12 +32,14 @@ export default function AdminSessionLogs() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterLogType, setFilterLogType] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const itemsPerPage = 7;
 
   const { data: sessionLogs, isLoading } = useQuery({
-    queryKey: ["admin-session-logs", searchQuery],
+    queryKey: ["admin-session-logs"],
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from("session_logs")
         .select(`
           *,
@@ -51,10 +53,6 @@ export default function AdminSessionLogs() {
           )
         `)
         .order("created_at", { ascending: false });
-
-      if (searchQuery) {
-        query = query.or(`topics_covered.ilike.%${searchQuery}%,next_steps.ilike.%${searchQuery}%`);
-      }
 
       const { data: logs, error } = await query;
       if (error) throw error;
@@ -140,6 +138,44 @@ export default function AdminSessionLogs() {
       if (filterLogType === "none" && (hasTutorLog || hasLearnerLog)) return false;
     }
 
+    // Filter by date range
+    if (dateFrom || dateTo) {
+      const sessionDate = new Date(group.sessions?.created_at);
+      if (dateFrom && sessionDate < new Date(dateFrom)) return false;
+      if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999); // Include the entire end date
+        if (sessionDate > toDate) return false;
+      }
+    }
+
+    // Filter by search query (name, subject, topics)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const subject = group.sessions?.subject?.toLowerCase() || "";
+      const tutorName = group.sessions?.tutor?.full_name?.toLowerCase() || "";
+      const learnerName = group.sessions?.learner?.full_name?.toLowerCase() || "";
+      const tutorTopics = group.tutor_log?.topics_covered?.toLowerCase() || "";
+      const learnerTopics = group.learner_log?.topics_covered?.toLowerCase() || "";
+      const tutorNextSteps = group.tutor_log?.next_steps?.toLowerCase() || "";
+      const learnerNextSteps = group.learner_log?.next_steps?.toLowerCase() || "";
+      const tutorAccomplishments = group.tutor_log?.accomplishments?.toLowerCase() || "";
+      const learnerAccomplishments = group.learner_log?.accomplishments?.toLowerCase() || "";
+      
+      const matchesSearch = 
+        subject.includes(query) ||
+        tutorName.includes(query) ||
+        learnerName.includes(query) ||
+        tutorTopics.includes(query) ||
+        learnerTopics.includes(query) ||
+        tutorNextSteps.includes(query) ||
+        learnerNextSteps.includes(query) ||
+        tutorAccomplishments.includes(query) ||
+        learnerAccomplishments.includes(query);
+      
+      if (!matchesSearch) return false;
+    }
+
     return true;
   });
 
@@ -152,7 +188,7 @@ export default function AdminSessionLogs() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterStatus, filterLogType, searchQuery]);
+  }, [filterStatus, filterLogType, searchQuery, dateFrom, dateTo]);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -240,24 +276,46 @@ export default function AdminSessionLogs() {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Search & Filter Logs</CardTitle>
-                <CardDescription>Search and filter session logs</CardDescription>
+                <CardDescription>Search by name, subject, topics, or filter by date and status</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="relative flex-1">
+                <div className="space-y-4">
+                  {/* Search Bar */}
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by topics, next steps, accomplishments..."
+                      placeholder="Search by tutor/learner name, subject, topics, accomplishments..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10"
                     />
                   </div>
                   
-                  <div className="flex gap-2">
+                  {/* Filters Row */}
+                  <div className="flex flex-col md:flex-row gap-3">
+                    {/* Date Range */}
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        placeholder="From date"
+                        className="w-[160px]"
+                      />
+                      <span className="text-sm text-muted-foreground">to</span>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        placeholder="To date"
+                        className="w-[160px]"
+                      />
+                    </div>
+                    
+                    {/* Status Filter */}
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Session Status" />
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
@@ -267,8 +325,9 @@ export default function AdminSessionLogs() {
                       </SelectContent>
                     </Select>
 
+                    {/* Log Type Filter */}
                     <Select value={filterLogType} onValueChange={setFilterLogType}>
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[160px]">
                         <SelectValue placeholder="Log Type" />
                       </SelectTrigger>
                       <SelectContent>
