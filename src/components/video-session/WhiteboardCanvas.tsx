@@ -291,15 +291,16 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             }
           })
           .on("presence", { event: "sync" }, () => {
-            if (isMonitorMode) return;
-            
             const state = channel.presenceState();
-            console.log(`👥 ${displayName} presence sync, users online:`, Object.keys(state).length);
+            console.log(`👥 ${displayName} presence sync, total keys:`, Object.keys(state).length);
+            console.log(`👥 ${displayName} presence state:`, state);
+            
             const presences: Record<string, UserPresence> = {};
             Object.keys(state).forEach((key) => {
               const presenceArray = state[key] as any[];
               if (presenceArray.length > 0) {
                 const presence = presenceArray[0];
+                console.log(`👤 Found presence:`, presence.userId?.substring(0, 8), presence.userName);
                 if (presence.userId && presence.userId !== user.id) {
                   presences[presence.userId] = {
                     userId: presence.userId,
@@ -310,37 +311,47 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
                 }
               }
             });
+            
+            console.log(`👥 ${displayName} other users present:`, Object.keys(presences).length);
             setUserPresences(presences);
             
             // Update bothUsersPresent based on actual presence count
             const hasOtherUsers = Object.keys(presences).length > 0;
+            console.log(`🔄 ${displayName} hasOtherUsers:`, hasOtherUsers, "bothUsersPresent:", bothUsersPresent);
+            
             if (hasOtherUsers !== bothUsersPresent) {
               setBothUsersPresent(hasOtherUsers);
               if (hasOtherUsers) {
                 console.log("✅ Other user connected - whiteboard enabled");
+                toast.success("Whiteboard connected");
               } else {
                 console.log("⏳ Other user disconnected - whiteboard disabled");
+                toast.info("Waiting for other user...");
               }
             }
             
-            updateObjectIndicators(fabricCanvas, presences);
-          })
-          .on("presence", { event: "join" }, ({ newPresences }) => {
-            console.log(`👋 ${displayName} saw user join whiteboard:`, newPresences);
-            // Set bothUsersPresent to true when someone joins
-            if (!bothUsersPresent) {
-              setBothUsersPresent(true);
-              console.log("✅ User joined - whiteboard enabled");
+            if (!isMonitorMode) {
+              updateObjectIndicators(fabricCanvas, presences);
             }
           })
+          .on("presence", { event: "join" }, ({ newPresences }) => {
+            console.log(`👋 ${displayName} saw user JOIN whiteboard:`, newPresences);
+            newPresences.forEach((p: any) => {
+              console.log(`  - Joined: ${p.userName} (${p.userId?.substring(0, 8)})`);
+            });
+          })
           .on("presence", { event: "leave" }, ({ leftPresences }) => {
-            console.log(`👋 ${displayName} saw user leave whiteboard:`, leftPresences);
+            console.log(`👋 ${displayName} saw user LEAVE whiteboard:`, leftPresences);
+            leftPresences.forEach((p: any) => {
+              console.log(`  - Left: ${p.userName} (${p.userId?.substring(0, 8)})`);
+            });
             
             // Update userPresences to remove left users
             setUserPresences(prev => {
               const updated = { ...prev };
               leftPresences.forEach((presence: any) => {
                 if (presence.userId && presence.userId !== user.id) {
+                  console.log(`  - Removing ${presence.userName} from userPresences`);
                   delete updated[presence.userId];
                 }
               });
@@ -349,16 +360,19 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             
             // Check if we still have other users present
             const state = channel.presenceState();
+            console.log(`📊 ${displayName} presence state after leave:`, state);
             const remainingUsers = Object.keys(state).filter(key => {
               const presenceArray = state[key] as any[];
               return presenceArray.length > 0 && presenceArray[0].userId !== user.id;
             });
             
-            if (remainingUsers.length === 0 && bothUsersPresent) {
-              setBothUsersPresent(false);
+            console.log(`📊 ${displayName} remaining users:`, remainingUsers.length);
+            
+            if (remainingUsers.length === 0) {
               console.log("⏳ Last user left - whiteboard disabled");
-              // Clear remote cursors
+              setBothUsersPresent(false);
               setRemoteCursors({});
+              toast.info("Waiting for other user...");
             }
           });
         
