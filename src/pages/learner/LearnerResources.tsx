@@ -130,17 +130,25 @@ export default function LearnerResources() {
           <header className="h-14 border-b flex items-center justify-center px-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <h1 className="text-xl font-semibold">Learning Resources</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <SidebarTrigger />
+                <h1 className="text-lg font-semibold">Learning Resources</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 
           <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-7xl">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Learning Resources</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Search resources by title, subject, or tutor
+                </p>
+              </div>
+
               {/* Search Bar */}
               <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

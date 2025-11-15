@@ -27,17 +27,25 @@ export default function Settings() {
           <header className="h-14 border-b flex items-center justify-center px-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <h1 className="text-xl font-semibold">Settings</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <SidebarTrigger />
+                <h1 className="text-lg font-semibold">Settings</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 
           <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-7xl">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Settings</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Customize how the app looks and manage preferences
+                </p>
+              </div>
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">

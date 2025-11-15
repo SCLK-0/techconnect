@@ -148,7 +148,7 @@ export default function MySessions() {
           <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-7xl">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Sessions</h1>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">Sessions</h2>
                 <p className="text-sm md:text-base text-muted-foreground">
                   View and manage your tutoring sessions
                 </p>
