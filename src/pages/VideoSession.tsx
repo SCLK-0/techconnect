@@ -645,17 +645,21 @@ export default function VideoSession() {
               
               // Broadcast current state on rejoin (with delay)
               setTimeout(() => {
-                if (sessionChannelRef.current) {
+                if (sessionChannelRef.current && stream) {
+                  // Check actual track state
+                  const videoTrack = stream.getVideoTracks()[0];
+                  const actualCameraState = videoTrack?.enabled ?? false;
+                  
                   sessionChannelRef.current.send({
                     type: 'broadcast',
                     event: 'media_state',
                     payload: { 
                       userId: user!.id, 
-                      camera: isCameraOn,
+                      camera: actualCameraState,
                       screenSharing: isScreenSharing
                     }
                   });
-                  console.log("📡 Broadcast state on rejoin - camera:", isCameraOn, "screenSharing:", isScreenSharing);
+                  console.log("📡 Broadcast state on rejoin - camera:", actualCameraState, "(track:", videoTrack?.enabled, ") screenSharing:", isScreenSharing);
                 }
               }, 500);
               
@@ -762,17 +766,21 @@ export default function VideoSession() {
           
           // Broadcast current state when connection is established (with delay to ensure other user is ready)
           setTimeout(() => {
-            if (sessionChannelRef.current) {
+            if (sessionChannelRef.current && localStream) {
+              // Check actual track state, not the state variable
+              const videoTrack = localStream.getVideoTracks()[0];
+              const actualCameraState = videoTrack?.enabled ?? false;
+              
               sessionChannelRef.current.send({
                 type: 'broadcast',
                 event: 'media_state',
                 payload: { 
                   userId: user!.id, 
-                  camera: isCameraOn,
+                  camera: actualCameraState,
                   screenSharing: isScreenSharing
                 }
               });
-              console.log("📡 Broadcast state on connection - camera:", isCameraOn, "screenSharing:", isScreenSharing);
+              console.log("📡 Broadcast state on connection - camera:", actualCameraState, "(track enabled:", videoTrack?.enabled, ") screenSharing:", isScreenSharing);
             }
           }, 500); // 500ms delay to ensure other user's channel is ready
           
@@ -915,17 +923,21 @@ export default function VideoSession() {
                   
                   // Broadcast current state when connection is established (with delay)
                   setTimeout(() => {
-                    if (sessionChannelRef.current) {
+                    if (sessionChannelRef.current && stream) {
+                      // Check actual track state
+                      const videoTrack = stream.getVideoTracks()[0];
+                      const actualCameraState = videoTrack?.enabled ?? false;
+                      
                       sessionChannelRef.current.send({
                         type: 'broadcast',
                         event: 'media_state',
                         payload: { 
                           userId: user!.id, 
-                          camera: isCameraOn,
+                          camera: actualCameraState,
                           screenSharing: isScreenSharing
                         }
                       });
-                      console.log("📡 Tutor broadcast state on connection - camera:", isCameraOn, "screenSharing:", isScreenSharing);
+                      console.log("📡 Tutor broadcast state on connection - camera:", actualCameraState, "(track:", videoTrack?.enabled, ") screenSharing:", isScreenSharing);
                     }
                   }, 500);
                   
