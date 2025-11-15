@@ -31,6 +31,48 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAudioLevel } from "@/hooks/useAudioLevel";
 
+// Component to show camera-off icon when remote video is disabled
+function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
+  const [isVideoOff, setIsVideoOff] = useState(false);
+
+  useEffect(() => {
+    const videoTrack = stream.getVideoTracks()[0];
+    
+    if (!videoTrack) {
+      setIsVideoOff(true);
+      return;
+    }
+
+    // Set initial state
+    setIsVideoOff(!videoTrack.enabled);
+
+    // Listen for changes
+    const checkState = () => setIsVideoOff(!videoTrack.enabled);
+    
+    videoTrack.addEventListener('ended', () => setIsVideoOff(true));
+    videoTrack.addEventListener('mute', () => setIsVideoOff(true));
+    videoTrack.addEventListener('unmute', () => setIsVideoOff(false));
+    
+    // Poll every 100ms to catch any state changes
+    const interval = setInterval(checkState, 100);
+
+    return () => {
+      clearInterval(interval);
+      videoTrack.removeEventListener('ended', checkState);
+      videoTrack.removeEventListener('mute', checkState);
+      videoTrack.removeEventListener('unmute', checkState);
+    };
+  }, [stream]);
+
+  if (!isVideoOff) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
+      <VideoOff className="w-8 h-8 text-white opacity-75" />
+    </div>
+  );
+}
+
 export default function VideoSession() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
@@ -1643,24 +1685,10 @@ export default function VideoSession() {
                       playsInline
                       className="w-full h-full object-cover"
                     />
-                    {/* Camera Off Overlay - Check both state and actual track */}
-                    {remoteStream && isConnected && (() => {
-                      const videoTrack = remoteStream.getVideoTracks()[0];
-                      const shouldShowIcon = !remoteVideoEnabled || !videoTrack || !videoTrack.enabled;
-                      console.log("Camera off check:", { 
-                        hasStream: !!remoteStream, 
-                        isConnected, 
-                        remoteVideoEnabled, 
-                        hasTrack: !!videoTrack, 
-                        trackEnabled: videoTrack?.enabled,
-                        shouldShowIcon 
-                      });
-                      return shouldShowIcon ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
-                          <VideoOff className="w-8 h-8 text-white opacity-75" />
-                        </div>
-                      ) : null;
-                    })()}
+                    {/* Camera Off Overlay */}
+                    {remoteStream && isConnected && (
+                      <RemoteCameraOffIndicator stream={remoteStream} />
+                    )}
                     {!isConnected && (
                       <div className="absolute inset-0 w-full h-full flex flex-col text-white bg-gradient-to-br from-gray-900 to-gray-800">
                         <div className="flex items-center justify-center gap-2 p-4 bg-background/20">
