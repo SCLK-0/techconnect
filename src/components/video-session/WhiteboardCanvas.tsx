@@ -279,6 +279,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             console.log(`✅ ${displayName} processing remote event:`, payload.type);
             
             if (payload.type === "cursor:move") {
+              // Don't show cursors in monitor mode
+              if (isMonitorMode) return;
+              
               setRemoteCursors(prev => ({
                 ...prev,
                 [payload.userId]: payload.data
@@ -1680,10 +1683,13 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             </div>
           )}
           
-          {/* Remote Cursors */}
-          {canvas && canvasContainerRef.current && Object.values(remoteCursors).map((cursor) => {
+          {/* Remote Cursors - Only show for non-monitor users */}
+          {!isMonitorMode && canvas && canvasContainerRef.current && Object.values(remoteCursors).map((cursor) => {
             const canvasElement = canvasRef.current;
             if (!canvasElement) return null;
+            
+            // Don't show cursor if it's from the current user
+            if (cursor.userId === userId) return null;
             
             const canvasRect = canvasElement.getBoundingClientRect();
             const containerRect = canvasContainerRef.current!.getBoundingClientRect();
