@@ -633,6 +633,20 @@ export default function VideoSession() {
               setRemoteStream(remoteStream);
               setIsConnected(true);
               
+              // Broadcast current state on rejoin
+              if (sessionChannelRef.current) {
+                sessionChannelRef.current.send({
+                  type: 'broadcast',
+                  event: 'media_state',
+                  payload: { 
+                    userId: user!.id, 
+                    camera: isCameraOn,
+                    screenSharing: isScreenSharing
+                  }
+                });
+                console.log("📡 Broadcast state on rejoin - camera:", isCameraOn, "screenSharing:", isScreenSharing);
+              }
+              
               setTimeout(() => {
                 if (remoteVideoRef.current && remoteStream) {
                   console.log("Setting remote learner video stream");
@@ -733,6 +747,20 @@ export default function VideoSession() {
           
           setRemoteStream(remoteStream);
           setIsConnected(true); // Set connected immediately when stream is received
+          
+          // Broadcast current state when connection is established (so other user knows our state)
+          if (sessionChannelRef.current) {
+            sessionChannelRef.current.send({
+              type: 'broadcast',
+              event: 'media_state',
+              payload: { 
+                userId: user!.id, 
+                camera: isCameraOn,
+                screenSharing: isScreenSharing
+              }
+            });
+            console.log("📡 Broadcast state on connection - camera:", isCameraOn, "screenSharing:", isScreenSharing);
+          }
           
           // Set video element with retry logic
           const setVideoStream = (attempts = 0) => {
@@ -870,6 +898,20 @@ export default function VideoSession() {
                   
                   setRemoteStream(remoteStream);
                   setIsConnected(true); // Set connected immediately when stream is received
+                  
+                  // Broadcast current state when connection is established
+                  if (sessionChannelRef.current) {
+                    sessionChannelRef.current.send({
+                      type: 'broadcast',
+                      event: 'media_state',
+                      payload: { 
+                        userId: user!.id, 
+                        camera: isCameraOn,
+                        screenSharing: isScreenSharing
+                      }
+                    });
+                    console.log("📡 Tutor broadcast state on connection - camera:", isCameraOn, "screenSharing:", isScreenSharing);
+                  }
                   
                   // Set video with retry logic
                   const setLearnerVideo = (attempts = 0) => {
