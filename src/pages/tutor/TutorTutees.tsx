@@ -163,12 +163,13 @@ export default function TutorTutees() {
           <header className="h-14 border-b flex items-center justify-center px-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <h1 className="text-xl font-semibold">My Tutees</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <SidebarTrigger />
+                <h1 className="text-xl font-semibold">My Tutees</h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 
