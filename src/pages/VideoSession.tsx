@@ -1576,11 +1576,15 @@ export default function VideoSession() {
                       playsInline
                       className="w-full h-full object-cover"
                     />
-                    {!remoteVideoEnabled && remoteStream && isConnected && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-                        <VideoOff className="w-8 h-8 text-white opacity-75" />
-                      </div>
-                    )}
+                    {remoteStream && isConnected && (() => {
+                      const videoTrack = remoteStream.getVideoTracks()[0];
+                      const isVideoOff = !videoTrack || !videoTrack.enabled;
+                      return isVideoOff && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
+                          <VideoOff className="w-8 h-8 text-white opacity-75" />
+                        </div>
+                      );
+                    })()}
                     {!isConnected && (
                       <div className="absolute inset-0 w-full h-full flex flex-col text-white bg-gradient-to-br from-gray-900 to-gray-800">
                         <div className="flex items-center justify-center gap-2 p-4 bg-background/20">
