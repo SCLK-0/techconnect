@@ -26,12 +26,12 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const initDevices = async (videoDeviceId?: string, audioDeviceId?: string) => {
+  const initDevices = async (videoDeviceId?: string, audioDeviceId?: string, preserveStates?: { camera: boolean, mic: boolean }) => {
     try {
       setIsLoading(true);
       setError(null);
       
-      console.log("Requesting camera and microphone access...");
+      console.log("Requesting camera and microphone access...", preserveStates ? "with preserved states" : "");
       
       const constraints: MediaStreamConstraints = {
         video: videoDeviceId 
@@ -50,9 +50,22 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
       const videoTrack = stream.getVideoTracks()[0];
       const audioTrack = stream.getAudioTracks()[0];
       
+      // Apply preserved states if provided
+      if (preserveStates) {
+        console.log("Applying preserved states:", preserveStates);
+        if (videoTrack) {
+          videoTrack.enabled = preserveStates.camera;
+          setIsCameraOn(preserveStates.camera);
+        }
+        if (audioTrack) {
+          audioTrack.enabled = preserveStates.mic;
+          setIsMicOn(preserveStates.mic);
+        }
+      }
+      
       if (videoTrack) {
         const videoSettings = videoTrack.getSettings();
-        console.log("Active video device:", videoSettings.deviceId, videoTrack.label);
+        console.log("Active video device:", videoSettings.deviceId, videoTrack.label, "enabled:", videoTrack.enabled);
         if (videoSettings.deviceId) {
           setSelectedVideoDevice(videoSettings.deviceId);
         }
@@ -60,7 +73,7 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
       
       if (audioTrack) {
         const audioSettings = audioTrack.getSettings();
-        console.log("Active audio device:", audioSettings.deviceId, audioTrack.label);
+        console.log("Active audio device:", audioSettings.deviceId, audioTrack.label, "enabled:", audioTrack.enabled);
         if (audioSettings.deviceId) {
           setSelectedAudioDevice(audioSettings.deviceId);
         }
@@ -78,6 +91,7 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
       }, 200);
       
       toast.success("Camera and microphone ready!");
+      return stream;
     } catch (err: any) {
       console.error("Device access error:", err);
       
@@ -148,51 +162,21 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
     const currentCameraState = isCameraOn;
     const currentMicState = isMicOn;
     
+    console.log("Device change - saving states:", { camera: currentCameraState, mic: currentMicState });
+    
     if (kind === "videoinput") {
       setSelectedVideoDevice(deviceId);
       // Stop current stream and reinitialize with new device
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
-      await initDevices(deviceId, selectedAudioDevice);
-      
-      // Restore camera/mic states after device change
-      setTimeout(() => {
-        if (localStream) {
-          const videoTrack = localStream.getVideoTracks()[0];
-          const audioTrack = localStream.getAudioTracks()[0];
-          if (videoTrack) {
-            videoTrack.enabled = currentCameraState;
-            setIsCameraOn(currentCameraState);
-          }
-          if (audioTrack) {
-            audioTrack.enabled = currentMicState;
-            setIsMicOn(currentMicState);
-          }
-        }
-      }, 300);
+      await initDevices(deviceId, selectedAudioDevice, { camera: currentCameraState, mic: currentMicState });
     } else {
       setSelectedAudioDevice(deviceId);
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
-      await initDevices(selectedVideoDevice, deviceId);
-      
-      // Restore camera/mic states after device change
-      setTimeout(() => {
-        if (localStream) {
-          const videoTrack = localStream.getVideoTracks()[0];
-          const audioTrack = localStream.getAudioTracks()[0];
-          if (videoTrack) {
-            videoTrack.enabled = currentCameraState;
-            setIsCameraOn(currentCameraState);
-          }
-          if (audioTrack) {
-            audioTrack.enabled = currentMicState;
-            setIsMicOn(currentMicState);
-          }
-        }
-      }, 300);
+      await initDevices(selectedVideoDevice, deviceId, { camera: currentCameraState, mic: currentMicState });
     }
   };
 
