@@ -152,7 +152,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : linkActive
-                          ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground flex items-center gap-3 font-normal"
+                          ? "bg-primary text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
@@ -188,7 +188,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : isActive
-                          ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground flex items-center gap-3 font-normal"
+                          ? "bg-primary text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
@@ -215,7 +215,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : isActive
-                          ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground flex items-center gap-3 font-normal"
+                          ? "bg-primary text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
