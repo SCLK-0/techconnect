@@ -187,7 +187,7 @@ export default function AdminLiveMonitoring() {
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b flex items-center justify-center px-4">
+          <header className="h-12 border-b flex items-center justify-center px-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
@@ -200,7 +200,7 @@ export default function AdminLiveMonitoring() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-4 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 py-3 overflow-auto flex justify-center">
             <div className="grid gap-4 md:grid-cols-2 mb-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
