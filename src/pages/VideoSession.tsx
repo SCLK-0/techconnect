@@ -725,7 +725,7 @@ export default function VideoSession() {
         // Update peer ID in database for both tutor and learner
         await updateSessionPeerId(id);
         console.log(`✅ ${role} peer ID updated:`, id);
-        toast.success("Connected to peer network");
+        // toast.success("Connected to peer network"); // Removed - too noisy
         
         // For both tutor and learner: Check if session is already in progress and the other party is present
         // This handles rejoining scenarios
@@ -894,7 +894,7 @@ export default function VideoSession() {
                 remoteVideoRef.current.play()
                   .then(() => {
                     console.log("✅ Remote video element playing");
-                    toast.success("Connected to peer");
+                    // toast.success("Connected to peer"); // Removed - too noisy
                   })
                   .catch(e => {
                     console.log(`❌ Remote video play error (attempt ${attempts + 1}):`, e);
@@ -997,7 +997,7 @@ export default function VideoSession() {
               if (learnerPeerId && learnerPeerId !== remotePeerId && newPeer) {
                 setRemotePeerId(learnerPeerId);
                 console.log("📞 Tutor calling learner:", learnerPeerId);
-                toast.info("Connecting to learner...");
+                // toast.info("Connecting to learner..."); // Removed - too noisy
                 
                 const call = newPeer.call(learnerPeerId, stream);
                 
@@ -1034,7 +1034,7 @@ export default function VideoSession() {
                         remoteVideoRef.current.play()
                           .then(() => {
                             console.log("✅ Learner video playing");
-                            toast.success("✅ Connected to learner!");
+                            // toast.success("✅ Connected to learner!"); // Removed - too noisy
                           })
                           .catch(e => {
                             console.log(`❌ Learner video play error (attempt ${attempts + 1}):`, e);
@@ -1267,7 +1267,7 @@ export default function VideoSession() {
         };
 
         setIsScreenSharing(true);
-        toast.success("Screen sharing started");
+        // toast.success("Screen sharing started"); // Removed - visual feedback is enough
       } else {
         // Switch back to camera
         const videoTrack = localStream?.getVideoTracks()[0];
@@ -1288,7 +1288,7 @@ export default function VideoSession() {
         screenStreamRef.current?.getTracks().forEach((track) => track.stop());
         screenStreamRef.current = null;
         setIsScreenSharing(false);
-        toast.info("Screen sharing stopped");
+        // toast.info("Screen sharing stopped"); // Removed - visual feedback is enough
       }
     } catch (error) {
       console.error("Error toggling screen share:", error);
@@ -1848,8 +1848,21 @@ export default function VideoSession() {
                       {isScreenSharing ? "Your Screen" : "You"}
                     </div>
                     {!isCameraOn && !isScreenSharing && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-                        <VideoOff className="w-6 h-6 text-white opacity-75" />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-700 rounded-lg">
+                        {(role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url) ? (
+                          <img 
+                            src={role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url} 
+                            alt="You" 
+                            className="w-20 h-20 rounded-full object-cover border-4 border-white/20 shadow-lg"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-full bg-primary/20 border-4 border-white/20 flex items-center justify-center">
+                            <span className="text-3xl font-bold text-white">
+                              {(role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name)?.charAt(0).toUpperCase() || "?"}
+                            </span>
+                          </div>
+                        )}
+                        <VideoOff className="w-5 h-5 text-white/50 mt-2" />
                       </div>
                     )}
                     <div className="absolute bottom-1 right-1 flex gap-1">
@@ -2252,7 +2265,7 @@ export default function VideoSession() {
                       newStream.getVideoTracks().forEach(t => t.stop());
                     }
                     
-                    toast.success(`${kind === "videoinput" ? "Camera" : "Microphone"} changed successfully`);
+                    // toast.success(`${kind === "videoinput" ? "Camera" : "Microphone"} changed successfully`); // Removed - too noisy
                   } catch (error: any) {
                     console.error("Error changing device:", error);
                     let errorMsg = "Failed to change device";
