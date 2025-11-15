@@ -704,6 +704,24 @@ export default function VideoSession() {
         console.log(`✅ ${role} peer ID updated:`, id);
         // toast.success("Connected to peer network"); // Removed - too noisy
         
+        // Broadcast initial camera/mic state (non-blocking, fire and forget)
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
+        supabase.channel(`session-${sessionId}`).subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await supabase.channel(`session-${sessionId}`).send({
+              type: 'broadcast',
+              event: 'media_state',
+              payload: { 
+                userId: user!.id, 
+                camera: videoTrack?.enabled ?? true,
+                mic: audioTrack?.enabled ?? true
+              }
+            });
+            console.log("📡 Broadcast initial media state - camera:", videoTrack?.enabled, "mic:", audioTrack?.enabled);
+          }
+        });
+        
         // For both tutor and learner: Check if session is already in progress and the other party is present
         // This handles rejoining scenarios
         const { data: currentSession } = await supabase
