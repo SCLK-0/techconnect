@@ -143,8 +143,7 @@ export default function LearnerDashboard() {
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <h1 className="text-lg font-semibold">Learner Dashboard</h1>
+                <SidebarTrigger className="md:hidden" />
               </div>
               <div className="flex items-center gap-2">
                 <NotificationBell />

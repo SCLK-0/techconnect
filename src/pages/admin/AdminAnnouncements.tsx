@@ -175,8 +175,7 @@ export default function AdminAnnouncements() {
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <h1 className="text-xl font-semibold">Manage Announcements</h1>
+                <SidebarTrigger className="md:hidden" />
               </div>
               <div className="flex items-center gap-4">
                 <NotificationBell />
