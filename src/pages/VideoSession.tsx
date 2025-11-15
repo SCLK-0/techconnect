@@ -382,9 +382,9 @@ export default function VideoSession() {
       return;
     }
 
-    // Don't set initial state from track - rely on broadcast instead
+    // Set initial state
     console.log("Remote video track initial state:", videoTrack.label, "enabled:", videoTrack.enabled);
-    console.log("⚠️ Not setting remoteVideoEnabled from track - waiting for broadcast");
+    setRemoteVideoEnabled(videoTrack.enabled);
 
     // Listen for track state changes
     const handleEnded = () => {
@@ -649,31 +649,8 @@ export default function VideoSession() {
       console.log("Audio track:", audioTrack?.label, "enabled:", audioTrack?.enabled);
       
       // Sync camera/mic states from the device test modal
-      const cameraEnabled = videoTrack?.enabled ?? true;
-      const micEnabled = audioTrack?.enabled ?? true;
-      setIsCameraOn(cameraEnabled);
-      setIsMicOn(micEnabled);
-      
-      // Broadcast initial media state to other participants (non-blocking)
-      setTimeout(async () => {
-        try {
-          const channel = supabase.channel(`session-${sessionId}`);
-          await channel.subscribe();
-          await channel.send({
-            type: 'broadcast',
-            event: 'media_state',
-            payload: { 
-              userId: user!.id, 
-              camera: cameraEnabled,
-              mic: micEnabled
-            }
-          });
-          console.log("📡 Broadcast initial media state - camera:", cameraEnabled, "mic:", micEnabled);
-          await channel.unsubscribe();
-        } catch (error) {
-          console.error("Failed to broadcast initial media state:", error);
-        }
-      }, 100);
+      setIsCameraOn(videoTrack?.enabled ?? true);
+      setIsMicOn(audioTrack?.enabled ?? true);
       
       setLocalStream(stream);
       setHasTestedDevices(true);
@@ -868,16 +845,31 @@ export default function VideoSession() {
           setRemoteStream(remoteStream);
           setIsConnected(true); // Set connected immediately when stream is received
           
-          // Note: We don't set remoteVideoEnabled based on videoTrack.enabled here
-          // because it's always true even when camera is off (track exists but sends black frames)
-          // Instead, we rely on the media_state broadcast from the remote user
+          // Track video track enabled state
           const videoTrack = remoteStream.getVideoTracks()[0];
           if (videoTrack) {
             console.log("Remote video track:", videoTrack.label, "enabled:", videoTrack.enabled);
-            console.log("⚠️ Not setting remoteVideoEnabled from track - waiting for broadcast");
+            setRemoteVideoEnabled(videoTrack.enabled);
+            
+            // Add event listeners for track state changes
+            const handleTrackEnd = () => {
+              console.log("Remote video track ended");
+              setRemoteVideoEnabled(false);
+            };
+            const handleTrackMute = () => {
+              console.log("Remote video track muted");
+              setRemoteVideoEnabled(false);
+            };
+            const handleTrackUnmute = () => {
+              console.log("Remote video track unmuted");
+              setRemoteVideoEnabled(true);
+            };
+            
+            videoTrack.addEventListener('ended', handleTrackEnd);
+            videoTrack.addEventListener('mute', handleTrackMute);
+            videoTrack.addEventListener('unmute', handleTrackUnmute);
           } else {
             console.log("⚠️ No remote video track found");
-            setRemoteVideoEnabled(false);
           }
           
           // Set video element with retry logic
