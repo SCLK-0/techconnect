@@ -1368,25 +1368,26 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
         objects: objects,
       };
       
-      console.log('Saving whiteboard state with', objects.length, 'objects');
+      console.log('💾 Saving whiteboard state with', objects.length, 'objects for session:', sessionId);
       if (objects.length > 0) {
         console.log('Sample object:', JSON.stringify(objects[0]).substring(0, 200));
       }
       
       // Upsert whiteboard state
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('whiteboard_states')
         .upsert({
           session_id: sessionId,
           canvas_state: canvasData,
         }, {
           onConflict: 'session_id'
-        });
+        })
+        .select();
       
       if (error) {
-        console.error('Error saving whiteboard state:', error);
+        console.error('❌ Error saving whiteboard state:', error);
       } else {
-        console.log('✅ Whiteboard state saved successfully');
+        console.log('✅ Whiteboard state saved successfully:', data);
       }
     } catch (error) {
       console.error('Error saving whiteboard state:', error);
