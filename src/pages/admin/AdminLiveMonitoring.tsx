@@ -204,7 +204,7 @@ export default function AdminLiveMonitoring() {
             </div>
           </header>
 
-          <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-3 pt-8 pb-6 overflow-auto flex justify-center">
             <div className="grid gap-2 md:grid-cols-2 mb-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -269,7 +269,7 @@ export default function AdminSessionLogs() {
             </div>
           </header>
 
-          <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-3 pt-8 pb-6 overflow-auto flex justify-center">
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Search & Filter Logs</CardTitle>

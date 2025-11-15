@@ -496,7 +496,7 @@ const FindTutors = () => {
             </div>
           </header>
 
-          <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-3 pt-8 pb-6 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-5xl">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Find Tutors</h2>
