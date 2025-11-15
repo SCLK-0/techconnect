@@ -1683,7 +1683,7 @@ export default function VideoSession() {
                       ref={remoteVideoRef}
                       autoPlay
                       playsInline
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''}`}
                     />
                     {/* Camera Off Overlay */}
                     {remoteStream && isConnected && (
@@ -1738,7 +1738,7 @@ export default function VideoSession() {
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''}`}
                     />
                     <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-white text-[10px]">
                       {isScreenSharing ? "Your Screen" : "You"}

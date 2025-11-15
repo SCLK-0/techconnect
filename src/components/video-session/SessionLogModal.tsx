@@ -30,7 +30,6 @@ export function SessionLogModal({
   onComplete,
 }: SessionLogModalProps) {
   const [topicsCovered, setTopicsCovered] = useState("");
-  const [nextSteps, setNextSteps] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -50,7 +49,6 @@ export function SessionLogModal({
         user_id: user.id,
         user_role: userRole,
         topics_covered: topicsCovered.trim(),
-        next_steps: nextSteps.trim() || null,
         accomplishments: null,
         homework: null,
       });
@@ -89,19 +87,7 @@ export function SessionLogModal({
               placeholder="e.g., Reviewed quadratic equations, practiced graphing parabolas..."
               value={topicsCovered}
               onChange={(e) => setTopicsCovered(e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          {/* Next Steps */}
-          <div className="space-y-2">
-            <Label htmlFor="next-steps">Next Steps (Optional)</Label>
-            <Textarea
-              id="next-steps"
-              placeholder="e.g., Focus on word problems in next session, prepare quiz on functions..."
-              value={nextSteps}
-              onChange={(e) => setNextSteps(e.target.value)}
-              rows={2}
+              rows={4}
             />
           </div>
         </div>
