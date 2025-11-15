@@ -131,6 +131,15 @@ export default function VideoSession() {
   const [hasNotifiedMonitoring, setHasNotifiedMonitoring] = useState(false);
   const [remoteCameraOn, setRemoteCameraOn] = useState(false); // Remote user's camera state - default to false to show profile pic until broadcast received
   const [remoteScreenSharing, setRemoteScreenSharing] = useState(false); // Remote user's screen share state
+  
+  // Debug logging
+  useEffect(() => {
+    console.log("🔴 remoteCameraOn changed to:", remoteCameraOn);
+  }, [remoteCameraOn]);
+  
+  useEffect(() => {
+    console.log("🟢 remoteScreenSharing changed to:", remoteScreenSharing);
+  }, [remoteScreenSharing]);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
 
@@ -1723,7 +1732,7 @@ export default function VideoSession() {
                       ref={remoteVideoRef}
                       autoPlay
                       playsInline
-                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''} ${!remoteCameraOn && !remoteScreenSharing ? 'opacity-0' : 'opacity-100'}`}
+                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''} ${remoteCameraOn || remoteScreenSharing ? 'opacity-100' : 'opacity-0'}`}
                     />
                     {/* Camera Off Overlay - Always show when connected and camera is off */}
                     {isConnected && !remoteCameraOn && !remoteScreenSharing && (
