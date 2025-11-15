@@ -129,7 +129,7 @@ export default function VideoSession() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hasNotifiedMonitoring, setHasNotifiedMonitoring] = useState(false);
-  const [remoteCameraOn, setRemoteCameraOn] = useState(true); // Remote user's camera state
+  const [remoteCameraOn, setRemoteCameraOn] = useState(false); // Remote user's camera state - default to false to show profile pic until broadcast received
   const [remoteScreenSharing, setRemoteScreenSharing] = useState(false); // Remote user's screen share state
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
