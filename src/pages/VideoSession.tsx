@@ -61,7 +61,9 @@ function RemoteCameraOffIndicator({
       ) : (
         <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-white/20 flex items-center justify-center">
           <span className="text-2xl font-bold text-white">
-            {userName?.charAt(0).toUpperCase() || "?"}
+            {userName ? 
+              userName.split(' ').slice(0, 2).map(n => n.charAt(0).toUpperCase()).join('') 
+              : "?"}
           </span>
         </div>
       )}
@@ -1799,7 +1801,9 @@ export default function VideoSession() {
                         ) : (
                           <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-white/20 flex items-center justify-center">
                             <span className="text-2xl font-bold text-white">
-                              {(role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name)?.charAt(0).toUpperCase() || "?"}
+                              {(role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name) ? 
+                                (role === "tutor" ? sessionData?.tutor_profiles?.full_name : sessionData?.learner_profiles?.full_name).split(' ').slice(0, 2).map(n => n.charAt(0).toUpperCase()).join('') 
+                                : "?"}
                             </span>
                           </div>
                         )}
