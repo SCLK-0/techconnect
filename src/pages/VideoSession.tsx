@@ -237,10 +237,8 @@ export default function VideoSession() {
               if (status === "completed" && !isMonitorMode) {
                 console.log("📝 Session completed via realtime - cleaning up and showing log");
                 toast.info("Session has ended");
-                // Clean up media
-                localStream?.getTracks().forEach((track) => track.stop());
-                screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-                peer?.destroy();
+                // Clean up all media tracks
+                cleanupMediaTracks();
                 // Show session log modal only if not already shown
                 if (!logModalShown) {
                   setShowLogModal(true);
@@ -825,11 +823,8 @@ export default function VideoSession() {
               // If session is completed and user is learner, show session log modal
               if (status === "completed" && role === "learner") {
                 toast.info("Session ended by tutor");
-                // Clean up media streams
-                localStream?.getTracks().forEach((track) => track.stop());
-                screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-                peer?.destroy();
-                setLocalStream(null);
+                // Clean up all media tracks
+                cleanupMediaTracks();
                 setRemoteStream(null);
                 setPeer(null);
                 setRemotePeerId(null);
@@ -1164,6 +1159,75 @@ export default function VideoSession() {
     }
   };
 
+  // Comprehensive cleanup function to stop all media tracks
+  const cleanupMediaTracks = () => {
+    console.log("🧹 Cleaning up all media tracks...");
+    
+    // Stop local stream tracks
+    if (localStream) {
+      localStream.getTracks().forEach((track) => {
+        console.log(`Stopping ${track.kind} track:`, track.label);
+        track.stop();
+      });
+    }
+    
+    // Stop remote stream tracks
+    if (remoteStream) {
+      remoteStream.getTracks().forEach((track) => {
+        console.log(`Stopping remote ${track.kind} track:`, track.label);
+        track.stop();
+      });
+    }
+    
+    // Stop screen share tracks
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => {
+        console.log(`Stopping screen share ${track.kind} track:`, track.label);
+        track.stop();
+      });
+    }
+    
+    // Stop tutor/learner streams (monitor mode)
+    if (tutorStream) {
+      tutorStream.getTracks().forEach((track) => {
+        console.log(`Stopping tutor ${track.kind} track:`, track.label);
+        track.stop();
+      });
+    }
+    
+    if (learnerStream) {
+      learnerStream.getTracks().forEach((track) => {
+        console.log(`Stopping learner ${track.kind} track:`, track.label);
+        track.stop();
+      });
+    }
+    
+    // Destroy peer connection
+    if (peer && !peer.destroyed) {
+      peer.destroy();
+    }
+    
+    // Clear video element sources
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (tutorVideoRef.current) tutorVideoRef.current.srcObject = null;
+    if (learnerVideoRef.current) learnerVideoRef.current.srcObject = null;
+    
+    // Clear refs
+    screenStreamRef.current = null;
+    
+    // Clear state
+    setLocalStream(null);
+    setRemoteStream(null);
+    setTutorStream(null);
+    setLearnerStream(null);
+    setPeer(null);
+    setRemotePeerId(null);
+    setIsConnected(false);
+    
+    console.log("✅ Media cleanup complete");
+  };
+
   const endSession = async () => {
     console.log("🔴 End Session clicked - Role:", role, "Monitor Mode:", isMonitorMode);
     
@@ -1176,19 +1240,8 @@ export default function VideoSession() {
 
     console.log("✅ Permission granted - proceeding to end session");
 
-    localStream?.getTracks().forEach((track) => track.stop());
-    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-    peer?.destroy();
-
-    // Clear all refs and state
-    setLocalStream(null);
-    setRemoteStream(null);
-    setPeer(null);
-    setRemotePeerId(null);
-    setIsConnected(false);
-    if (localVideoRef.current) localVideoRef.current.srcObject = null;
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-    screenStreamRef.current = null;
+    // Use comprehensive cleanup
+    cleanupMediaTracks();
 
     // If admin monitor mode, notify and exit
     if (isMonitorMode) {
