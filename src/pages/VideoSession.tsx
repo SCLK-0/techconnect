@@ -200,6 +200,7 @@ export default function VideoSession() {
   const screenStreamRef = useRef<MediaStream | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const callRef = useRef<any>(null);
+  const sessionChannelRef = useRef<any>(null);
 
   // Audio level detection for monitor mode
   const { isSpeaking: tutorSpeaking } = useAudioLevel({ 
@@ -699,31 +700,11 @@ export default function VideoSession() {
       newPeer.on("open", async (id) => {
         console.log("My peer ID is: " + id);
         setPeer(newPeer);
-        // Update peer ID in database for both tutor and learner
+        
+        // Update peer ID in database first
         await updateSessionPeerId(id);
         console.log(`✅ ${role} peer ID updated:`, id);
         // toast.success("Connected to peer network"); // Removed - too noisy
-        
-        // Broadcast initial camera/mic state immediately (fire and forget)
-        const videoTrack = stream.getVideoTracks()[0];
-        const audioTrack = stream.getAudioTracks()[0];
-        const channel = supabase.channel(`session-${sessionId}`);
-        channel.subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            channel.send({
-              type: 'broadcast',
-              event: 'media_state',
-              payload: { 
-                userId: user!.id, 
-                camera: videoTrack?.enabled ?? true,
-                mic: audioTrack?.enabled ?? true
-              }
-            }).then(() => {
-              console.log("📡 Broadcast initial media state - camera:", videoTrack?.enabled, "mic:", audioTrack?.enabled);
-              channel.unsubscribe();
-            });
-          }
-        });
         
         // For both tutor and learner: Check if session is already in progress and the other party is present
         // This handles rejoining scenarios
@@ -866,13 +847,13 @@ export default function VideoSession() {
           setRemoteStream(remoteStream);
           setIsConnected(true); // Set connected immediately when stream is received
           
-          // Don't set remoteVideoEnabled from track - wait for broadcast
-          // The video track is always "enabled" even when camera is off (just sends black frames)
-          // We rely on the media_state broadcast to know the actual camera state
+          // Set initial state from video track as fallback, will be overridden by broadcast if received
           const videoTrack = remoteStream.getVideoTracks()[0];
           if (videoTrack) {
             console.log("Remote video track:", videoTrack.label, "enabled:", videoTrack.enabled);
-            console.log("⚠️ Waiting for media_state broadcast to set camera state");
+            // Use track state as initial value - broadcast will update if different
+            setRemoteVideoEnabled(videoTrack.enabled);
+            console.log("📹 Initial camera state from track:", videoTrack.enabled);
           } else {
             console.log("⚠️ No remote video track found");
             setRemoteVideoEnabled(false);
@@ -933,7 +914,10 @@ export default function VideoSession() {
 
       // Subscribe to session updates for peer ID
       const sessionChannel = supabase
-        .channel(`session-${sessionId}`)
+        .channel(`session-${sessionId}`);
+      sessionChannelRef.current = sessionChannel;
+      
+      sessionChannel
         .on(
           "postgres_changes",
           {
@@ -1076,14 +1060,33 @@ export default function VideoSession() {
           (payload) => {
             // Update remote media state when other user toggles camera/mic
             if (payload.payload.userId !== user!.id) {
-              console.log("Remote media state changed:", payload.payload);
+              console.log("📡 Received media_state broadcast:", payload.payload);
               if (payload.payload.camera !== undefined) {
                 setRemoteVideoEnabled(payload.payload.camera);
               }
             }
           }
         )
-        .subscribe();
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            // Broadcast initial camera/mic state after subscription is confirmed
+            const videoTrack = stream.getVideoTracks()[0];
+            const audioTrack = stream.getAudioTracks()[0];
+            const cameraState = videoTrack?.enabled ?? true;
+            const micState = audioTrack?.enabled ?? true;
+            
+            await sessionChannel.send({
+              type: 'broadcast',
+              event: 'media_state',
+              payload: { 
+                userId: user!.id, 
+                camera: cameraState,
+                mic: micState
+              }
+            });
+            console.log("📡 Broadcast initial media state - camera:", cameraState, "mic:", micState);
+          }
+        });
 
       // Subscribe to new chat messages for unread count (mobile only)
       const chatChannel = supabase
@@ -1187,34 +1190,34 @@ export default function VideoSession() {
   };
 
   const toggleCamera = () => {
-    if (localStream) {
+    if (localStream && sessionChannelRef.current) {
       const videoTrack = localStream.getVideoTracks()[0];
       videoTrack.enabled = !videoTrack.enabled;
       setIsCameraOn(videoTrack.enabled);
       
-      // Broadcast camera state change
-      const channel = supabase.channel(`session-${sessionId}`);
-      channel.send({
+      // Broadcast camera state change using existing channel
+      sessionChannelRef.current.send({
         type: 'broadcast',
         event: 'media_state',
         payload: { userId: user!.id, camera: videoTrack.enabled }
       });
+      console.log("📡 Broadcast camera state:", videoTrack.enabled);
     }
   };
 
   const toggleMic = () => {
-    if (localStream) {
+    if (localStream && sessionChannelRef.current) {
       const audioTrack = localStream.getAudioTracks()[0];
       audioTrack.enabled = !audioTrack.enabled;
       setIsMicOn(audioTrack.enabled);
       
-      // Broadcast mic state change
-      const channel = supabase.channel(`session-${sessionId}`);
-      channel.send({
+      // Broadcast mic state change using existing channel
+      sessionChannelRef.current.send({
         type: 'broadcast',
         event: 'media_state',
         payload: { userId: user!.id, mic: audioTrack.enabled }
       });
+      console.log("📡 Broadcast mic state:", audioTrack.enabled);
     }
   };
 
@@ -1288,14 +1291,15 @@ export default function VideoSession() {
         setIsScreenSharing(false);
         // toast.info("Screen sharing stopped"); // Removed - visual feedback is enough
         
-        // Broadcast camera state after stopping screen share
-        const channel = supabase.channel(`session-${sessionId}`);
-        channel.send({
-          type: 'broadcast',
-          event: 'media_state',
-          payload: { userId: user!.id, camera: isCameraOn }
-        });
-        console.log("📡 Broadcast camera state after stopping screen share:", isCameraOn);
+        // Broadcast camera state after stopping screen share using existing channel
+        if (sessionChannelRef.current) {
+          sessionChannelRef.current.send({
+            type: 'broadcast',
+            event: 'media_state',
+            payload: { userId: user!.id, camera: isCameraOn }
+          });
+          console.log("📡 Broadcast camera state after stopping screen share:", isCameraOn);
+        }
       }
     } catch (error) {
       console.error("Error toggling screen share:", error);
