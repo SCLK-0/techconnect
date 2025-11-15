@@ -382,9 +382,9 @@ export default function VideoSession() {
       return;
     }
 
-    // Set initial state
+    // Don't set from track - wait for broadcast
     console.log("Remote video track initial state:", videoTrack.label, "enabled:", videoTrack.enabled);
-    setRemoteVideoEnabled(videoTrack.enabled);
+    console.log("⚠️ Waiting for media_state broadcast to set camera state");
 
     // Listen for track state changes
     const handleEnded = () => {
@@ -704,23 +704,24 @@ export default function VideoSession() {
         console.log(`✅ ${role} peer ID updated:`, id);
         // toast.success("Connected to peer network"); // Removed - too noisy
         
-        // Broadcast initial camera/mic state (non-blocking, fire and forget)
+        // Broadcast initial camera/mic state after a short delay to ensure other user is listening
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
-        supabase.channel(`session-${sessionId}`).subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await supabase.channel(`session-${sessionId}`).send({
-              type: 'broadcast',
-              event: 'media_state',
-              payload: { 
-                userId: user!.id, 
-                camera: videoTrack?.enabled ?? true,
-                mic: audioTrack?.enabled ?? true
-              }
-            });
-            console.log("📡 Broadcast initial media state - camera:", videoTrack?.enabled, "mic:", audioTrack?.enabled);
-          }
-        });
+        setTimeout(async () => {
+          const channel = supabase.channel(`session-${sessionId}`);
+          await channel.subscribe();
+          await channel.send({
+            type: 'broadcast',
+            event: 'media_state',
+            payload: { 
+              userId: user!.id, 
+              camera: videoTrack?.enabled ?? true,
+              mic: audioTrack?.enabled ?? true
+            }
+          });
+          console.log("📡 Broadcast initial media state - camera:", videoTrack?.enabled, "mic:", audioTrack?.enabled);
+          await channel.unsubscribe();
+        }, 500); // Wait 500ms to ensure other user is connected and listening
         
         // For both tutor and learner: Check if session is already in progress and the other party is present
         // This handles rejoining scenarios
@@ -863,31 +864,16 @@ export default function VideoSession() {
           setRemoteStream(remoteStream);
           setIsConnected(true); // Set connected immediately when stream is received
           
-          // Track video track enabled state
+          // Don't set remoteVideoEnabled from track - wait for broadcast
+          // The video track is always "enabled" even when camera is off (just sends black frames)
+          // We rely on the media_state broadcast to know the actual camera state
           const videoTrack = remoteStream.getVideoTracks()[0];
           if (videoTrack) {
             console.log("Remote video track:", videoTrack.label, "enabled:", videoTrack.enabled);
-            setRemoteVideoEnabled(videoTrack.enabled);
-            
-            // Add event listeners for track state changes
-            const handleTrackEnd = () => {
-              console.log("Remote video track ended");
-              setRemoteVideoEnabled(false);
-            };
-            const handleTrackMute = () => {
-              console.log("Remote video track muted");
-              setRemoteVideoEnabled(false);
-            };
-            const handleTrackUnmute = () => {
-              console.log("Remote video track unmuted");
-              setRemoteVideoEnabled(true);
-            };
-            
-            videoTrack.addEventListener('ended', handleTrackEnd);
-            videoTrack.addEventListener('mute', handleTrackMute);
-            videoTrack.addEventListener('unmute', handleTrackUnmute);
+            console.log("⚠️ Waiting for media_state broadcast to set camera state");
           } else {
             console.log("⚠️ No remote video track found");
+            setRemoteVideoEnabled(false);
           }
           
           // Set video element with retry logic
