@@ -1,18 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TutorSidebar } from "@/components/tutor/TutorSidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useQuery } from "@tanstack/react-query";
-import { User, BookOpen, Star } from "lucide-react";
+import { User, BookOpen, Star, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { useState } from "react";
 
 export default function TutorTutees() {
   const { user } = useUserRole();
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -71,8 +73,18 @@ export default function TutorTutees() {
     enabled: !!user,
   });
 
-  const totalPages = Math.ceil(tutees.length / itemsPerPage);
-  const paginatedTutees = tutees.slice(
+  // Filter tutees by search query
+  const filteredTutees = tutees.filter((tutee: any) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      tutee.full_name?.toLowerCase().includes(query) ||
+      tutee.subjects?.some((s: string) => s.toLowerCase().includes(query))
+    );
+  });
+
+  const totalPages = Math.ceil(filteredTutees.length / itemsPerPage);
+  const paginatedTutees = filteredTutees.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -161,6 +173,20 @@ export default function TutorTutees() {
 
           <main className="flex-1 p-6 overflow-auto">
             <div className="max-w-6xl mx-auto space-y-6">
+              {/* Search Bar */}
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tutees by name or subject..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="pl-10"
+                />
+              </div>
+
               {tutees.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">

@@ -2,9 +2,10 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
-import { Download, FileText, Eye } from "lucide-react";
+import { Download, FileText, Eye, Search } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 export default function LearnerResources() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -36,8 +38,20 @@ export default function LearnerResources() {
     },
   });
 
-  const totalPages = Math.ceil(resources.length / itemsPerPage);
-  const paginatedResources = resources.slice(
+  // Filter resources by search query
+  const filteredResources = resources.filter((resource: any) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      resource.title?.toLowerCase().includes(query) ||
+      resource.description?.toLowerCase().includes(query) ||
+      resource.tutor_name?.toLowerCase().includes(query) ||
+      resource.subject?.toLowerCase().includes(query)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredResources.length / itemsPerPage);
+  const paginatedResources = filteredResources.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -126,6 +140,20 @@ export default function LearnerResources() {
 
           <main className="flex-1 p-6">
             <div className="max-w-7xl mx-auto space-y-6">
+              {/* Search Bar */}
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search resources by title, subject, or tutor..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="pl-10"
+                />
+              </div>
+
               {paginatedResources.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">

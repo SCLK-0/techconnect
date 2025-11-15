@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TutorSidebar } from "@/components/tutor/TutorSidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
-import { Star, MessageSquare, Calendar } from "lucide-react";
+import { Star, MessageSquare, Calendar, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
@@ -30,6 +31,7 @@ export default function TutorFeedback() {
   const { user } = useUserRole();
   const [feedback, setFeedback] = useState<FeedbackWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -111,8 +113,19 @@ export default function TutorFeedback() {
     );
   };
 
-  const totalPages = Math.ceil(feedback.length / itemsPerPage);
-  const paginatedFeedback = feedback.slice(
+  // Filter feedback by search query
+  const filteredFeedback = feedback.filter((fb) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      fb.session?.learner?.full_name?.toLowerCase().includes(query) ||
+      fb.session?.subject?.toLowerCase().includes(query) ||
+      fb.comment?.toLowerCase().includes(query)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredFeedback.length / itemsPerPage);
+  const paginatedFeedback = filteredFeedback.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -201,6 +214,22 @@ export default function TutorFeedback() {
 
           <main className="flex-1 p-6 overflow-auto">
             <div className="max-w-6xl mx-auto space-y-6">
+              {/* Search Bar */}
+              {!loading && feedback.length > 0 && (
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search feedback by student, subject, or comment..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+              )}
+
               {loading ? (
                 <p className="text-center text-muted-foreground">Loading feedback...</p>
               ) : feedback.length === 0 ? (
