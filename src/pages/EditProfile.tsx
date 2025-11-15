@@ -389,7 +389,7 @@ export default function EditProfile() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
+                  <div className="grid gap-3 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="fullName">Full Name *</Label>
                       <Input

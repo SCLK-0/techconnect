@@ -244,7 +244,7 @@ export default function TutorFeedback() {
                 </Card>
               ) : (
                 <>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {paginatedFeedback.map((fb) => (
                       <Card key={fb.id} className="hover:shadow-lg transition-shadow">
                         <CardHeader className="pb-3">

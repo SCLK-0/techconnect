@@ -201,7 +201,7 @@ export default function AdminLiveMonitoring() {
           </header>
 
           <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
-            <div className="grid gap-4 md:grid-cols-2 mb-6">
+            <div className="grid gap-3 md:grid-cols-2 mb-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Online Tutors</CardTitle>

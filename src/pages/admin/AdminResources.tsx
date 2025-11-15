@@ -186,7 +186,7 @@ export default function AdminResources() {
                 </Card>
               ) : (
                 <>
-                  <div className="grid gap-4">
+                  <div className="grid gap-3">
                     {paginatedResources.map((resource: any) => (
                     <Card key={resource.id}>
                       <CardHeader>
