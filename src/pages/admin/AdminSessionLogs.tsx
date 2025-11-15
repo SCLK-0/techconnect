@@ -25,8 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSearchParams } from "react-router-dom";
 
 export default function AdminSessionLogs() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -189,6 +191,19 @@ export default function AdminSessionLogs() {
   useEffect(() => {
     setCurrentPage(1);
   }, [filterStatus, filterLogType, searchQuery, dateFrom, dateTo]);
+
+  // Auto-open session log when coming from session management
+  useEffect(() => {
+    const sessionId = searchParams.get("session");
+    if (sessionId && sessionLogs) {
+      const sessionLog = sessionLogs.find((log: any) => log.session_id === sessionId);
+      if (sessionLog) {
+        setSelectedLog(sessionLog);
+        // Clear the URL parameter after opening
+        setSearchParams({});
+      }
+    }
+  }, [sessionLogs, searchParams, setSearchParams]);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;

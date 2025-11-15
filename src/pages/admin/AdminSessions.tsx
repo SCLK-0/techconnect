@@ -9,13 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Clock, CheckCircle, XCircle, Calendar as CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Clock, CheckCircle, XCircle, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { toast } from "sonner";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminSessions() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -237,18 +240,19 @@ export default function AdminSessions() {
                           <TableHead>Duration</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Date</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {isLoading ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center">
+                            <TableCell colSpan={7} className="text-center">
                               Loading sessions...
                             </TableCell>
                           </TableRow>
                         ) : filteredSessions.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center">
+                            <TableCell colSpan={7} className="text-center">
                               No sessions found
                             </TableCell>
                           </TableRow>
@@ -269,6 +273,17 @@ export default function AdminSessions() {
                                 {session.scheduled_at
                                   ? format(new Date(session.scheduled_at), "MMM dd, yyyy")
                                   : format(new Date(session.created_at), "MMM dd, yyyy")}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/admin/session-logs?session=${session.id}`)}
+                                  className="gap-2"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  View Logs
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))
