@@ -60,7 +60,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <CardTitle>Quick Actions</CardTitle>

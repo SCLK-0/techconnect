@@ -207,7 +207,7 @@ export default function TutorAvailability() {
                   <CardDescription>Set your recurring weekly hours for tutoring</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3">
+                  <div className="grid gap-2">
                     <div>
                       <Label>Day of Week</Label>
                       <select

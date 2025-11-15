@@ -168,7 +168,7 @@ export default function LearnerDashboard() {
                 </p>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
@@ -225,7 +225,7 @@ export default function LearnerDashboard() {
                 </Card>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <CardTitle>Quick Actions</CardTitle>

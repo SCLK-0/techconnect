@@ -196,7 +196,7 @@ export default function AdminApprovals() {
                 </Card>
               ) : (
                 <>
-                  <div className="grid gap-3">
+                  <div className="grid gap-2">
                     {paginatedTutors.map((tutor: any) => (
                     <Card key={tutor.id}>
                       <CardHeader>

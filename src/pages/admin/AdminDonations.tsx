@@ -124,7 +124,7 @@ export default function AdminDonations() {
 
           <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-7xl">
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-2 md:grid-cols-3">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
