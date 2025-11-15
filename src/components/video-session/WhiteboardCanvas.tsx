@@ -38,11 +38,12 @@ type UserPresence = {
 interface WhiteboardCanvasProps {
   sessionId: string;
   isMonitorMode?: boolean;
+  isPeerConnected?: boolean;
 }
 
 type Tool = "select" | "draw" | "text" | "eraser";
 
-export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: WhiteboardCanvasProps) {
+export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConnected = true }: WhiteboardCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
@@ -875,24 +876,29 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
     initCanvas();
   }, [sessionId]);
 
-  // Enable/disable canvas interaction based on both users being present
+  // Enable/disable canvas interaction based on both users being present AND peer connected
   useEffect(() => {
     if (!canvas || isMonitorMode) return;
 
-    if (bothUsersPresent) {
+    // Whiteboard is only enabled when BOTH conditions are met:
+    // 1. Both users are present in the whiteboard channel (bothUsersPresent)
+    // 2. Peer video connection is active (isPeerConnected)
+    const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
+
+    if (isWhiteboardEnabled) {
       // Enable interaction
       canvas.selection = true;
       canvas.isDrawingMode = activeTool === "draw";
-      console.log("✅ Both users present - whiteboard enabled");
+      console.log("✅ Both users present AND peer connected - whiteboard enabled");
     } else {
-      // Disable interaction until both users are present
+      // Disable interaction until both conditions are met
       canvas.selection = false;
       canvas.isDrawingMode = false;
       canvas.discardActiveObject();
       canvas.renderAll();
-      console.log("⏳ Waiting for both users - whiteboard disabled");
+      console.log("⏳ Waiting for connection - whiteboard disabled (bothUsers:", bothUsersPresent, "peerConnected:", isPeerConnected, ")");
     }
-  }, [bothUsersPresent, canvas, isMonitorMode, activeTool]);
+  }, [bothUsersPresent, isPeerConnected, canvas, isMonitorMode, activeTool]);
 
   const updateObjectIndicators = (fabricCanvas: Canvas, presences: Record<string, UserPresence>) => {
     const existingIndicators = fabricCanvas.getObjects().filter((obj) => (obj as any).isIndicator);
@@ -1493,6 +1499,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
     await saveWhiteboardState(canvas, userId);
   };
 
+  // Whiteboard is enabled only when both users are present AND peer is connected
+  const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20">
       {/* Toolbar - Hidden in monitor mode */}
@@ -1504,8 +1513,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "select" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("select")}
-              disabled={!bothUsersPresent}
-              title={bothUsersPresent ? "Select" : "Waiting for both users..."}
+              disabled={!isWhiteboardEnabled}
+              title={isWhiteboardEnabled ? "Select" : "Waiting for connection..."}
               className="h-8 w-8"
             >
               <MousePointer2 className="h-4 w-4" />
@@ -1514,8 +1523,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "draw" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("draw")}
-              disabled={!bothUsersPresent}
-              title={bothUsersPresent ? "Draw" : "Waiting for both users..."}
+              disabled={!isWhiteboardEnabled}
+              title={isWhiteboardEnabled ? "Draw" : "Waiting for connection..."}
               className="h-8 w-8"
             >
               <Minus className="h-4 w-4" />
@@ -1524,8 +1533,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "text" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("text")}
-              disabled={!bothUsersPresent}
-              title={bothUsersPresent ? "Text - Click on canvas to place" : "Waiting for both users..."}
+              disabled={!isWhiteboardEnabled}
+              title={isWhiteboardEnabled ? "Text - Click on canvas to place" : "Waiting for connection..."}
               className="h-8 w-8"
             >
               <Type className="h-4 w-4" />
@@ -1534,8 +1543,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               variant={activeTool === "eraser" ? "default" : "ghost"}
               size="sm"
               onClick={() => setActiveTool("eraser")}
-              disabled={!bothUsersPresent}
-              title={bothUsersPresent ? "Eraser" : "Waiting for both users..."}
+              disabled={!isWhiteboardEnabled}
+              title={isWhiteboardEnabled ? "Eraser" : "Waiting for connection..."}
               className="h-8 w-8"
             >
               <Eraser className="h-4 w-4" />
@@ -1551,9 +1560,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
                 type="color"
                 value={drawColor}
                 onChange={(e) => setDrawColor(e.target.value)}
-                disabled={!bothUsersPresent}
+                disabled={!isWhiteboardEnabled}
                 className="w-8 h-8 rounded border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title={bothUsersPresent ? "Color" : "Waiting for both users..."}
+                title={isWhiteboardEnabled ? "Color" : "Waiting for connection..."}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -1564,9 +1573,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
                 max="20"
                 value={brushSize}
                 onChange={(e) => setBrushSize(Number(e.target.value))}
-                disabled={!bothUsersPresent}
+                disabled={!isWhiteboardEnabled}
                 className="w-24 disabled:opacity-50 disabled:cursor-not-allowed"
-                title={bothUsersPresent ? "Brush size" : "Waiting for both users..."}
+                title={isWhiteboardEnabled ? "Brush size" : "Waiting for connection..."}
               />
               <span className="text-xs font-medium w-6">{brushSize}</span>
             </div>
@@ -1579,8 +1588,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            disabled={!bothUsersPresent}
-            title={bothUsersPresent ? "Upload image" : "Waiting for both users..."}
+            disabled={!isWhiteboardEnabled}
+            title={isWhiteboardEnabled ? "Upload image" : "Waiting for connection..."}
             className="h-8"
           >
             <Image className="h-4 w-4 mr-1" />
@@ -1601,8 +1610,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             variant="destructive" 
             size="sm" 
             onClick={clearCanvas} 
-            disabled={!bothUsersPresent}
-            title={bothUsersPresent ? "Clear all" : "Waiting for both users..."}
+            disabled={!isWhiteboardEnabled}
+            title={isWhiteboardEnabled ? "Clear all" : "Waiting for connection..."}
             className="h-8"
           >
             <Trash2 className="h-4 w-4 mr-1" />
@@ -1616,8 +1625,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
         <div className="absolute inset-0 flex items-center justify-center">
           <canvas ref={canvasRef} className="shadow-lg" />
           
-          {/* Waiting for both users overlay */}
-          {!isMonitorMode && !bothUsersPresent && (
+          {/* Waiting for connection overlay - shows when either peer is disconnected OR whiteboard presence is missing */}
+          {!isMonitorMode && (!bothUsersPresent || !isPeerConnected) && (
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40 pointer-events-none">
               <div className="bg-white/90 rounded-lg px-6 py-4 shadow-lg">
                 <p className="text-sm font-medium text-gray-700">

@@ -1618,7 +1618,11 @@ export default function VideoSession() {
           <div className="flex-1 overflow-hidden min-h-0">
             {/* Keep both components mounted to maintain realtime connections */}
             <div className={activePanel === "whiteboard" ? "h-full" : "hidden h-full"}>
-              <WhiteboardCanvas sessionId={sessionId!} isMonitorMode={isMonitorMode} />
+              <WhiteboardCanvas 
+                sessionId={sessionId!} 
+                isMonitorMode={isMonitorMode}
+                isPeerConnected={isConnected && remoteStream !== null}
+              />
             </div>
             <div className={activePanel === "assets" ? "h-full" : "hidden h-full"}>
               <AssetsPanel sessionId={sessionId!} isMonitorMode={isMonitorMode} />
