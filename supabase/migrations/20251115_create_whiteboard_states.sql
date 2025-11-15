@@ -36,6 +36,13 @@ CREATE POLICY "Users can modify whiteboard for their sessions"
       WHERE sessions.id = whiteboard_states.session_id
       AND (sessions.tutor_id = auth.uid() OR sessions.learner_id = auth.uid())
     )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.sessions
+      WHERE sessions.id = whiteboard_states.session_id
+      AND (sessions.tutor_id = auth.uid() OR sessions.learner_id = auth.uid())
+    )
   );
 
 -- Policy: Admins can view all whiteboard states
