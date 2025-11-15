@@ -450,50 +450,53 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
         });
       }
 
-      let lastCursorBroadcast = 0;
-      let lastDrawingBroadcast = 0;
-      
-      fabricCanvas.on("mouse:move", async (e) => {
-        const now = Date.now();
+      // Only add cursor tracking for non-monitor users
+      if (!isMonitorMode) {
+        let lastCursorBroadcast = 0;
+        let lastDrawingBroadcast = 0;
         
-        // Only broadcast if not in monitor mode AND channel is ready
-        if (!isMonitorMode && isChannelReady.current) {
-          if (isDrawing.current && fabricCanvas.isDrawingMode && e.pointer) {
-            // Broadcast drawing progress in real-time - faster for smoother sync
-            if (now - lastDrawingBroadcast > 8) { // ~120fps for ultra-smooth drawing
-              lastDrawingBroadcast = now;
-              await broadcastEvent({
-                type: "drawing:progress",
-                data: {
-                  x: e.pointer.x,
-                  y: e.pointer.y,
-                  color: fabricCanvas.freeDrawingBrush.color,
-                  width: fabricCanvas.freeDrawingBrush.width,
-                },
-                userId: user?.id || "",
-              });
-            }
-          }
+        fabricCanvas.on("mouse:move", async (e) => {
+          const now = Date.now();
           
-          // Broadcast cursor position - faster for real-time feel
-          if (e.pointer) {
-            if (now - lastCursorBroadcast > 16) { // Match drawing speed for ultra-smooth sync
-              lastCursorBroadcast = now;
-              await broadcastEvent({
-                type: "cursor:move",
-                data: {
-                  x: e.pointer.x,
-                  y: e.pointer.y,
+          // Only broadcast if channel is ready
+          if (isChannelReady.current) {
+            if (isDrawing.current && fabricCanvas.isDrawingMode && e.pointer) {
+              // Broadcast drawing progress in real-time - faster for smoother sync
+              if (now - lastDrawingBroadcast > 8) { // ~120fps for ultra-smooth drawing
+                lastDrawingBroadcast = now;
+                await broadcastEvent({
+                  type: "drawing:progress",
+                  data: {
+                    x: e.pointer.x,
+                    y: e.pointer.y,
+                    color: fabricCanvas.freeDrawingBrush.color,
+                    width: fabricCanvas.freeDrawingBrush.width,
+                  },
+                  userId: user?.id || "",
+                });
+              }
+            }
+            
+            // Broadcast cursor position - faster for real-time feel
+            if (e.pointer) {
+              if (now - lastCursorBroadcast > 16) { // Match drawing speed for ultra-smooth sync
+                lastCursorBroadcast = now;
+                await broadcastEvent({
+                  type: "cursor:move",
+                  data: {
+                    x: e.pointer.x,
+                    y: e.pointer.y,
+                    userId: user.id,
+                    userName: displayName,
+                    color: color,
+                  },
                   userId: user.id,
-                  userName: displayName,
-                  color: color,
-                },
-                userId: user.id,
-              });
+                });
+              }
             }
           }
-        }
-      });
+        });
+      }
 
       // Canvas event listeners for broadcasting
       if (!isMonitorMode) {
@@ -612,7 +615,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             return;
           }
           
-          if (channelRef.current) {
+          if (channelRef.current && !isMonitorMode) {
             // Broadcast that we're now editing this object
             await channelRef.current.track({
               userId: user.id,
@@ -651,7 +654,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             return;
           }
           
-          if (channelRef.current) {
+          if (channelRef.current && !isMonitorMode) {
             await channelRef.current.track({
               userId: user.id,
               userName: displayName,
@@ -666,7 +669,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
       });
 
       fabricCanvas.on("selection:cleared", async () => {
-        if (channelRef.current) {
+        if (channelRef.current && !isMonitorMode) {
           await channelRef.current.track({
             userId: user.id,
             userName: displayName,
