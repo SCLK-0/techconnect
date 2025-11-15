@@ -275,15 +275,19 @@ export default function AdminSessions() {
                                   : format(new Date(session.created_at), "MMM dd, yyyy")}
                               </TableCell>
                               <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => navigate(`/admin/session-logs?session=${session.id}`)}
-                                  className="gap-2"
-                                >
-                                  <FileText className="h-4 w-4" />
-                                  View Logs
-                                </Button>
+                                {session.status === "completed" ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/admin/session-logs?session=${session.id}`)}
+                                    className="gap-2"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                    View Logs
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">No logs yet</span>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))

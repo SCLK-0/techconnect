@@ -32,8 +32,8 @@ export default function AdminSessionLogs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterLogType, setFilterLogType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterLogType, setFilterLogType] = useState<string>("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const itemsPerPage = 7;
@@ -124,13 +124,13 @@ export default function AdminSessionLogs() {
 
   // Apply filters
   const filteredLogs = sessionLogs?.filter((group: any) => {
-    // Filter by session status
-    if (filterStatus !== "all" && group.sessions?.session_status !== filterStatus) {
+    // Filter by session status (empty string means show all)
+    if (filterStatus && group.sessions?.session_status !== filterStatus) {
       return false;
     }
 
-    // Filter by log type
-    if (filterLogType !== "all") {
+    // Filter by log type (empty string means show all)
+    if (filterLogType) {
       const hasTutorLog = !!group.tutor_log;
       const hasLearnerLog = !!group.learner_log;
       
@@ -330,10 +330,10 @@ export default function AdminSessionLogs() {
                     {/* Status Filter */}
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
                       <SelectTrigger className="w-[160px]">
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder="All Statuses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="">All Statuses</SelectItem>
                         <SelectItem value="completed">Completed</SelectItem>
                         <SelectItem value="in_progress">In Progress</SelectItem>
                         <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -343,10 +343,10 @@ export default function AdminSessionLogs() {
                     {/* Log Type Filter */}
                     <Select value={filterLogType} onValueChange={setFilterLogType}>
                       <SelectTrigger className="w-[160px]">
-                        <SelectValue placeholder="Log Type" />
+                        <SelectValue placeholder="All Logs" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Logs</SelectItem>
+                        <SelectItem value="">All Logs</SelectItem>
                         <SelectItem value="both">Both Submitted</SelectItem>
                         <SelectItem value="tutor_only">Tutor Only</SelectItem>
                         <SelectItem value="learner_only">Learner Only</SelectItem>
