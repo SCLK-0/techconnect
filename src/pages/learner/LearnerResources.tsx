@@ -142,8 +142,8 @@ export default function LearnerResources() {
             </div>
           </header>
 
-          <main className="flex-1 px-3 pt-8 pb-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-5xl">
+          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+            <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Learning Resources</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

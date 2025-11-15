@@ -204,8 +204,8 @@ export default function AdminSessions() {
             </div>
           </header>
 
-          <main className="flex-1 px-3 pt-8 pb-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-5xl">
+          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+            <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div className="flex flex-col sm:flex-row gap-4 justify-between">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
