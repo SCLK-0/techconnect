@@ -154,8 +154,9 @@ export default function Announcements() {
       <div className="min-h-screen flex w-full bg-background">
         <SidebarComponent />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b flex items-center justify-between px-4">
-            <div className="flex items-center gap-4">
+          <header className="h-14 border-b flex items-center justify-center px-4">
+            <div className="w-full max-w-7xl flex items-center justify-between">
+              <div className="flex items-center gap-4">
               <SidebarTrigger />
               <h1 className="text-xl font-semibold">Announcements</h1>
             </div>
