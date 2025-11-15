@@ -188,7 +188,6 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
                 sideOffset={5}
                 className="w-auto p-0 border-0 bg-transparent shadow-none"
                 style={{ zIndex: 100000 }}
-                onInteractOutside={(e) => e.preventDefault()}
               >
                 <EmojiPicker onEmojiClick={(emojiData) => {
                   setNewMessage((prev) => prev + emojiData.emoji);

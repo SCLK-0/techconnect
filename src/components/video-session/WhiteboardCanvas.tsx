@@ -278,7 +278,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
                 // Check if both users are now present (we have at least one remote cursor)
                 if (Object.keys(updated).length > 0 && !bothUsersPresent) {
                   setBothUsersPresent(true);
-                  toast.success("Both users connected - whiteboard enabled");
+                  // toast.success("Both users connected - whiteboard enabled"); // Removed - too noisy
                 }
                 return updated;
               });
