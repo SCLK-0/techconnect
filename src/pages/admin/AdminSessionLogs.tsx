@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, Filter } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,11 +18,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminSessionLogs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterLogType, setFilterLogType] = useState<string>("all");
   const itemsPerPage = 7;
 
   const { data: sessionLogs, isLoading } = useQuery({
@@ -37,7 +46,8 @@ export default function AdminSessionLogs() {
             subject,
             session_status,
             tutor_id,
-            learner_id
+            learner_id,
+            created_at
           )
         `)
         .order("created_at", { ascending: false });
@@ -64,24 +74,85 @@ export default function AdminSessionLogs() {
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]));
 
-      // Enrich logs with profile names
-      return logs?.map((log: any) => ({
-        ...log,
-        user: { full_name: profileMap.get(log.user_id) || "Unknown" },
-        sessions: log.sessions ? {
-          ...log.sessions,
-          tutor: { full_name: profileMap.get(log.sessions.tutor_id) || "Unknown" },
-          learner: { full_name: profileMap.get(log.sessions.learner_id) || "Unknown" }
-        } : null
-      }));
+      // Group logs by session_id
+      const groupedLogs = new Map<string, any>();
+      
+      logs?.forEach((log: any) => {
+        const sessionId = log.session_id;
+        
+        if (!groupedLogs.has(sessionId)) {
+          groupedLogs.set(sessionId, {
+            session_id: sessionId,
+            sessions: log.sessions ? {
+              ...log.sessions,
+              tutor: { full_name: profileMap.get(log.sessions.tutor_id) || "Unknown" },
+              learner: { full_name: profileMap.get(log.sessions.learner_id) || "Unknown" }
+            } : null,
+            tutor_log: null,
+            learner_log: null,
+            latest_update: log.created_at
+          });
+        }
+        
+        const group = groupedLogs.get(sessionId);
+        
+        // Add log to appropriate role
+        if (log.user_role === 'tutor') {
+          group.tutor_log = {
+            ...log,
+            user: { full_name: profileMap.get(log.user_id) || "Unknown" }
+          };
+        } else if (log.user_role === 'learner') {
+          group.learner_log = {
+            ...log,
+            user: { full_name: profileMap.get(log.user_id) || "Unknown" }
+          };
+        }
+        
+        // Update latest timestamp
+        if (new Date(log.created_at) > new Date(group.latest_update)) {
+          group.latest_update = log.created_at;
+        }
+      });
+
+      // Convert map to array and sort by latest update
+      return Array.from(groupedLogs.values()).sort((a, b) => 
+        new Date(b.latest_update).getTime() - new Date(a.latest_update).getTime()
+      );
     },
   });
 
-  const totalPages = Math.ceil((sessionLogs?.length || 0) / itemsPerPage);
-  const paginatedLogs = sessionLogs?.slice(
+  // Apply filters
+  const filteredLogs = sessionLogs?.filter((group: any) => {
+    // Filter by session status
+    if (filterStatus !== "all" && group.sessions?.session_status !== filterStatus) {
+      return false;
+    }
+
+    // Filter by log type
+    if (filterLogType !== "all") {
+      const hasTutorLog = !!group.tutor_log;
+      const hasLearnerLog = !!group.learner_log;
+      
+      if (filterLogType === "both" && (!hasTutorLog || !hasLearnerLog)) return false;
+      if (filterLogType === "tutor_only" && (!hasTutorLog || hasLearnerLog)) return false;
+      if (filterLogType === "learner_only" && (hasTutorLog || !hasLearnerLog)) return false;
+      if (filterLogType === "none" && (hasTutorLog || hasLearnerLog)) return false;
+    }
+
+    return true;
+  });
+
+  const totalPages = Math.ceil((filteredLogs?.length || 0) / itemsPerPage);
+  const paginatedLogs = filteredLogs?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterLogType, searchQuery]);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -168,18 +239,47 @@ export default function AdminSessionLogs() {
           <main className="flex-1 p-6">
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Search Logs</CardTitle>
-                <CardDescription>Search session logs by topics or next steps</CardDescription>
+                <CardTitle>Search & Filter Logs</CardTitle>
+                <CardDescription>Search and filter session logs</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search logs..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by topics, next steps, accomplishments..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Session Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={filterLogType} onValueChange={setFilterLogType}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Log Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Logs</SelectItem>
+                        <SelectItem value="both">Both Submitted</SelectItem>
+                        <SelectItem value="tutor_only">Tutor Only</SelectItem>
+                        <SelectItem value="learner_only">Learner Only</SelectItem>
+                        <SelectItem value="none">No Logs</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -202,31 +302,38 @@ export default function AdminSessionLogs() {
                 ) : sessionLogs && sessionLogs.length > 0 ? (
                   <>
                     <div className="space-y-4">
-                      {paginatedLogs?.map((log: any) => (
+                      {paginatedLogs?.map((group: any) => (
                       <div
-                        key={log.id}
+                        key={group.session_id}
                         className="p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
-                        onClick={() => setSelectedLog(log)}
+                        onClick={() => setSelectedLog(group)}
                       >
                          <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <h3 className="font-semibold">{log.sessions?.subject || "Unknown Subject"}</h3>
+                            <h3 className="font-semibold">{group.sessions?.subject || "Unknown Subject"}</h3>
                             <p className="text-sm text-muted-foreground">
-                              Tutor: {log.sessions?.tutor?.full_name || "Unknown"} • 
-                              Learner: {log.sessions?.learner?.full_name || "Unknown"}
+                              Tutor: {group.sessions?.tutor?.full_name || "Unknown"} • 
+                              Learner: {group.sessions?.learner?.full_name || "Unknown"}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline">
-                              {log.user_role}
-                            </Badge>
+                            {group.tutor_log && (
+                              <Badge variant="secondary" className="text-xs">
+                                Tutor Log
+                              </Badge>
+                            )}
+                            {group.learner_log && (
+                              <Badge variant="secondary" className="text-xs">
+                                Learner Log
+                              </Badge>
+                            )}
                             <span className="text-xs text-muted-foreground">
-                              {format(new Date(log.created_at), "MMM dd, yyyy")}
+                              {format(new Date(group.latest_update), "MMM dd, yyyy")}
                             </span>
                           </div>
                         </div>
                         <p className="text-sm line-clamp-2 text-muted-foreground">
-                          {log.topics_covered}
+                          {group.tutor_log?.topics_covered || group.learner_log?.topics_covered || "No topics covered yet"}
                         </p>
                       </div>
                     ))}
@@ -245,58 +352,124 @@ export default function AdminSessionLogs() {
 
       {/* Log Details Dialog */}
       <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedLog?.sessions?.subject || "Session Log"}</DialogTitle>
             <DialogDescription>
-              Submitted by {selectedLog?.user?.full_name || "Unknown"} ({selectedLog?.user_role}) on{" "}
-              {selectedLog && format(new Date(selectedLog.created_at), "MMMM dd, yyyy 'at' hh:mm a")}
+              Session between {selectedLog?.sessions?.tutor?.full_name} (Tutor) and {selectedLog?.sessions?.learner?.full_name} (Learner)
             </DialogDescription>
           </DialogHeader>
           
           {selectedLog && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <h4 className="font-semibold mb-2">Session Details</h4>
                 <div className="space-y-1 text-sm">
                   <p><span className="text-muted-foreground">Tutor:</span> {selectedLog.sessions?.tutor?.full_name}</p>
                   <p><span className="text-muted-foreground">Learner:</span> {selectedLog.sessions?.learner?.full_name}</p>
                   <p><span className="text-muted-foreground">Status:</span> <Badge variant="outline">{selectedLog.sessions?.session_status}</Badge></p>
+                  <p><span className="text-muted-foreground">Session Date:</span> {format(new Date(selectedLog.sessions?.created_at), "MMMM dd, yyyy")}</p>
                 </div>
               </div>
 
-              <div>
-                <h4 className="font-semibold mb-2">Topics Covered</h4>
-                <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
-                  {selectedLog.topics_covered}
-                </p>
-              </div>
+              {/* Tutor's Log */}
+              {selectedLog.tutor_log && (
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="default">Tutor's Log</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      Submitted {format(new Date(selectedLog.tutor_log.created_at), "MMM dd, yyyy 'at' hh:mm a")}
+                    </span>
+                  </div>
 
-              {selectedLog.next_steps && (
-                <div>
-                  <h4 className="font-semibold mb-2">Next Steps</h4>
-                  <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
-                    {selectedLog.next_steps}
-                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <h5 className="font-medium text-sm mb-1">Topics Covered</h5>
+                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                        {selectedLog.tutor_log.topics_covered}
+                      </p>
+                    </div>
+
+                    {selectedLog.tutor_log.next_steps && (
+                      <div>
+                        <h5 className="font-medium text-sm mb-1">Next Steps</h5>
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                          {selectedLog.tutor_log.next_steps}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedLog.tutor_log.accomplishments && (
+                      <div>
+                        <h5 className="font-medium text-sm mb-1">Accomplishments</h5>
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                          {selectedLog.tutor_log.accomplishments}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedLog.tutor_log.homework && (
+                      <div>
+                        <h5 className="font-medium text-sm mb-1">Homework</h5>
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                          {selectedLog.tutor_log.homework}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {selectedLog.accomplishments && (
-                <div>
-                  <h4 className="font-semibold mb-2">Accomplishments</h4>
-                  <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
-                    {selectedLog.accomplishments}
-                  </p>
+              {/* Learner's Log */}
+              {selectedLog.learner_log && (
+                <div className="border-l-4 border-green-500 pl-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="secondary">Learner's Log</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      Submitted {format(new Date(selectedLog.learner_log.created_at), "MMM dd, yyyy 'at' hh:mm a")}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <h5 className="font-medium text-sm mb-1">Topics Covered</h5>
+                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                        {selectedLog.learner_log.topics_covered}
+                      </p>
+                    </div>
+
+                    {selectedLog.learner_log.next_steps && (
+                      <div>
+                        <h5 className="font-medium text-sm mb-1">Next Steps</h5>
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                          {selectedLog.learner_log.next_steps}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedLog.learner_log.accomplishments && (
+                      <div>
+                        <h5 className="font-medium text-sm mb-1">Accomplishments</h5>
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                          {selectedLog.learner_log.accomplishments}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedLog.learner_log.homework && (
+                      <div>
+                        <h5 className="font-medium text-sm mb-1">Homework</h5>
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                          {selectedLog.learner_log.homework}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {selectedLog.homework && (
-                <div>
-                  <h4 className="font-semibold mb-2">Homework</h4>
-                  <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
-                    {selectedLog.homework}
-                  </p>
-                </div>
+              {!selectedLog.tutor_log && !selectedLog.learner_log && (
+                <p className="text-center text-muted-foreground py-4">No logs submitted for this session yet</p>
               )}
             </div>
           )}
