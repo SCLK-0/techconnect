@@ -70,8 +70,9 @@ export default function TutorRequests() {
                 <h1 className="text-xl font-semibold">Session Requests</h1>
               </div>
               <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 

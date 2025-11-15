@@ -47,8 +47,9 @@ export default function AdminAnalytics() {
                 <h1 className="text-xl font-semibold">Analytics</h1>
               </div>
               <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 

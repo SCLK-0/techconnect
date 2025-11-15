@@ -194,8 +194,9 @@ export default function AdminSessions() {
                 <h1 className="text-xl font-semibold">Session Management</h1>
               </div>
               <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 

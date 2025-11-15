@@ -208,8 +208,9 @@ export default function TutorFeedback() {
                 <h1 className="text-xl font-semibold">Student Feedback</h1>
               </div>
               <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 
