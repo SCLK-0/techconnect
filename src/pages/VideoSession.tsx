@@ -276,15 +276,23 @@ export default function VideoSession() {
                 toast.success("You've been admitted to the session!");
               }
               
-              if (status === "completed" && !isMonitorMode) {
-                console.log("📝 Session completed via realtime - cleaning up and showing log");
+              if (status === "completed") {
+                console.log("📝 Session completed via realtime - cleaning up");
                 toast.info("Session has ended");
                 // Clean up all media tracks
                 cleanupMediaTracks();
-                // Show session log modal only if not already shown
-                if (!logModalShown) {
-                  setShowLogModal(true);
-                  setLogModalShown(true);
+                
+                if (isMonitorMode) {
+                  // Admin in monitor mode - navigate back to monitoring dashboard
+                  console.log("👀 Admin monitor - navigating to dashboard");
+                  navigate("/admin/live-monitoring");
+                } else {
+                  // Tutor or learner - show session log modal
+                  console.log("📝 Showing session log modal");
+                  if (!logModalShown) {
+                    setShowLogModal(true);
+                    setLogModalShown(true);
+                  }
                 }
               }
             }
@@ -876,8 +884,8 @@ export default function VideoSession() {
               const status = newSession.session_status as "waiting" | "in_progress" | "completed";
               setSessionStatus(status);
               
-              // If session is completed and user is learner, show session log modal
-              if (status === "completed" && role === "learner") {
+              // Handle session completion for all roles
+              if (status === "completed") {
                 toast.info("Session ended by tutor");
                 // Clean up all media tracks
                 cleanupMediaTracks();
@@ -888,10 +896,17 @@ export default function VideoSession() {
                 if (localVideoRef.current) localVideoRef.current.srcObject = null;
                 if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
                 screenStreamRef.current = null;
-                // Show log modal for learner only if not already shown
-                if (!logModalShown) {
-                  setShowLogModal(true);
-                  setLogModalShown(true);
+                
+                if (isMonitorMode) {
+                  // Admin in monitor mode - navigate back to monitoring dashboard
+                  console.log("👀 Admin monitor - navigating to dashboard");
+                  navigate("/admin/live-monitoring");
+                } else {
+                  // Tutor or learner - show session log modal
+                  if (!logModalShown) {
+                    setShowLogModal(true);
+                    setLogModalShown(true);
+                  }
                 }
               }
             }
