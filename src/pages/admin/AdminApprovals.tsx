@@ -169,7 +169,7 @@ export default function AdminApprovals() {
           </header>
 
           <main className="flex-1 px-4 py-6 overflow-auto">
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-[calc(100%-3rem)]">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold">Pending Applications</h2>

@@ -384,7 +384,7 @@ export default function AdminSessionLogs() {
           </DialogHeader>
           
           {selectedLog && (
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-[calc(100%-3rem)]">
               <div>
                 <h4 className="font-semibold mb-2">Session Details</h4>
                 <div className="space-y-1 text-sm">

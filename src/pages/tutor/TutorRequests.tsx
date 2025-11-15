@@ -75,7 +75,7 @@ export default function TutorRequests() {
           </header>
 
           <main className="flex-1 px-4 py-6 overflow-auto">
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-[calc(100%-3rem)]">
               {requests.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">

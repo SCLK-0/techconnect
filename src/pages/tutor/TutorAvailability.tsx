@@ -198,7 +198,7 @@ export default function TutorAvailability() {
           </header>
 
           <main className="flex-1 px-4 py-6 overflow-auto">
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-[calc(100%-3rem)]">
               <Card>
                 <CardHeader>
                   <CardTitle>Weekly Recurring Schedule</CardTitle>
