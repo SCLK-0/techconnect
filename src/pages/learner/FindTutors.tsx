@@ -483,8 +483,14 @@ const FindTutors = () => {
         <div className="flex-1 flex flex-col">
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <SidebarTrigger className="md:hidden" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-sm">TC</span>
+                  </div>
+                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <NotificationBell />
