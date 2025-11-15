@@ -42,13 +42,8 @@ CREATE POLICY "Users can modify whiteboard for their sessions"
 CREATE POLICY "Admins can view all whiteboards"
   ON public.whiteboard_states
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.user_id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+  TO authenticated
+  USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Add comment
 COMMENT ON TABLE public.whiteboard_states IS 'Stores whiteboard canvas state for each session to persist drawings across reconnections';
