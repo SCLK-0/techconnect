@@ -296,19 +296,16 @@ export default function EditProfile() {
       <div className="min-h-screen flex w-full bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b flex items-center justify-between px-4/50 backdrop-blur-sm sticky top-0 z-10">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <div>
-                <h1 className="text-xl font-semibold">Profile</h1>
-                <p className="text-xs text-muted-foreground">
-                  {isEditing ? "Edit your profile information" : "View your profile"}
-                </p>
+          <header className="h-14 border-b flex items-center justify-center px-4">
+            <div className="w-full max-w-7xl flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger />
+                <h1 className="text-lg font-semibold">Edit Profile</h1>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 

@@ -129,24 +129,23 @@ export default function MySessions() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <LearnerSidebar />
-        <main className="flex-1">
-          {/* Header */}
+        <div className="flex-1 flex flex-col">
           <header className="h-14 border-b flex items-center justify-center px-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <h1 className="text-xl font-semibold">My Sessions</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <NotificationBell />
-              <UserMenu />
+                <SidebarTrigger />
+                <h1 className="text-lg font-semibold">My Sessions</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserMenu />
+              </div>
             </div>
           </header>
 
-          {/* Content */}
-          <div className="px-4 py-6">
+          <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-7xl">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold">Sessions</h1>
@@ -306,8 +305,9 @@ export default function MySessions() {
             </Tabs>
           </div>
         </div>
-      </main>
-    </div>
-  </SidebarProvider>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
