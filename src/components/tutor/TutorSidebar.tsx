@@ -145,31 +145,35 @@ export function TutorSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className={({ isActive: linkActive }) =>
-                        shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
-                          : linkActive
-                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
-                      }
-                      onClick={(e) => {
-                        if (!canNavigate && !isLoading) {
-                          e.preventDefault();
-                          toast.error(
-                            !isActive 
-                              ? "Your account is inactive. Please contact an administrator." 
-                              : "Your tutor profile must be approved to access this feature."
-                          );
+                  <NavLink to={item.url}>
+                    {({ isActive: linkActive }) => (
+                      <SidebarMenuButton
+                        asChild
+                        className={
+                          shouldShowDisabled
+                            ? "opacity-50"
+                            : linkActive
+                            ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground"
+                            : ""
                         }
-                      }}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {state === "expanded" && <span className="font-normal">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+                        onClick={(e) => {
+                          if (!canNavigate && !isLoading) {
+                            e.preventDefault();
+                            toast.error(
+                              !isActive 
+                                ? "Your account is inactive. Please contact an administrator." 
+                                : "Your tutor profile must be approved to access this feature."
+                            );
+                          }
+                        }}
+                      >
+                        <span className="flex items-center gap-3 font-normal">
+                          <item.icon className="h-4 w-4" />
+                          {state === "expanded" && <span className="font-normal">{item.title}</span>}
+                        </span>
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -181,15 +185,16 @@ export function TutorSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to="/edit-profile"
-                      className={({ isActive }) =>
+                <NavLink to="/edit-profile">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      asChild
+                      className={
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
+                          ? "opacity-50"
                           : isActive
-                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
+                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground"
+                          : ""
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -202,21 +207,25 @@ export function TutorSidebar() {
                         }
                       }}
                     >
-                      <User className="h-4 w-4" />
-                      {state === "expanded" && <span className="font-normal">Profile</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to="/settings"
-                      className={({ isActive }) =>
+                      <span className="flex items-center gap-3 font-normal">
+                        <User className="h-4 w-4" />
+                        {state === "expanded" && <span className="font-normal">Profile</span>}
+                      </span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/settings">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      asChild
+                      className={
                         shouldShowDisabled
-                          ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
+                          ? "opacity-50"
                           : isActive
-                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
+                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground"
+                          : ""
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -229,11 +238,14 @@ export function TutorSidebar() {
                         }
                       }}
                     >
-                      <Settings className="h-4 w-4" />
-                      {state === "expanded" && <span className="font-normal">Settings</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                      <span className="flex items-center gap-3 font-normal">
+                        <Settings className="h-4 w-4" />
+                        {state === "expanded" && <span className="font-normal">Settings</span>}
+                      </span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                   <LogOut className="h-4 w-4" />

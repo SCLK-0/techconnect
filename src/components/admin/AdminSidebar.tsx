@@ -39,19 +39,23 @@ export const AdminSidebar = () => {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={({ isActive }) =>
-                        isActive
-                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
-                      }
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {state === "expanded" && <span className="font-normal">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+                  <NavLink to={item.url}>
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        asChild
+                        className={
+                          isActive
+                            ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground"
+                            : ""
+                        }
+                      >
+                        <span className="flex items-center gap-3 font-normal">
+                          <item.icon className="h-4 w-4" />
+                          {state === "expanded" && <span className="font-normal">{item.title}</span>}
+                        </span>
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -63,34 +67,42 @@ export const AdminSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink 
-                    to="/edit-profile" 
-                    className={({ isActive }) =>
-                      isActive
-                        ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
-                    }
-                  >
-                    <User className="h-4 w-4" />
-                    {state === "expanded" && <span className="font-normal">Profile</span>}
-                  </NavLink>
-                </SidebarMenuButton>
+                <NavLink to="/edit-profile">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      asChild
+                      className={
+                        isActive
+                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground"
+                          : ""
+                      }
+                    >
+                      <span className="flex items-center gap-3 font-normal">
+                        <User className="h-4 w-4" />
+                        {state === "expanded" && <span className="font-normal">Profile</span>}
+                      </span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink 
-                    to="/settings" 
-                    className={({ isActive }) =>
-                      isActive
-                        ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground flex items-center gap-3 font-normal"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
-                    }
-                  >
-                    <Settings className="h-4 w-4" />
-                    {state === "expanded" && <span className="font-normal">Settings</span>}
-                  </NavLink>
-                </SidebarMenuButton>
+                <NavLink to="/settings">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      asChild
+                      className={
+                        isActive
+                          ? "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground"
+                          : ""
+                      }
+                    >
+                      <span className="flex items-center gap-3 font-normal">
+                        <Settings className="h-4 w-4" />
+                        {state === "expanded" && <span className="font-normal">Settings</span>}
+                      </span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} className="font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
