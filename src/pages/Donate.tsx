@@ -150,7 +150,7 @@ export default function Donate() {
       <div className="min-h-screen flex w-full bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b flex items-center justify-center px-3">
+          <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
