@@ -49,6 +49,7 @@ function RemoteCameraOffIndicator({ stream, isEnabled }: { stream: MediaStream; 
   useEffect(() => {
     // If isEnabled prop is provided, use it directly
     if (isEnabled !== undefined) {
+      console.log("🎥 useEffect: isEnabled prop changed to:", isEnabled);
       setIsVideoOff(!isEnabled);
       return;
     }
@@ -103,8 +104,12 @@ function RemoteCameraOffIndicator({ stream, isEnabled }: { stream: MediaStream; 
     };
   }, [stream, isEnabled]);
 
-  if (!isVideoOff) return null;
+  if (!isVideoOff) {
+    console.log("🎥 Camera is ON - not showing overlay");
+    return null;
+  }
 
+  console.log("🎥 Camera is OFF - showing overlay");
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black rounded-lg pointer-events-none z-20">
       <VideoOff className="w-8 h-8 text-white opacity-75" />
