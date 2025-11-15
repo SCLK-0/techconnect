@@ -7,10 +7,9 @@ import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Search, FileText, Filter, X } from "lucide-react";
+import { Search, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,13 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { useSearchParams } from "react-router-dom";
 
 export default function AdminSessionLogs() {
@@ -33,8 +26,6 @@ export default function AdminSessionLogs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterLogType, setFilterLogType] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const itemsPerPage = 7;
@@ -125,22 +116,6 @@ export default function AdminSessionLogs() {
 
   // Apply filters
   const filteredLogs = sessionLogs?.filter((group: any) => {
-    // Filter by session status ("all" means show all)
-    if (filterStatus !== "all" && group.sessions?.session_status !== filterStatus) {
-      return false;
-    }
-
-    // Filter by log type ("all" means show all)
-    if (filterLogType !== "all") {
-      const hasTutorLog = !!group.tutor_log;
-      const hasLearnerLog = !!group.learner_log;
-      
-      if (filterLogType === "both" && (!hasTutorLog || !hasLearnerLog)) return false;
-      if (filterLogType === "tutor_only" && (!hasTutorLog || hasLearnerLog)) return false;
-      if (filterLogType === "learner_only" && (hasTutorLog || !hasLearnerLog)) return false;
-      if (filterLogType === "none" && (hasTutorLog || hasLearnerLog)) return false;
-    }
-
     // Filter by date range
     if (dateFrom || dateTo) {
       const sessionDate = new Date(group.sessions?.created_at);
@@ -191,7 +166,7 @@ export default function AdminSessionLogs() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterStatus, filterLogType, searchQuery, dateFrom, dateTo]);
+  }, [searchQuery, dateFrom, dateTo]);
 
   // Auto-open session log when coming from session management
   useEffect(() => {
@@ -326,55 +301,6 @@ export default function AdminSessionLogs() {
                         placeholder="To date"
                         className="w-[160px]"
                       />
-                    </div>
-                    
-                    {/* Status Filter */}
-                    <div className="flex gap-1 items-center">
-                      <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="w-[160px]">
-                          <SelectValue placeholder="Filter by Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {filterStatus !== "all" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setFilterStatus("all")}
-                          className="h-8 w-8"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Log Type Filter */}
-                    <div className="flex gap-1 items-center">
-                      <Select value={filterLogType} onValueChange={setFilterLogType}>
-                        <SelectTrigger className="w-[160px]">
-                          <SelectValue placeholder="Filter by Log Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="both">Both Submitted</SelectItem>
-                          <SelectItem value="tutor_only">Tutor Only</SelectItem>
-                          <SelectItem value="learner_only">Learner Only</SelectItem>
-                          <SelectItem value="none">No Logs</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {filterLogType !== "all" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setFilterLogType("all")}
-                          className="h-8 w-8"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
                   </div>
                 </div>
