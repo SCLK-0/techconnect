@@ -47,7 +47,7 @@ export const LearnerSidebar = () => {
   return (
     <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="bg-primary/5">
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -58,8 +58,8 @@ export const LearnerSidebar = () => {
                       to={item.url}
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-muted/50"
+                          ? "bg-white text-primary font-medium shadow-sm"
+                          : "hover:bg-white/50"
                       }
                     >
                       <item.icon className="h-4 w-4" />
@@ -72,13 +72,20 @@ export const LearnerSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        <SidebarGroup className="bg-background">
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/edit-profile">
+                  <NavLink 
+                    to="/edit-profile"
+                    className={({ isActive }) =>
+                      isActive
+                        ? "bg-primary text-white font-medium"
+                        : "hover:bg-muted/50"
+                    }
+                  >
                     <User className="h-4 w-4" />
                     {state !== "collapsed" && <span>Edit Profile</span>}
                   </NavLink>
@@ -86,7 +93,14 @@ export const LearnerSidebar = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/settings">
+                  <NavLink 
+                    to="/settings"
+                    className={({ isActive }) =>
+                      isActive
+                        ? "bg-primary text-white font-medium"
+                        : "hover:bg-muted/50"
+                    }
+                  >
                     <Settings className="h-4 w-4" />
                     {state !== "collapsed" && <span>Settings</span>}
                   </NavLink>

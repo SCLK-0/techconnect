@@ -1,6 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { useSidebar, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
-import { NavLink } from "@/components/NavLink";
 import { LayoutDashboard, LineChart, Users, CheckCircle, Calendar, FileText, Heart, Megaphone, User, Settings, LogOut, Activity, FileTextIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,14 +33,21 @@ export const AdminSidebar = () => {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="bg-primary/5">
           <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className="flex items-center gap-3" activeClassName="bg-primary/10 text-primary">
+                    <NavLink 
+                      to={item.url} 
+                      className={({ isActive }) =>
+                        isActive
+                          ? "bg-white text-primary font-medium shadow-sm flex items-center gap-3"
+                          : "hover:bg-white/50 flex items-center gap-3"
+                      }
+                    >
                       <item.icon className="h-4 w-4" />
                       {state === "expanded" && <span>{item.title}</span>}
                     </NavLink>
@@ -52,13 +58,20 @@ export const AdminSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        <SidebarGroup className="bg-background">
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/edit-profile" className="flex items-center gap-3" activeClassName="bg-primary/10 text-primary">
+                  <NavLink 
+                    to="/edit-profile" 
+                    className={({ isActive }) =>
+                      isActive
+                        ? "bg-primary text-white font-medium flex items-center gap-3"
+                        : "hover:bg-muted/50 flex items-center gap-3"
+                    }
+                  >
                     <User className="h-4 w-4" />
                     {state === "expanded" && <span>Profile</span>}
                   </NavLink>
@@ -66,7 +79,14 @@ export const AdminSidebar = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className="flex items-center gap-3" activeClassName="bg-primary/10 text-primary">
+                  <NavLink 
+                    to="/settings" 
+                    className={({ isActive }) =>
+                      isActive
+                        ? "bg-primary text-white font-medium flex items-center gap-3"
+                        : "hover:bg-muted/50 flex items-center gap-3"
+                    }
+                  >
                     <Settings className="h-4 w-4" />
                     {state === "expanded" && <span>Settings</span>}
                   </NavLink>

@@ -139,7 +139,7 @@ export function TutorSidebar() {
     <>
       <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="bg-primary/5">
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -152,8 +152,8 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50"
                           : linkActive
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-muted/50"
+                          ? "bg-white text-primary font-medium shadow-sm"
+                          : "hover:bg-white/50"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -176,7 +176,7 @@ export function TutorSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        <SidebarGroup className="bg-background">
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -188,7 +188,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50"
                           : isActive
-                          ? "bg-primary/10 text-primary font-medium"
+                          ? "bg-primary text-white font-medium"
                           : "hover:bg-muted/50"
                       }
                       onClick={(e) => {
@@ -215,7 +215,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50"
                           : isActive
-                          ? "bg-primary/10 text-primary font-medium"
+                          ? "bg-primary text-white font-medium"
                           : "hover:bg-muted/50"
                       }
                       onClick={(e) => {
