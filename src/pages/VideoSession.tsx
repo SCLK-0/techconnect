@@ -172,7 +172,7 @@ export default function VideoSession() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(true); // Default to true, will be updated when stream is received
+  const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(false); // Default to false until we know the actual state
   const [hasNotifiedMonitoring, setHasNotifiedMonitoring] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -633,8 +633,24 @@ export default function VideoSession() {
       console.log("Audio track:", audioTrack?.label, "enabled:", audioTrack?.enabled);
       
       // Sync camera/mic states from the device test modal
-      setIsCameraOn(videoTrack?.enabled ?? true);
-      setIsMicOn(audioTrack?.enabled ?? true);
+      const cameraEnabled = videoTrack?.enabled ?? true;
+      const micEnabled = audioTrack?.enabled ?? true;
+      setIsCameraOn(cameraEnabled);
+      setIsMicOn(micEnabled);
+      
+      // Broadcast initial media state to other participants
+      const channel = supabase.channel(`session-${sessionId}`);
+      await channel.subscribe();
+      await channel.send({
+        type: 'broadcast',
+        event: 'media_state',
+        payload: { 
+          userId: user!.id, 
+          camera: cameraEnabled,
+          mic: micEnabled
+        }
+      });
+      console.log("📡 Broadcast initial media state - camera:", cameraEnabled, "mic:", micEnabled);
       
       setLocalStream(stream);
       setHasTestedDevices(true);
