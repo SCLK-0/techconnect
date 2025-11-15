@@ -32,84 +32,47 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAudioLevel } from "@/hooks/useAudioLevel";
 
 // Component to show profile picture when remote video is disabled
-function RemoteCameraOffIndicator({ stream, isEnabled, profilePicture, userName }: { stream: MediaStream; isEnabled?: boolean; profilePicture?: string; userName?: string }) {
+function RemoteCameraOffIndicator({ stream, profilePicture, userName }: { stream: MediaStream; profilePicture?: string; userName?: string }) {
+  // ALWAYS check the video track directly - no props, no broadcasts, just the track state
   const [isVideoOff, setIsVideoOff] = useState(() => {
-    // If isEnabled prop is provided, use it; otherwise check video track
-    if (isEnabled !== undefined) {
-      console.log("🎥 RemoteCameraOffIndicator using isEnabled prop:", !isEnabled);
-      return !isEnabled;
-    }
-    // Initialize state immediately based on video track
     const videoTrack = stream.getVideoTracks()[0];
     const initialState = !videoTrack || !videoTrack.enabled;
-    console.log("🎥 RemoteCameraOffIndicator initial state:", initialState, "track:", videoTrack?.label, "enabled:", videoTrack?.enabled);
+    console.log("🎥 RemoteCameraOffIndicator initial:", initialState, "track enabled:", videoTrack?.enabled);
     return initialState;
   });
 
   useEffect(() => {
-    // If isEnabled prop is provided, use it directly
-    if (isEnabled !== undefined) {
-      console.log("🎥 useEffect: isEnabled prop changed to:", isEnabled);
-      setIsVideoOff(!isEnabled);
-      return;
-    }
-
     const videoTrack = stream.getVideoTracks()[0];
     
     if (!videoTrack) {
-      console.log("🎥 No video track found - showing camera off");
+      console.log("🎥 No video track - showing profile pic");
       setIsVideoOff(true);
       return;
     }
 
-    // Set initial state immediately and log it
-    const initialEnabled = videoTrack.enabled;
-    console.log("🎥 Video track on mount:", videoTrack.label, "enabled:", initialEnabled);
-    setIsVideoOff(!initialEnabled);
+    // Set initial state
+    setIsVideoOff(!videoTrack.enabled);
+    console.log("🎥 Video track initial state:", videoTrack.enabled);
 
-    // Listen for changes
-    const checkState = () => {
-      const currentState = !videoTrack.enabled;
-      if (currentState !== isVideoOff) {
-        console.log("🎥 Video track state changed:", videoTrack.enabled);
+    // Poll every 100ms to check track state
+    const interval = setInterval(() => {
+      const newState = !videoTrack.enabled;
+      if (newState !== isVideoOff) {
+        console.log("🎥 Video track changed:", videoTrack.enabled);
+        setIsVideoOff(newState);
       }
-      setIsVideoOff(currentState);
-    };
-    
-    const handleEnded = () => {
-      console.log("🎥 Video track ended");
-      setIsVideoOff(true);
-    };
-    const handleMute = () => {
-      console.log("🎥 Video track muted");
-      setIsVideoOff(true);
-    };
-    const handleUnmute = () => {
-      console.log("🎥 Video track unmuted");
-      setIsVideoOff(false);
-    };
-    
-    videoTrack.addEventListener('ended', handleEnded);
-    videoTrack.addEventListener('mute', handleMute);
-    videoTrack.addEventListener('unmute', handleUnmute);
-    
-    // Poll every 50ms for faster detection
-    const interval = setInterval(checkState, 50);
+    }, 100);
 
     return () => {
       clearInterval(interval);
-      videoTrack.removeEventListener('ended', handleEnded);
-      videoTrack.removeEventListener('mute', handleMute);
-      videoTrack.removeEventListener('unmute', handleUnmute);
     };
-  }, [stream, isEnabled]);
+  }, [stream]);
 
   if (!isVideoOff) {
-    console.log("🎥 Camera is ON - not showing overlay");
-    return null;
+    return null; // Camera is on, show video
   }
 
-  console.log("🎥 Camera is OFF - showing overlay with profile picture");
+  // Camera is off, show profile picture
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg z-20">
       {profilePicture ? (
@@ -188,7 +151,6 @@ export default function VideoSession() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(false); // Default to false (show profile pic), will be updated by broadcast
   const [hasNotifiedMonitoring, setHasNotifiedMonitoring] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -369,48 +331,7 @@ export default function VideoSession() {
     };
   }, [sessionId, user, role]);
 
-  // Monitor remote stream video track status
-  useEffect(() => {
-    if (!remoteStream) {
-      console.log("No remote stream to monitor");
-      return;
-    }
 
-    const videoTrack = remoteStream.getVideoTracks()[0];
-    if (!videoTrack) {
-      console.log("No video track in remote stream");
-      setRemoteVideoEnabled(false);
-      return;
-    }
-
-    // Don't set from track - wait for broadcast
-    console.log("Remote video track initial state:", videoTrack.label, "enabled:", videoTrack.enabled);
-    console.log("⚠️ Waiting for media_state broadcast to set camera state");
-
-    // Listen for track state changes
-    const handleEnded = () => {
-      console.log("Remote video track ended");
-      setRemoteVideoEnabled(false);
-    };
-    const handleMute = () => {
-      console.log("Remote video track muted");
-      setRemoteVideoEnabled(false);
-    };
-    const handleUnmute = () => {
-      console.log("Remote video track unmuted");
-      setRemoteVideoEnabled(true);
-    };
-
-    videoTrack.addEventListener('ended', handleEnded);
-    videoTrack.addEventListener('mute', handleMute);
-    videoTrack.addEventListener('unmute', handleUnmute);
-
-    return () => {
-      videoTrack.removeEventListener('ended', handleEnded);
-      videoTrack.removeEventListener('mute', handleMute);
-      videoTrack.removeEventListener('unmute', handleUnmute);
-    };
-  }, [remoteStream]);
 
   // Initialize monitor mode (admin viewing without camera/mic)
   const initializeMonitorMode = async () => {
@@ -597,11 +518,6 @@ export default function VideoSession() {
           setReconnectAttempts(0);
           setIsReconnecting(false);
           
-          const videoTrack = remoteStream.getVideoTracks()[0];
-          if (videoTrack) {
-            setRemoteVideoEnabled(videoTrack.enabled);
-          }
-
           setTimeout(() => {
             if (remoteVideoRef.current) {
               remoteVideoRef.current.srcObject = remoteStream;
@@ -738,14 +654,6 @@ export default function VideoSession() {
               setRemoteStream(remoteStream);
               setIsConnected(true);
               
-              const videoTrack = remoteStream.getVideoTracks()[0];
-              if (videoTrack) {
-                setRemoteVideoEnabled(videoTrack.enabled);
-                videoTrack.addEventListener('ended', () => setRemoteVideoEnabled(false));
-                videoTrack.addEventListener('mute', () => setRemoteVideoEnabled(false));
-                videoTrack.addEventListener('unmute', () => setRemoteVideoEnabled(true));
-              }
-              
               setTimeout(() => {
                 if (remoteVideoRef.current && remoteStream) {
                   console.log("Setting remote learner video stream");
@@ -846,18 +754,6 @@ export default function VideoSession() {
           
           setRemoteStream(remoteStream);
           setIsConnected(true); // Set connected immediately when stream is received
-          
-          // Set initial state from video track as fallback, will be overridden by broadcast if received
-          const videoTrack = remoteStream.getVideoTracks()[0];
-          if (videoTrack) {
-            console.log("Remote video track:", videoTrack.label, "enabled:", videoTrack.enabled);
-            // Use track state as initial value - broadcast will update if different
-            setRemoteVideoEnabled(videoTrack.enabled);
-            console.log("📹 Initial camera state from track:", videoTrack.enabled);
-          } else {
-            console.log("⚠️ No remote video track found");
-            setRemoteVideoEnabled(false);
-          }
           
           // Set video element with retry logic
           const setVideoStream = (attempts = 0) => {
@@ -996,15 +892,6 @@ export default function VideoSession() {
                   setRemoteStream(remoteStream);
                   setIsConnected(true); // Set connected immediately when stream is received
                   
-                  // Track video track enabled state
-                  const videoTrack = remoteStream.getVideoTracks()[0];
-                  if (videoTrack) {
-                    setRemoteVideoEnabled(videoTrack.enabled);
-                    videoTrack.addEventListener('ended', () => setRemoteVideoEnabled(false));
-                    videoTrack.addEventListener('mute', () => setRemoteVideoEnabled(false));
-                    videoTrack.addEventListener('unmute', () => setRemoteVideoEnabled(true));
-                  }
-                  
                   // Set video with retry logic
                   const setLearnerVideo = (attempts = 0) => {
                     if (attempts > 3) return;
@@ -1058,12 +945,9 @@ export default function VideoSession() {
           "broadcast",
           { event: "media_state" },
           (payload) => {
-            // Update remote media state when other user toggles camera/mic
+            // Log media state broadcasts for debugging
             if (payload.payload.userId !== user!.id) {
               console.log("📡 Received media_state broadcast:", payload.payload);
-              if (payload.payload.camera !== undefined) {
-                setRemoteVideoEnabled(payload.payload.camera);
-              }
             }
           }
         )
@@ -1798,8 +1682,7 @@ export default function VideoSession() {
                     {/* Camera Off Overlay */}
                     {remoteStream && isConnected && (
                       <RemoteCameraOffIndicator 
-                        stream={remoteStream} 
-                        isEnabled={remoteVideoEnabled}
+                        stream={remoteStream}
                         profilePicture={role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url}
                         userName={role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name}
                       />
