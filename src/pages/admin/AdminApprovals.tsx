@@ -168,11 +168,11 @@ export default function AdminApprovals() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-3 overflow-auto flex justify-center">
-            <div className="space-y-3 w-full max-w-7xl">
+          <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
+            <div className="space-y-6 w-full max-w-7xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold">Pending Applications</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold mb-2">Pending Applications</h2>
                   <p className="text-xs sm:text-sm text-muted-foreground">Review and approve tutor applications</p>
                 </div>
                 <Badge variant="secondary" className="text-sm sm:text-base px-3 py-1 sm:px-4 sm:py-2">

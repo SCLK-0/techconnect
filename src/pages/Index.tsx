@@ -126,7 +126,7 @@ const Index = () => {
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-primary">Platform Features</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-2">
               Why Choose TechConnect?
             </h2>
           </div>

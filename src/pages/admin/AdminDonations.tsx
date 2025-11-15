@@ -109,7 +109,7 @@ export default function AdminDonations() {
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-12 border-b flex items-center justify-center px-4">
+          <header className="h-14 border-b flex items-center justify-center px-3">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
@@ -122,8 +122,8 @@ export default function AdminDonations() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-3 overflow-auto flex justify-center">
-            <div className="space-y-3 w-full max-w-7xl">
+          <main className="flex-1 px-3 py-6 overflow-auto flex justify-center">
+            <div className="space-y-6 w-full max-w-7xl">
               <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -164,7 +164,7 @@ export default function AdminDonations() {
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold">All Donations</h2>
+                <h2 className="text-2xl font-bold mb-2">All Donations</h2>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by status" />
