@@ -138,8 +138,8 @@ export default function LearnerResources() {
             </div>
           </header>
 
-          <main className="flex-1 p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+          <main className="flex-1 px-4 py-6 overflow-auto">
+            <div className="space-y-6">
               {/* Search Bar */}
               <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -492,9 +492,9 @@ const FindTutors = () => {
             </div>
           </header>
 
-          <main className="flex-1 p-4 sm:p-6 overflow-auto">
+          <main className="flex-1 px-4 py-6 overflow-auto">
 
-          <div className="container mx-auto space-y-4 sm:space-y-6">
+          <div className="space-y-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold mb-2">Find Tutors</h1>
               <p className="text-sm sm:text-base text-muted-foreground">

@@ -129,8 +129,8 @@ export default function TutorSessions() {
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <div className="max-w-6xl mx-auto space-y-6">
+          <main className="flex-1 px-4 py-6 overflow-auto">
+            <div className="space-y-6">
               <Tabs value={filter} onValueChange={(v) => { setFilter(v as any); setCurrentPage(1); }}>
                 <TabsList className="flex-wrap h-auto">
                   <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending</TabsTrigger>

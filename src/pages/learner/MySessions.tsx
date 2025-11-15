@@ -146,7 +146,7 @@ export default function MySessions() {
 
           {/* Content */}
           <div className="p-4 md:p-6">
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="space-y-6">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold">Sessions</h1>
                 <p className="text-sm md:text-base text-muted-foreground">

@@ -183,8 +183,8 @@ export default function AdminAnnouncements() {
             </div>
           </header>
 
-          <main className="flex-1 p-6">
-            <div className="max-w-4xl mx-auto space-y-6">
+          <main className="flex-1 px-4 py-6 overflow-auto">
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Create Announcement</CardTitle>
