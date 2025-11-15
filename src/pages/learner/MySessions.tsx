@@ -303,8 +303,7 @@ export default function MySessions() {
                 )}
               </TabsContent>
             </Tabs>
-          </div>
-        </div>
+            </div>
           </main>
         </div>
       </div>
