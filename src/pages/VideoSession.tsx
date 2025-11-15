@@ -33,35 +33,62 @@ import { useAudioLevel } from "@/hooks/useAudioLevel";
 
 // Component to show profile picture when remote video is disabled
 function RemoteCameraOffIndicator({ stream, profilePicture, userName }: { stream: MediaStream; profilePicture?: string; userName?: string }) {
-  // ALWAYS check the video track directly - no props, no broadcasts, just the track state
   const [isVideoOff, setIsVideoOff] = useState(() => {
     const videoTrack = stream.getVideoTracks()[0];
-    const initialState = !videoTrack || !videoTrack.enabled;
-    console.log("🎥 RemoteCameraOffIndicator initial:", initialState, "track enabled:", videoTrack?.enabled);
+    if (!videoTrack) return true;
+    
+    // If it's a screen share track, don't show overlay (screen share is always "on")
+    const isScreenShare = videoTrack.label.toLowerCase().includes('screen') || 
+                          videoTrack.label.toLowerCase().includes('display') ||
+                          videoTrack.label.toLowerCase().includes('window');
+    
+    if (isScreenShare) {
+      console.log("🖥️ Screen share detected - hiding overlay");
+      return false;
+    }
+    
+    const initialState = !videoTrack.enabled;
+    console.log("🎥 Camera track initial:", initialState, "enabled:", videoTrack.enabled);
     return initialState;
   });
 
   useEffect(() => {
-    const videoTrack = stream.getVideoTracks()[0];
-    
-    if (!videoTrack) {
-      console.log("🎥 No video track - showing profile pic");
-      setIsVideoOff(true);
-      return;
-    }
+    const checkVideoState = () => {
+      const videoTrack = stream.getVideoTracks()[0];
+      
+      if (!videoTrack) {
+        console.log("🎥 No video track - showing profile pic");
+        setIsVideoOff(true);
+        return;
+      }
 
-    // Set initial state
-    setIsVideoOff(!videoTrack.enabled);
-    console.log("🎥 Video track initial state:", videoTrack.enabled);
+      // Check if it's a screen share by track label
+      const isScreenShare = videoTrack.label.toLowerCase().includes('screen') || 
+                            videoTrack.label.toLowerCase().includes('display') ||
+                            videoTrack.label.toLowerCase().includes('window');
+      
+      if (isScreenShare) {
+        // Screen share is active - don't show overlay
+        if (isVideoOff) {
+          console.log("🖥️ Screen share active - hiding overlay");
+          setIsVideoOff(false);
+        }
+        return;
+      }
 
-    // Poll every 100ms to check track state
-    const interval = setInterval(() => {
+      // Regular camera track - check if enabled
       const newState = !videoTrack.enabled;
       if (newState !== isVideoOff) {
-        console.log("🎥 Video track changed:", videoTrack.enabled);
+        console.log("🎥 Camera state changed:", videoTrack.enabled);
         setIsVideoOff(newState);
       }
-    }, 100);
+    };
+
+    // Initial check
+    checkVideoState();
+
+    // Poll every 100ms to detect track changes (including screen share start/stop)
+    const interval = setInterval(checkVideoState, 100);
 
     return () => {
       clearInterval(interval);
@@ -69,10 +96,10 @@ function RemoteCameraOffIndicator({ stream, profilePicture, userName }: { stream
   }, [stream]);
 
   if (!isVideoOff) {
-    return null; // Camera is on, show video
+    return null; // Camera is on OR screen sharing, show video
   }
 
-  // Camera is off, show profile picture
+  // Camera is off and not screen sharing, show profile picture
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg z-20">
       {profilePicture ? (
