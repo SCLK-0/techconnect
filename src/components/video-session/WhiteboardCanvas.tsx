@@ -1238,7 +1238,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
           .from('whiteboard_states')
           .select('canvas_state, updated_at')
           .eq('session_id', sessionId)
-          .single();
+          .maybeSingle();
         
         if (data && data.updated_at) {
           const dbUpdateTime = new Date(data.updated_at).getTime();
