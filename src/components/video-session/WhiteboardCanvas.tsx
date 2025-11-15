@@ -319,13 +319,43 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
               }
             });
             setUserPresences(presences);
+            
+            // Update bothUsersPresent based on actual presence count
+            const hasOtherUsers = Object.keys(presences).length > 0;
+            if (hasOtherUsers !== bothUsersPresent) {
+              setBothUsersPresent(hasOtherUsers);
+              if (hasOtherUsers) {
+                console.log("✅ Other user connected - whiteboard enabled");
+              } else {
+                console.log("⏳ Other user disconnected - whiteboard disabled");
+              }
+            }
+            
             updateObjectIndicators(fabricCanvas, presences);
           })
           .on("presence", { event: "join" }, ({ newPresences }) => {
             console.log(`👋 ${displayName} saw user join whiteboard:`, newPresences);
+            // Set bothUsersPresent to true when someone joins
+            if (!bothUsersPresent) {
+              setBothUsersPresent(true);
+              console.log("✅ User joined - whiteboard enabled");
+            }
           })
           .on("presence", { event: "leave" }, ({ leftPresences }) => {
             console.log(`👋 ${displayName} saw user leave whiteboard:`, leftPresences);
+            // Check if we still have other users present
+            const state = channel.presenceState();
+            const remainingUsers = Object.keys(state).filter(key => {
+              const presenceArray = state[key] as any[];
+              return presenceArray.length > 0 && presenceArray[0].userId !== user.id;
+            });
+            
+            if (remainingUsers.length === 0 && bothUsersPresent) {
+              setBothUsersPresent(false);
+              console.log("⏳ Last user left - whiteboard disabled");
+              // Clear remote cursors
+              setRemoteCursors({});
+            }
           });
         
         // Subscribe with timeout
