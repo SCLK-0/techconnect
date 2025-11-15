@@ -350,7 +350,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
             
             // Set channel ready immediately - no delay
             isChannelReady.current = true;
-            toast.success("Whiteboard ready");
+            // toast.success("Whiteboard ready"); // Removed - too noisy
             console.log(`🎨 ${displayName} channel is now ready for broadcasts`);
           } else {
             console.log(`👀 ${displayName} in monitor mode - not tracking presence`);

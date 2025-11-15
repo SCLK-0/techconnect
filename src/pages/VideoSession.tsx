@@ -704,28 +704,26 @@ export default function VideoSession() {
         console.log(`✅ ${role} peer ID updated:`, id);
         // toast.success("Connected to peer network"); // Removed - too noisy
         
-        // Broadcast initial camera/mic state after a short delay (fire and forget)
+        // Broadcast initial camera/mic state immediately (fire and forget)
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
-        setTimeout(() => {
-          const channel = supabase.channel(`session-${sessionId}`);
-          channel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              channel.send({
-                type: 'broadcast',
-                event: 'media_state',
-                payload: { 
-                  userId: user!.id, 
-                  camera: videoTrack?.enabled ?? true,
-                  mic: audioTrack?.enabled ?? true
-                }
-              }).then(() => {
-                console.log("📡 Broadcast initial media state - camera:", videoTrack?.enabled, "mic:", audioTrack?.enabled);
-                channel.unsubscribe();
-              });
-            }
-          });
-        }, 100); // Wait 100ms to ensure other user is connected and listening
+        const channel = supabase.channel(`session-${sessionId}`);
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            channel.send({
+              type: 'broadcast',
+              event: 'media_state',
+              payload: { 
+                userId: user!.id, 
+                camera: videoTrack?.enabled ?? true,
+                mic: audioTrack?.enabled ?? true
+              }
+            }).then(() => {
+              console.log("📡 Broadcast initial media state - camera:", videoTrack?.enabled, "mic:", audioTrack?.enabled);
+              channel.unsubscribe();
+            });
+          }
+        });
         
         // For both tutor and learner: Check if session is already in progress and the other party is present
         // This handles rejoining scenarios
@@ -1289,6 +1287,15 @@ export default function VideoSession() {
         screenStreamRef.current = null;
         setIsScreenSharing(false);
         // toast.info("Screen sharing stopped"); // Removed - visual feedback is enough
+        
+        // Broadcast camera state after stopping screen share
+        const channel = supabase.channel(`session-${sessionId}`);
+        channel.send({
+          type: 'broadcast',
+          event: 'media_state',
+          payload: { userId: user!.id, camera: isCameraOn }
+        });
+        console.log("📡 Broadcast camera state after stopping screen share:", isCameraOn);
       }
     } catch (error) {
       console.error("Error toggling screen share:", error);
