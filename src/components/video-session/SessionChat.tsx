@@ -31,6 +31,7 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showFullscreenEmojiPicker, setShowFullscreenEmojiPicker] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -96,11 +97,6 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
     }
   };
 
-  const onEmojiClick = (emojiData: EmojiClickData) => {
-    setNewMessage((prev) => prev + emojiData.emoji);
-    setShowEmojiPicker(false);
-  };
-
   const handleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
@@ -110,7 +106,7 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
       {/* Chat Header */}
       <div className="px-4 py-3 border-b bg-gradient-to-r from-background to-muted/30 flex items-center justify-between shrink-0">
         <h3 className="font-semibold text-sm">Session Chat</h3>
-        {!disableFullscreen && (
+        {!disableFullscreen && !fullscreenMode && (
           <Button 
             variant="ghost" 
             size="icon" 
@@ -119,6 +115,17 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
             title="Fullscreen"
           >
             <Maximize2 className="h-4 w-4" />
+          </Button>
+        )}
+        {fullscreenMode && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleFullscreen}
+            className="h-8 w-8"
+            title="Close"
+          >
+            <X className="h-4 w-4" />
           </Button>
         )}
       </div>
@@ -165,7 +172,11 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
       {!isMonitorMode && (
         <form onSubmit={sendMessage} className="p-3 border-t bg-background/95 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-2">
-            <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker} modal={true}>
+            <Popover 
+              open={fullscreenMode ? showFullscreenEmojiPicker : showEmojiPicker} 
+              onOpenChange={fullscreenMode ? setShowFullscreenEmojiPicker : setShowEmojiPicker} 
+              modal={true}
+            >
               <PopoverTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" className="shrink-0">
                   <Smile className="h-4 w-4" />
@@ -179,7 +190,14 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
                 style={{ zIndex: 100000 }}
                 onInteractOutside={(e) => e.preventDefault()}
               >
-                <EmojiPicker onEmojiClick={onEmojiClick} />
+                <EmojiPicker onEmojiClick={(emojiData) => {
+                  setNewMessage((prev) => prev + emojiData.emoji);
+                  if (fullscreenMode) {
+                    setShowFullscreenEmojiPicker(false);
+                  } else {
+                    setShowEmojiPicker(false);
+                  }
+                }} />
               </PopoverContent>
             </Popover>
             <Input
@@ -206,7 +224,7 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
       {/* Fullscreen Modal */}
       {!disableFullscreen && (
         <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-          <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col gap-0">
+          <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col gap-0 [&>button]:hidden">
             <div className="flex-1 flex flex-col min-h-0">
               {chatContent(true)}
             </div>
