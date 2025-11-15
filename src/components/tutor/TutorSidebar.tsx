@@ -152,8 +152,8 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : linkActive
-                          ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
+                          ? "bg-primary text-primary-foreground flex items-center gap-3 font-normal"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -188,8 +188,8 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : isActive
-                          ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
+                          ? "bg-primary text-primary-foreground flex items-center gap-3 font-normal"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -215,8 +215,8 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3 font-normal text-foreground"
                           : isActive
-                          ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
+                          ? "bg-primary text-primary-foreground flex items-center gap-3 font-normal"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                       }
                       onClick={(e) => {
                         if (!canNavigate && !isLoading) {
@@ -235,7 +235,7 @@ export function TutorSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal text-foreground">
+                <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                   <LogOut className="h-4 w-4" />
                   {state === "expanded" && <span className="font-normal">Log Out</span>}
                 </SidebarMenuButton>

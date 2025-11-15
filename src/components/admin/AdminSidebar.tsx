@@ -44,8 +44,8 @@ export const AdminSidebar = () => {
                       to={item.url} 
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-primary text-white flex items-center gap-3 font-normal"
-                          : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
+                          ? "bg-primary text-primary-foreground flex items-center gap-3 font-normal"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                       }
                     >
                       <item.icon className="h-4 w-4" />
@@ -68,8 +68,8 @@ export const AdminSidebar = () => {
                     to="/edit-profile" 
                     className={({ isActive }) =>
                       isActive
-                        ? "bg-primary text-white flex items-center gap-3 font-normal"
-                        : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
+                        ? "bg-primary text-primary-foreground flex items-center gap-3 font-normal"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                     }
                   >
                     <User className="h-4 w-4" />
@@ -83,8 +83,8 @@ export const AdminSidebar = () => {
                     to="/settings" 
                     className={({ isActive }) =>
                       isActive
-                        ? "bg-primary text-white flex items-center gap-3 font-normal"
-                        : "hover:bg-muted/50 flex items-center gap-3 font-normal text-foreground"
+                        ? "bg-primary text-primary-foreground flex items-center gap-3 font-normal"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 font-normal"
                     }
                   >
                     <Settings className="h-4 w-4" />
@@ -93,7 +93,7 @@ export const AdminSidebar = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} className="font-normal text-foreground">
+                <SidebarMenuButton onClick={handleLogout} className="font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                   <LogOut className="h-4 w-4" />
                   {state === "expanded" && <span className="font-normal">Log Out</span>}
                 </SidebarMenuButton>
