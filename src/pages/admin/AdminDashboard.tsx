@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
 import { Users, UserCheck, Activity, Calendar, Megaphone } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
+import logo from "@/assets/logo.png";
 
 export default function AdminDashboard() {
   const { data: stats } = useQuery({
@@ -43,9 +44,7 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="md:hidden" />
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-sm">TC</span>
-                  </div>
+                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
                   <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
                 </div>
               </div>

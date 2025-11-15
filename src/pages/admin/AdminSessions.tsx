@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
+import logo from "@/assets/logo.png";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -192,9 +193,7 @@ export default function AdminSessions() {
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="md:hidden" />
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-sm">TC</span>
-                  </div>
+                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
                   <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
                 </div>
               </div>

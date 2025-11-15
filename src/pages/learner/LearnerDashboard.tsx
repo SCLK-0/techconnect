@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import logo from "@/assets/logo.png";
 
 export default function LearnerDashboard() {
   const [firstName, setFirstName] = useState<string | null>(null);
@@ -145,9 +146,7 @@ export default function LearnerDashboard() {
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="md:hidden" />
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-sm">TC</span>
-                  </div>
+                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
                   <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
                 </div>
               </div>
