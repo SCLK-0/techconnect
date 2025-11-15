@@ -366,9 +366,9 @@ export default function VideoSession() {
       return;
     }
 
-    // Set initial state
+    // Don't set initial state from track - rely on broadcast instead
     console.log("Remote video track initial state:", videoTrack.label, "enabled:", videoTrack.enabled);
-    setRemoteVideoEnabled(videoTrack.enabled);
+    console.log("⚠️ Not setting remoteVideoEnabled from track - waiting for broadcast");
 
     // Listen for track state changes
     const handleEnded = () => {
@@ -845,31 +845,16 @@ export default function VideoSession() {
           setRemoteStream(remoteStream);
           setIsConnected(true); // Set connected immediately when stream is received
           
-          // Track video track enabled state
+          // Note: We don't set remoteVideoEnabled based on videoTrack.enabled here
+          // because it's always true even when camera is off (track exists but sends black frames)
+          // Instead, we rely on the media_state broadcast from the remote user
           const videoTrack = remoteStream.getVideoTracks()[0];
           if (videoTrack) {
             console.log("Remote video track:", videoTrack.label, "enabled:", videoTrack.enabled);
-            setRemoteVideoEnabled(videoTrack.enabled);
-            
-            // Add event listeners for track state changes
-            const handleTrackEnd = () => {
-              console.log("Remote video track ended");
-              setRemoteVideoEnabled(false);
-            };
-            const handleTrackMute = () => {
-              console.log("Remote video track muted");
-              setRemoteVideoEnabled(false);
-            };
-            const handleTrackUnmute = () => {
-              console.log("Remote video track unmuted");
-              setRemoteVideoEnabled(true);
-            };
-            
-            videoTrack.addEventListener('ended', handleTrackEnd);
-            videoTrack.addEventListener('mute', handleTrackMute);
-            videoTrack.addEventListener('unmute', handleTrackUnmute);
+            console.log("⚠️ Not setting remoteVideoEnabled from track - waiting for broadcast");
           } else {
             console.log("⚠️ No remote video track found");
+            setRemoteVideoEnabled(false);
           }
           
           // Set video element with retry logic
