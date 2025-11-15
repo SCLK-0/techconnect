@@ -33,7 +33,11 @@ import { useAudioLevel } from "@/hooks/useAudioLevel";
 
 // Component to show camera-off icon when remote video is disabled
 function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
-  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(() => {
+    // Initialize state immediately based on video track
+    const videoTrack = stream.getVideoTracks()[0];
+    return !videoTrack || !videoTrack.enabled;
+  });
 
   useEffect(() => {
     const videoTrack = stream.getVideoTracks()[0];
@@ -43,7 +47,7 @@ function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
       return;
     }
 
-    // Set initial state
+    // Set initial state immediately
     setIsVideoOff(!videoTrack.enabled);
 
     // Listen for changes
@@ -67,7 +71,7 @@ function RemoteCameraOffIndicator({ stream }: { stream: MediaStream }) {
   if (!isVideoOff) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
+    <div className="absolute inset-0 flex items-center justify-center bg-black rounded-lg pointer-events-none z-10">
       <VideoOff className="w-8 h-8 text-white opacity-75" />
     </div>
   );
