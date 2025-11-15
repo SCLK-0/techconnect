@@ -44,7 +44,7 @@ export const AdminSidebar = () => {
                       to={item.url} 
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3"
                           : "hover:bg-muted/50 flex items-center gap-3"
                       }
                     >
@@ -68,7 +68,7 @@ export const AdminSidebar = () => {
                     to="/edit-profile" 
                     className={({ isActive }) =>
                       isActive
-                        ? "bg-primary text-white font-medium flex items-center gap-3"
+                        ? "bg-primary text-white flex items-center gap-3"
                         : "hover:bg-muted/50 flex items-center gap-3"
                     }
                   >
@@ -83,7 +83,7 @@ export const AdminSidebar = () => {
                     to="/settings" 
                     className={({ isActive }) =>
                       isActive
-                        ? "bg-primary text-white font-medium flex items-center gap-3"
+                        ? "bg-primary text-white flex items-center gap-3"
                         : "hover:bg-muted/50 flex items-center gap-3"
                     }
                   >

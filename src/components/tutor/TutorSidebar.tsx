@@ -152,7 +152,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3"
                           : linkActive
-                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3"
                           : "hover:bg-muted/50 flex items-center gap-3"
                       }
                       onClick={(e) => {
@@ -188,7 +188,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3"
                           : isActive
-                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3"
                           : "hover:bg-muted/50 flex items-center gap-3"
                       }
                       onClick={(e) => {
@@ -215,7 +215,7 @@ export function TutorSidebar() {
                         shouldShowDisabled
                           ? "opacity-50 flex items-center gap-3"
                           : isActive
-                          ? "bg-primary text-white font-medium flex items-center gap-3"
+                          ? "bg-primary text-white flex items-center gap-3"
                           : "hover:bg-muted/50 flex items-center gap-3"
                       }
                       onClick={(e) => {
