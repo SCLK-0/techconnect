@@ -260,21 +260,35 @@ export default function VideoSession() {
 
   // Monitor remote stream video track status
   useEffect(() => {
-    if (!remoteStream) return;
+    if (!remoteStream) {
+      console.log("No remote stream to monitor");
+      return;
+    }
 
     const videoTrack = remoteStream.getVideoTracks()[0];
     if (!videoTrack) {
+      console.log("No video track in remote stream");
       setRemoteVideoEnabled(false);
       return;
     }
 
     // Set initial state
+    console.log("Remote video track initial state:", videoTrack.label, "enabled:", videoTrack.enabled);
     setRemoteVideoEnabled(videoTrack.enabled);
 
     // Listen for track state changes
-    const handleEnded = () => setRemoteVideoEnabled(false);
-    const handleMute = () => setRemoteVideoEnabled(false);
-    const handleUnmute = () => setRemoteVideoEnabled(true);
+    const handleEnded = () => {
+      console.log("Remote video track ended");
+      setRemoteVideoEnabled(false);
+    };
+    const handleMute = () => {
+      console.log("Remote video track muted");
+      setRemoteVideoEnabled(false);
+    };
+    const handleUnmute = () => {
+      console.log("Remote video track unmuted");
+      setRemoteVideoEnabled(true);
+    };
 
     videoTrack.addEventListener('ended', handleEnded);
     videoTrack.addEventListener('mute', handleMute);
@@ -1629,15 +1643,11 @@ export default function VideoSession() {
                       playsInline
                       className="w-full h-full object-cover"
                     />
-                    {remoteStream && isConnected && (() => {
-                      const videoTrack = remoteStream.getVideoTracks()[0];
-                      const isVideoOff = !videoTrack || !videoTrack.enabled;
-                      return isVideoOff && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
-                          <VideoOff className="w-8 h-8 text-white opacity-75" />
-                        </div>
-                      );
-                    })()}
+                    {remoteStream && isConnected && !remoteVideoEnabled && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg pointer-events-none z-10">
+                        <VideoOff className="w-8 h-8 text-white opacity-75" />
+                      </div>
+                    )}
                     {!isConnected && (
                       <div className="absolute inset-0 w-full h-full flex flex-col text-white bg-gradient-to-br from-gray-900 to-gray-800">
                         <div className="flex items-center justify-center gap-2 p-4 bg-background/20">
