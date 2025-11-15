@@ -121,12 +121,20 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
       if (isMonitorMode) {
         fabricCanvas.selection = false;
         fabricCanvas.skipTargetFind = true;
+        fabricCanvas.interactive = false;
+        fabricCanvas.defaultCursor = "default";
+        fabricCanvas.hoverCursor = "default";
+        fabricCanvas.moveCursor = "default";
         // Make all objects non-selectable
         fabricCanvas.forEachObject((obj) => {
           obj.selectable = false;
           obj.evented = false;
+          obj.hasControls = false;
+          obj.hasBorders = false;
+          obj.lockMovementX = true;
+          obj.lockMovementY = true;
         });
-        console.log("👀 Monitor mode - canvas is view-only");
+        console.log("👀 Monitor mode - canvas is completely view-only");
       }
 
       // Ensure white background is rendered immediately
@@ -1180,10 +1188,18 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
     if (isMonitorMode) {
       canvas.isDrawingMode = false;
       canvas.selection = false;
+      canvas.skipTargetFind = true;
+      canvas.interactive = false;
       canvas.defaultCursor = "default";
+      canvas.hoverCursor = "default";
+      canvas.moveCursor = "default";
       canvas.forEachObject((obj) => {
         obj.selectable = false;
         obj.evented = false;
+        obj.hasControls = false;
+        obj.hasBorders = false;
+        obj.lockMovementX = true;
+        obj.lockMovementY = true;
       });
       canvas.renderAll();
       return;
@@ -1213,8 +1229,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false }: Whiteboar
     // Re-enable object interactions for non-monitor mode
     canvas.forEachObject((obj) => {
       if (!(obj as any).isIndicator && !(obj as any).isRemoteDrawing) {
-        obj.selectable = true;
-        obj.evented = true;
+        obj.selectable = !isMonitorMode;
+        obj.evented = !isMonitorMode;
       }
     });
   }, [activeTool, canvas, drawColor, brushSize, isMonitorMode]);
