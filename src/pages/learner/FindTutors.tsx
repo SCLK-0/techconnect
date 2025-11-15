@@ -16,6 +16,7 @@ import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
 import { BookSessionDialog } from "@/components/learner/BookSessionDialog";
 import { InstantSessionDialog } from "@/components/learner/InstantSessionDialog";
 import { InstantSessionWaitingModal } from "@/components/learner/InstantSessionWaitingModal";
+import { TutorDetailDialog } from "@/components/learner/TutorDetailDialog";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { useNavigate } from "react-router-dom";
 import { toast as sonnerToast } from "sonner";
@@ -49,6 +50,7 @@ const FindTutors = () => {
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [isInstantDialogOpen, setIsInstantDialogOpen] = useState(false);
   const [isWaitingModalOpen, setIsWaitingModalOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [createdSessionId, setCreatedSessionId] = useState<string | null>(null);
   const [acceptedSessionId, setAcceptedSessionId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -151,6 +153,11 @@ const FindTutors = () => {
     if (tutor.next_available) score += 10;
     
     return score;
+  };
+
+  const handleCardClick = (tutor: TutorProfile) => {
+    setSelectedTutor(tutor);
+    setIsDetailDialogOpen(true);
   };
 
   const handleBookSession = (tutor: TutorProfile) => {
@@ -624,7 +631,11 @@ const FindTutors = () => {
                 <>
                   <div className="grid gap-2 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {paginatedTutors.map((tutor) => (
-                      <Card key={tutor.id} className="hover:shadow-lg transition-shadow">
+                      <Card 
+                        key={tutor.id} 
+                        className="hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => handleCardClick(tutor)}
+                      >
                       <CardHeader className="pb-3">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                           <Avatar className="h-14 w-14 sm:h-16 sm:w-16">
@@ -670,16 +681,21 @@ const FindTutors = () => {
                         <div>
                           <h4 className="text-xs sm:text-sm font-semibold mb-2">Subject Expertise</h4>
                           <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                            {tutor.subject_expertise.map((subject) => (
+                            {tutor.subject_expertise.slice(0, 3).map((subject) => (
                               <Badge key={subject} variant="secondary" className="text-xs">
                                 {subject}
                               </Badge>
                             ))}
+                            {tutor.subject_expertise.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{tutor.subject_expertise.length - 3} more
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div>
                           <h4 className="text-xs sm:text-sm font-semibold mb-2">Bio</h4>
-                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                             {tutor.bio}
                           </p>
                         </div>
@@ -692,14 +708,20 @@ const FindTutors = () => {
                         <div className="flex flex-col gap-2">
                           <Button 
                             className="w-full text-sm"
-                            onClick={() => handleBookSession(tutor)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBookSession(tutor);
+                            }}
                           >
                             Book Session
                           </Button>
                           <Button 
                             variant={tutor.is_online ? "default" : "outline"}
                             className="w-full relative pr-8 text-sm"
-                            onClick={() => handleInstantSession(tutor)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleInstantSession(tutor);
+                            }}
                             disabled={!tutor.is_online}
                           >
                             <Zap className="mr-2 h-4 w-4 flex-shrink-0" />
@@ -727,6 +749,13 @@ const FindTutors = () => {
 
       {selectedTutor && (
         <>
+          <TutorDetailDialog
+            open={isDetailDialogOpen}
+            onOpenChange={setIsDetailDialogOpen}
+            tutor={selectedTutor}
+            onBookSession={() => handleBookSession(selectedTutor)}
+            onInstantSession={() => handleInstantSession(selectedTutor)}
+          />
           <BookSessionDialog
             open={isBookingDialogOpen}
             onOpenChange={setIsBookingDialogOpen}
