@@ -481,9 +481,9 @@ const FindTutors = () => {
         <LearnerSidebar />
         
         <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b flex items-center justify-between pr-6 bg-card">
+          <header className="h-16 border-b flex items-center justify-between px-6 bg-card">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="ml-4" />
+              <SidebarTrigger />
               <h1 className="text-xl font-semibold">Find Tutors</h1>
             </div>
             <div className="flex items-center gap-4">
