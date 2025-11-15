@@ -263,7 +263,7 @@ export default function AdminSessionLogs() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 overflow-auto">
+          <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Search & Filter Logs</CardTitle>
@@ -384,7 +384,7 @@ export default function AdminSessionLogs() {
           </DialogHeader>
           
           {selectedLog && (
-            <div className="space-y-6 max-w-[calc(100%-3rem)]">
+            <div className="space-y-6 w-full max-w-7xl">
               <div>
                 <h4 className="font-semibold mb-2">Session Details</h4>
                 <div className="space-y-1 text-sm">

@@ -162,8 +162,8 @@ export default function TutorDashboard() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 overflow-auto">
-            <div className="space-y-6 max-w-[calc(100%-3rem)]">
+          <main className="flex-1 px-4 py-6 overflow-auto flex justify-center">
+            <div className="space-y-6 w-full max-w-7xl">
               {tutorStatus === "pending" && (
                 <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
                   <CardContent className="pt-6">
