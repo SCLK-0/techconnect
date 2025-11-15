@@ -88,14 +88,75 @@ export function InstantSessionDialog({
         return;
       }
 
+      const now = new Date();
+      const durationMinutes = parseInt(values.duration);
+      const sessionEndTime = new Date(now.getTime() + durationMinutes * 60000);
+
+      // Check if learner has any active or upcoming sessions
+      const { data: learnerSessions, error: learnerCheckError } = await supabase
+        .from("sessions")
+        .select("scheduled_at, duration_minutes, status")
+        .eq("learner_id", user.id)
+        .in("status", ["pending", "accepted", "in_progress"]);
+
+      if (learnerCheckError) throw learnerCheckError;
+
+      const hasLearnerConflict = learnerSessions?.some(session => {
+        const existingStart = new Date(session.scheduled_at);
+        const existingEnd = new Date(existingStart.getTime() + session.duration_minutes * 60000);
+        
+        // Check if the instant session would overlap with existing sessions
+        return (
+          (now >= existingStart && now < existingEnd) ||
+          (sessionEndTime > existingStart && sessionEndTime <= existingEnd) ||
+          (now <= existingStart && sessionEndTime >= existingEnd)
+        );
+      });
+
+      if (hasLearnerConflict) {
+        toast.error("You already have a session scheduled", {
+          description: "Please complete or cancel your current session before starting a new one.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check if tutor has any active or upcoming sessions in the next hour
+      const { data: tutorSessions, error: tutorCheckError } = await supabase
+        .from("sessions")
+        .select("scheduled_at, duration_minutes, status")
+        .eq("tutor_id", tutorId)
+        .in("status", ["pending", "accepted", "in_progress"]);
+
+      if (tutorCheckError) throw tutorCheckError;
+
+      const hasTutorConflict = tutorSessions?.some(session => {
+        const existingStart = new Date(session.scheduled_at);
+        const existingEnd = new Date(existingStart.getTime() + session.duration_minutes * 60000);
+        
+        return (
+          (now >= existingStart && now < existingEnd) ||
+          (sessionEndTime > existingStart && sessionEndTime <= existingEnd) ||
+          (now <= existingStart && sessionEndTime >= existingEnd)
+        );
+      });
+
+      if (hasTutorConflict) {
+        toast.error("Tutor is currently busy", {
+          description: "This tutor has another session scheduled. Please try again later or book a scheduled session.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create instant session with pending status
       const { data, error } = await supabase
         .from("sessions")
         .insert({
           tutor_id: tutorId,
           learner_id: user.id,
-          scheduled_at: new Date().toISOString(),
-          duration_minutes: parseInt(values.duration),
+          scheduled_at: now.toISOString(),
+          duration_minutes: durationMinutes,
           subject: values.subject.trim(),
           status: "pending",
           session_type: "instant",

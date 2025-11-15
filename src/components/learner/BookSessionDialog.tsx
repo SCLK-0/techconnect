@@ -196,6 +196,71 @@ export function BookSessionDialog({
       const [hours, minutes] = values.time.split(":").map(Number);
       const scheduledAt = new Date(values.date);
       scheduledAt.setHours(hours, minutes, 0, 0);
+      
+      const durationMinutes = parseInt(values.duration);
+      const sessionEndTime = new Date(scheduledAt.getTime() + durationMinutes * 60000);
+
+      // Check for conflicts with tutor's existing sessions
+      const { data: tutorSessions, error: tutorCheckError } = await supabase
+        .from("sessions")
+        .select("scheduled_at, duration_minutes")
+        .eq("tutor_id", tutorId)
+        .in("status", ["pending", "accepted", "in_progress"])
+        .gte("scheduled_at", scheduledAt.toISOString())
+        .lte("scheduled_at", sessionEndTime.toISOString());
+
+      if (tutorCheckError) throw tutorCheckError;
+
+      // Check if any existing session overlaps
+      const hasConflict = tutorSessions?.some(session => {
+        const existingStart = new Date(session.scheduled_at);
+        const existingEnd = new Date(existingStart.getTime() + session.duration_minutes * 60000);
+        
+        // Check if sessions overlap
+        return (
+          (scheduledAt >= existingStart && scheduledAt < existingEnd) ||
+          (sessionEndTime > existingStart && sessionEndTime <= existingEnd) ||
+          (scheduledAt <= existingStart && sessionEndTime >= existingEnd)
+        );
+      });
+
+      if (hasConflict) {
+        toast.error("Time slot unavailable", {
+          description: "The tutor already has a session scheduled at this time. Please choose a different time.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check for conflicts with learner's existing sessions
+      const { data: learnerSessions, error: learnerCheckError } = await supabase
+        .from("sessions")
+        .select("scheduled_at, duration_minutes")
+        .eq("learner_id", user.id)
+        .in("status", ["pending", "accepted", "in_progress"])
+        .gte("scheduled_at", scheduledAt.toISOString())
+        .lte("scheduled_at", sessionEndTime.toISOString());
+
+      if (learnerCheckError) throw learnerCheckError;
+
+      const hasLearnerConflict = learnerSessions?.some(session => {
+        const existingStart = new Date(session.scheduled_at);
+        const existingEnd = new Date(existingStart.getTime() + session.duration_minutes * 60000);
+        
+        return (
+          (scheduledAt >= existingStart && scheduledAt < existingEnd) ||
+          (sessionEndTime > existingStart && sessionEndTime <= existingEnd) ||
+          (scheduledAt <= existingStart && sessionEndTime >= existingEnd)
+        );
+      });
+
+      if (hasLearnerConflict) {
+        toast.error("You already have a session at this time", {
+          description: "Please choose a different time slot.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
       // Create session
       const { error } = await supabase
@@ -204,7 +269,7 @@ export function BookSessionDialog({
           tutor_id: tutorId,
           learner_id: user.id,
           scheduled_at: scheduledAt.toISOString(),
-          duration_minutes: parseInt(values.duration),
+          duration_minutes: durationMinutes,
           subject: values.subject.trim(),
           status: "pending",
           session_type: "scheduled",
