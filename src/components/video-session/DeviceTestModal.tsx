@@ -144,6 +144,10 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
   };
 
   const handleDeviceChange = async (deviceId: string, kind: "videoinput" | "audioinput") => {
+    // Save current camera/mic states before reinitializing
+    const currentCameraState = isCameraOn;
+    const currentMicState = isMicOn;
+    
     if (kind === "videoinput") {
       setSelectedVideoDevice(deviceId);
       // Stop current stream and reinitialize with new device
@@ -151,12 +155,44 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
         localStream.getTracks().forEach(track => track.stop());
       }
       await initDevices(deviceId, selectedAudioDevice);
+      
+      // Restore camera/mic states after device change
+      setTimeout(() => {
+        if (localStream) {
+          const videoTrack = localStream.getVideoTracks()[0];
+          const audioTrack = localStream.getAudioTracks()[0];
+          if (videoTrack) {
+            videoTrack.enabled = currentCameraState;
+            setIsCameraOn(currentCameraState);
+          }
+          if (audioTrack) {
+            audioTrack.enabled = currentMicState;
+            setIsMicOn(currentMicState);
+          }
+        }
+      }, 300);
     } else {
       setSelectedAudioDevice(deviceId);
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
       await initDevices(selectedVideoDevice, deviceId);
+      
+      // Restore camera/mic states after device change
+      setTimeout(() => {
+        if (localStream) {
+          const videoTrack = localStream.getVideoTracks()[0];
+          const audioTrack = localStream.getAudioTracks()[0];
+          if (videoTrack) {
+            videoTrack.enabled = currentCameraState;
+            setIsCameraOn(currentCameraState);
+          }
+          if (audioTrack) {
+            audioTrack.enabled = currentMicState;
+            setIsMicOn(currentMicState);
+          }
+        }
+      }, 300);
     }
   };
 

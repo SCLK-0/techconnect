@@ -526,6 +526,10 @@ export default function VideoSession() {
       console.log("Video track:", videoTrack?.label, "enabled:", videoTrack?.enabled);
       console.log("Audio track:", audioTrack?.label, "enabled:", audioTrack?.enabled);
       
+      // Sync camera/mic states from the device test modal
+      setIsCameraOn(videoTrack?.enabled ?? true);
+      setIsMicOn(audioTrack?.enabled ?? true);
+      
       setLocalStream(stream);
       setHasTestedDevices(true);
       setShowDeviceTest(false);
