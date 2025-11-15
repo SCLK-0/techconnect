@@ -1723,16 +1723,31 @@ export default function VideoSession() {
                       ref={remoteVideoRef}
                       autoPlay
                       playsInline
-                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''}`}
+                      className={`w-full h-full object-cover ${isMonitorMode ? 'cursor-default' : ''} ${!remoteCameraOn && !remoteScreenSharing ? 'opacity-0' : 'opacity-100'}`}
                     />
-                    {/* Camera Off Overlay */}
-                    {remoteStream && isConnected && (
-                      <RemoteCameraOffIndicator 
-                        isCameraOn={remoteCameraOn}
-                        isScreenSharing={remoteScreenSharing}
-                        profilePicture={role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url}
-                        userName={role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name}
-                      />
+                    {/* Camera Off Overlay - Always show when connected and camera is off */}
+                    {isConnected && !remoteCameraOn && !remoteScreenSharing && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg z-20">
+                        {(role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url) ? (
+                          <img 
+                            src={role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url} 
+                            alt={role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name} 
+                            className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-white/20 flex items-center justify-center">
+                            <span className="text-2xl font-bold text-white">
+                              {(role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name)?.charAt(0).toUpperCase() || "?"}
+                            </span>
+                          </div>
+                        )}
+                        {(role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name) && (
+                          <p className="mt-2 text-white text-xs font-medium">
+                            {role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name}
+                          </p>
+                        )}
+                        <VideoOff className="w-4 h-4 text-white/50 mt-1" />
+                      </div>
                     )}
                     {!isConnected && (
                       <div className="absolute inset-0 w-full h-full flex flex-col text-white bg-gradient-to-br from-gray-900 to-gray-800">
