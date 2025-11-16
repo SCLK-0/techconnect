@@ -40,6 +40,8 @@ const AdminLogin = () => {
 
         if (roleData?.role === "admin") {
           console.log("✅ Admin verified! Redirecting to dashboard...");
+          // Clean up the admin OAuth flag
+          sessionStorage.removeItem('admin_oauth_attempt');
           // Show toast first
           toast({
             title: "Welcome Admin!",
@@ -76,6 +78,10 @@ const AdminLogin = () => {
     setLoading(true);
     try {
       console.log("🔐 Starting Google OAuth for admin...");
+      
+      // Store a flag in sessionStorage to indicate this is an admin OAuth attempt
+      sessionStorage.setItem('admin_oauth_attempt', 'true');
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -85,10 +91,11 @@ const AdminLogin = () => {
       });
 
       if (error) throw error;
-      // Note: User will be redirected to Google, then back to /admin/login
+      // Note: User will be redirected to Google, then back (possibly through confirm-email)
       // The loading state will persist until the redirect happens
     } catch (error: any) {
       console.error("❌ Google OAuth error:", error);
+      sessionStorage.removeItem('admin_oauth_attempt');
       toast({
         title: "Sign-in failed",
         description: error.message || "Could not sign in with Google",

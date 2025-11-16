@@ -19,8 +19,19 @@ const ConfirmEmail = () => {
     let pollInterval: NodeJS.Timeout;
     let isConfirmed = false;
     
-    // IMMEDIATE CHECK: If this is an OAuth callback (has access_token), check if it's an admin
+    // IMMEDIATE CHECK: If this is an admin OAuth attempt, redirect immediately
     const checkIfAdminOAuth = async () => {
+      // Check if this was an admin OAuth attempt (flag set in sessionStorage)
+      const isAdminOAuthAttempt = sessionStorage.getItem('admin_oauth_attempt') === 'true';
+      
+      if (isAdminOAuthAttempt) {
+        console.log("🔐 Admin OAuth attempt detected! Redirecting to admin/login immediately...");
+        sessionStorage.removeItem('admin_oauth_attempt'); // Clean up
+        navigate("/admin/login", { replace: true });
+        return true; // Signal that we're redirecting
+      }
+      
+      // Also check if this is an OAuth callback with an admin role
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const hasOAuthToken = hashParams.has('access_token');
       
