@@ -13,32 +13,45 @@ const AdminLogin = () => {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      console.log("🔍 Checking admin auth status...");
+      
       // Check if this is an OAuth callback
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const isCallback = hashParams.has('access_token');
+      
+      if (isCallback) {
+        console.log("✅ OAuth callback detected, processing...");
+        setLoading(true); // Show loading while processing
+      }
       
       const { data: { session } } = await supabase.auth.getSession();
       
       // Check if user is already authenticated (callback or existing session)
       if (session?.user) {
+        console.log("👤 User session found:", session.user.email);
+        
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
           .single();
 
+        console.log("🎭 User role:", roleData?.role);
+
         if (roleData?.role === "admin") {
+          console.log("✅ Admin verified! Redirecting to dashboard...");
           // Show toast first
           toast({
             title: "Welcome Admin!",
             description: "Access granted.",
             duration: 2000,
           });
-          // Wait longer to ensure toast is visible
+          // Wait to ensure toast is visible
           await new Promise(resolve => setTimeout(resolve, 1200));
           navigate("/admin/dashboard", { replace: true });
         } else if (isCallback) {
           // Only show error and sign out if this was a new login attempt
+          console.log("❌ Not an admin, denying access");
           toast({
             title: "Access Denied",
             description: "You don't have admin privileges.",
@@ -48,7 +61,11 @@ const AdminLogin = () => {
           // Wait to show toast before signing out
           await new Promise(resolve => setTimeout(resolve, 2000));
           await supabase.auth.signOut();
+          setLoading(false);
         }
+      } else if (isCallback) {
+        console.log("⚠️ OAuth callback but no session found");
+        setLoading(false);
       }
     };
 
@@ -58,15 +75,20 @@ const AdminLogin = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      console.log("🔐 Starting Google OAuth for admin...");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/admin/login`,
+          skipBrowserRedirect: false,
         },
       });
 
       if (error) throw error;
+      // Note: User will be redirected to Google, then back to /admin/login
+      // The loading state will persist until the redirect happens
     } catch (error: any) {
+      console.error("❌ Google OAuth error:", error);
       toast({
         title: "Sign-in failed",
         description: error.message || "Could not sign in with Google",
