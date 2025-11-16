@@ -633,7 +633,7 @@ const FindTutors = () => {
                     {paginatedTutors.map((tutor) => (
                       <Card 
                         key={tutor.id} 
-                        className="hover:shadow-lg transition-shadow cursor-pointer"
+                        className="hover:shadow-xl hover:scale-[1.02] hover:border-primary/50 transition-all duration-300 cursor-pointer"
                         onClick={() => handleCardClick(tutor)}
                       >
                       <CardHeader className="pb-3">
