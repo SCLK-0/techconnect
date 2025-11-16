@@ -14,6 +14,7 @@ import logo from "@/assets/logo.png";
 import { AvailabilityCalendar } from "@/components/tutor/AvailabilityCalendar";
 import { toast } from "sonner";
 import { Clock, Trash2, Copy } from "lucide-react";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -29,6 +30,7 @@ export default function TutorAvailability() {
   const { user } = useUserRole();
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [dayAvailability, setDayAvailability] = useState<any[]>([]);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [newSlot, setNewSlot] = useState<TimeSlot>({
     day_of_week: 1,
     start_time: "09:00",
@@ -106,6 +108,7 @@ export default function TutorAvailability() {
 
     if (!error && data) {
       setDayAvailability(data);
+      setInitialLoad(false);
     }
   };
 
@@ -156,6 +159,7 @@ export default function TutorAvailability() {
       toast.error("Failed to delete");
     } else {
       toast.success("Time slot deleted");
+      loadAvailability();
     }
   };
 
@@ -186,25 +190,31 @@ export default function TutorAvailability() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <TutorSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={initialLoad} message="Loading availability..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Availability</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Set your weekly schedule and manage specific date availability
+                </p>
+              </div>
+
               <Card>
                 <CardHeader>
                   <CardTitle>Weekly Recurring Schedule</CardTitle>
@@ -215,9 +225,10 @@ export default function TutorAvailability() {
                     <div>
                       <Label>Day of Week</Label>
                       <select
-                        className="w-full p-2 border rounded bg-background"
+                        className="w-full p-2 border rounded bg-background text-sm"
                         value={newSlot.day_of_week}
                         onChange={(e) => setNewSlot({ ...newSlot, day_of_week: parseInt(e.target.value) })}
+                        style={{ fontSize: '14px' }}
                       >
                         {DAYS.map((day, idx) => (
                           <option key={idx} value={idx}>{day}</option>
@@ -231,6 +242,8 @@ export default function TutorAvailability() {
                           type="time"
                           value={newSlot.start_time}
                           onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
+                          className="text-sm"
+                          style={{ fontSize: '14px' }}
                         />
                       </div>
                       <div>
@@ -239,6 +252,8 @@ export default function TutorAvailability() {
                           type="time"
                           value={newSlot.end_time}
                           onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
+                          className="text-sm"
+                          style={{ fontSize: '14px' }}
                         />
                       </div>
                     </div>

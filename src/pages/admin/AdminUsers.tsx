@@ -5,16 +5,16 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+
 import { toast } from "sonner";
-import { Search, Shield, UserX, Mail, Calendar, UserCheck, Loader2 } from "lucide-react";
+import { Search, UserX, Calendar, UserCheck, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
@@ -24,13 +24,12 @@ export default function AdminUsers() {
   const { user: currentUser } = useUserRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [newRole, setNewRole] = useState<string>("");
+  const [yearLevelFilter, setYearLevelFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading, error } = useQuery({
+  const { data: users = [], isLoading, isFetching, error } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
       console.log("Fetching admin users...");
@@ -57,11 +56,28 @@ export default function AdminUsers() {
         // Don't throw, just continue without roles
       }
 
-      // Merge profiles with their roles
-      const usersWithRoles = profiles?.map(profile => ({
-        ...profile,
-        user_roles: roles?.filter(r => r.user_id === profile.user_id) || []
-      })) || [];
+      // Fetch learner year levels
+      const { data: learnerProfiles } = await supabase
+        .from("learner_profiles")
+        .select("user_id, registered_year");
+
+      // Fetch tutor year levels
+      const { data: tutorProfiles } = await supabase
+        .from("tutor_profiles")
+        .select("user_id, registered_year");
+
+      // Merge profiles with their roles and year levels
+      const usersWithRoles = profiles?.map(profile => {
+        const userRole = roles?.find(r => r.user_id === profile.user_id);
+        const learnerProfile = learnerProfiles?.find(lp => lp.user_id === profile.user_id);
+        const tutorProfile = tutorProfiles?.find(tp => tp.user_id === profile.user_id);
+        
+        return {
+          ...profile,
+          user_roles: roles?.filter(r => r.user_id === profile.user_id) || [],
+          registered_year: learnerProfile?.registered_year || tutorProfile?.registered_year
+        };
+      }) || [];
 
       console.log("Fetched users with roles:", usersWithRoles);
       return usersWithRoles;
@@ -73,43 +89,37 @@ export default function AdminUsers() {
     console.error("Query error:", error);
   }
 
-  const assignRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const { error } = await supabase
-        .from("user_roles")
-        .insert([{ user_id: userId, role: role as "admin" | "tutor" | "learner" }]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Role assigned successfully");
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      setSelectedUser(null);
-      setNewRole("");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to assign role");
-    },
-  });
-
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
-      const { error } = await supabase
+      console.log("Toggling user status:", { userId, isActive });
+      
+      const { data, error } = await supabase
         .from("profiles")
         .update({ is_active: isActive })
-        .eq("user_id", userId);
-      if (error) throw error;
+        .eq("user_id", userId)
+        .select();
+      
+      if (error) {
+        console.error("Error updating user status:", error);
+        throw error;
+      }
+      
+      console.log("User status updated:", data);
       return { userId, isActive };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success(
         data.isActive 
           ? "✅ User activated successfully! They can now access the system." 
           : "🚫 User deactivated successfully! Their access has been restricted.",
         { duration: 4000 }
       );
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      // Force refetch the data
+      await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      await queryClient.refetchQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: any) => {
+      console.error("Mutation error:", error);
       toast.error(error.message || "Failed to update user status");
     },
   });
@@ -122,7 +132,9 @@ export default function AdminUsers() {
     const userRole = user.user_roles?.[0]?.role || "none";
     const matchesRole = roleFilter === "all" || userRole === roleFilter;
 
-    return matchesSearch && matchesRole;
+    const matchesYearLevel = yearLevelFilter === "all" || user.registered_year === yearLevelFilter;
+
+    return matchesSearch && matchesRole && matchesYearLevel;
   });
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -143,7 +155,7 @@ export default function AdminUsers() {
     }
 
     return (
-      <Pagination className="mt-6">
+      <Pagination className="mt-6 mb-4">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
@@ -204,26 +216,25 @@ export default function AdminUsers() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading users..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
-              <div className="flex flex-col sm:flex-row gap-4 justify-between">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -234,14 +245,26 @@ export default function AdminUsers() {
                   />
                 </div>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by role" />
+                  <SelectTrigger className="w-full sm:w-[140px]">
+                    <SelectValue placeholder="Role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="tutor">Tutor</SelectItem>
                     <SelectItem value="learner">Learner</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={yearLevelFilter} onValueChange={setYearLevelFilter}>
+                  <SelectTrigger className="w-full sm:w-[140px]">
+                    <SelectValue placeholder="Year Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    <SelectItem value="1st Year">1st Year</SelectItem>
+                    <SelectItem value="2nd Year">2nd Year</SelectItem>
+                    <SelectItem value="3rd Year">3rd Year</SelectItem>
+                    <SelectItem value="4th Year">4th Year</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -303,97 +326,37 @@ export default function AdminUsers() {
                                 {user.created_at ? format(new Date(user.created_at), "MMM dd, yyyy") : "N/A"}
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  {!isUserAdmin(user) && (
-                                    <Button
-                                      variant={user.is_active ? "destructive" : "default"}
-                                      size="sm"
-                                      onClick={() => {
-                                        toggleUserStatusMutation.mutate({
-                                          userId: user.user_id,
-                                          isActive: !user.is_active,
-                                        });
-                                      }}
-                                      disabled={toggleUserStatusMutation.isPending}
-                                      className="transition-all duration-300 hover:scale-105"
-                                    >
-                                      {toggleUserStatusMutation.isPending ? (
-                                        <>
-                                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                          Processing...
-                                        </>
-                                      ) : user.is_active ? (
-                                        <>
-                                          <UserX className="h-4 w-4 mr-2" />
-                                          Deactivate
-                                        </>
-                                      ) : (
-                                        <>
-                                          <UserCheck className="h-4 w-4 mr-2" />
-                                          Activate
-                                        </>
-                                      )}
-                                    </Button>
-                                  )}
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setSelectedUser(user)}
-                                    >
-                                      <Shield className="h-4 w-4 mr-2" />
-                                      Manage Roles
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Manage User Roles</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      <div>
-                                        <Label>User</Label>
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                          {user.full_name}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <Label>Current Role</Label>
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                          {user.user_roles?.[0]?.role || "none"}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <Label htmlFor="role">Assign New Role</Label>
-                                        <Select value={newRole} onValueChange={setNewRole}>
-                                          <SelectTrigger id="role">
-                                            <SelectValue placeholder="Select role" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="admin">Admin</SelectItem>
-                                            <SelectItem value="tutor">Tutor</SelectItem>
-                                            <SelectItem value="learner">Learner</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <Button
-                                        className="w-full"
-                                        onClick={() => {
-                                          if (newRole) {
-                                            assignRoleMutation.mutate({
-                                              userId: user.user_id,
-                                              role: newRole,
-                                            });
-                                          }
-                                        }}
-                                        disabled={!newRole || assignRoleMutation.isPending}
-                                      >
-                                        Assign Role
-                                      </Button>
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                                </div>
+                                {!isUserAdmin(user) && (
+                                  <Button
+                                    variant={user.is_active ? "destructive" : "default"}
+                                    size="sm"
+                                    onClick={() => {
+                                      toggleUserStatusMutation.mutate({
+                                        userId: user.user_id,
+                                        isActive: !user.is_active,
+                                      });
+                                    }}
+                                    disabled={toggleUserStatusMutation.isPending}
+                                    className="transition-all duration-300 hover:scale-105"
+                                  >
+                                    {toggleUserStatusMutation.isPending ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Processing...
+                                      </>
+                                    ) : user.is_active ? (
+                                      <>
+                                        <UserX className="h-4 w-4 mr-2" />
+                                        Deactivate
+                                      </>
+                                    ) : (
+                                      <>
+                                        <UserCheck className="h-4 w-4 mr-2" />
+                                        Activate
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))
@@ -438,99 +401,37 @@ export default function AdminUsers() {
                               </Badge>
                             </div>
 
-                            <div className="flex gap-2">
-                              {!isUserAdmin(user) && (
-                                <Button
-                                  variant={user.is_active ? "destructive" : "default"}
-                                  size="sm"
-                                  className="flex-1 transition-all duration-300 hover:scale-105"
-                                  onClick={() => {
-                                    toggleUserStatusMutation.mutate({
-                                      userId: user.user_id,
-                                      isActive: !user.is_active,
-                                    });
-                                  }}
-                                  disabled={toggleUserStatusMutation.isPending}
-                                >
-                                  {toggleUserStatusMutation.isPending ? (
-                                    <>
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                      Processing...
-                                    </>
-                                  ) : user.is_active ? (
-                                    <>
-                                      <UserX className="h-4 w-4 mr-2" />
-                                      Deactivate
-                                    </>
-                                  ) : (
-                                    <>
-                                      <UserCheck className="h-4 w-4 mr-2" />
-                                      Activate
-                                    </>
-                                  )}
-                                </Button>
-                              )}
-
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => setSelectedUser(user)}
-                                >
-                                  <Shield className="h-4 w-4 mr-2" />
-                                  Manage Roles
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Manage User Roles</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div>
-                                    <Label>User</Label>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      {user.full_name}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label>Current Role</Label>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      {user.user_roles?.[0]?.role || "none"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label htmlFor="role">Assign New Role</Label>
-                                    <Select value={newRole} onValueChange={setNewRole}>
-                                      <SelectTrigger id="role">
-                                        <SelectValue placeholder="Select role" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="tutor">Tutor</SelectItem>
-                                        <SelectItem value="learner">Learner</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <Button
-                                    className="w-full"
-                                    onClick={() => {
-                                      if (newRole) {
-                                        assignRoleMutation.mutate({
-                                          userId: user.user_id,
-                                          role: newRole,
-                                        });
-                                      }
-                                    }}
-                                    disabled={!newRole || assignRoleMutation.isPending}
-                                  >
-                                    Assign Role
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            </div>
+                            {!isUserAdmin(user) && (
+                              <Button
+                                variant={user.is_active ? "destructive" : "default"}
+                                size="sm"
+                                className="w-full transition-all duration-300 hover:scale-105"
+                                onClick={() => {
+                                  toggleUserStatusMutation.mutate({
+                                    userId: user.user_id,
+                                    isActive: !user.is_active,
+                                  });
+                                }}
+                                disabled={toggleUserStatusMutation.isPending}
+                              >
+                                {toggleUserStatusMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Processing...
+                                  </>
+                                ) : user.is_active ? (
+                                  <>
+                                    <UserX className="h-4 w-4 mr-2" />
+                                    Deactivate
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Activate
+                                  </>
+                                )}
+                              </Button>
+                            )}
                           </CardContent>
                         </Card>
                       ))

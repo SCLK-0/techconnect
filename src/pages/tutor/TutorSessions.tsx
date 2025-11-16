@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 export default function TutorSessions() {
   const { user } = useUserRole();
@@ -25,11 +26,12 @@ export default function TutorSessions() {
   const [filter, setFilter] = useState<"pending" | "accepted" | "completed" | "cancelled" | "missed">("pending");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Enable session notifications
   useSessionNotifications(user?.id);
 
-  const { data: sessions = [] } = useQuery({
+  const { data: sessions = [], isLoading, isFetching, isSuccess } = useQuery({
     queryKey: ["tutor-sessions", user?.id, filter],
     queryFn: async () => {
       if (!user) return [];
@@ -114,29 +116,42 @@ export default function TutorSessions() {
     currentPage * itemsPerPage
   );
 
+  // Clear initial load state once query is successful
+  useEffect(() => {
+    if (isSuccess) {
+      setInitialLoad(false);
+    }
+  }, [isSuccess]);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <TutorSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={initialLoad || isLoading || isFetching} message="Loading sessions..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">My Sessions</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Manage your tutoring sessions and track your schedule
+                </p>
+              </div>
+
               <Tabs value={filter} onValueChange={(v) => { setFilter(v as any); setCurrentPage(1); }}>
                 <TabsList className="flex-wrap h-auto">
                   <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending</TabsTrigger>
@@ -244,7 +259,7 @@ export default function TutorSessions() {
                         ))}
                       </div>
 
-                      <Pagination className="mt-6">
+                      <Pagination className="mt-6 mb-4">
                         <PaginationContent>
                           <PaginationItem>
                             <PaginationPrevious

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Video, VideoOff, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
@@ -193,9 +193,12 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">{sessionData?.subject || "Interactive Session"}</DialogTitle>
+      <DialogContent className="max-w-4xl w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogHeader className="text-center">
+          <DialogTitle className="text-2xl break-words">{sessionData?.subject || "Interactive Session"}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Test your camera and microphone before joining the session
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -303,7 +306,7 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
             <div className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Subject:</span>
-                <span className="text-muted-foreground">{sessionData?.subject}</span>
+                <span className="text-muted-foreground break-words">{sessionData?.subject}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -333,18 +336,18 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
                 <div className="space-y-2">
                   {sessionData?.tutor_profiles && (
                     <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
-                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
+                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium flex-shrink-0">
                         {sessionData.tutor_profiles.full_name?.charAt(0) || 'T'}
                       </div>
-                      <span className="text-sm">{sessionData.tutor_profiles.full_name}</span>
+                      <span className="text-sm break-words">{sessionData.tutor_profiles.full_name}</span>
                     </div>
                   )}
                   {sessionData?.learner_profiles && (
                     <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
-                      <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-medium">
+                      <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-medium flex-shrink-0">
                         {sessionData.learner_profiles.full_name?.charAt(0) || 'L'}
                       </div>
-                      <span className="text-sm">{sessionData.learner_profiles.full_name}</span>
+                      <span className="text-sm break-words">{sessionData.learner_profiles.full_name}</span>
                     </div>
                   )}
                 </div>
@@ -368,16 +371,17 @@ export function DeviceTestModal({ open, onContinue, onCancel, sessionData, role 
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
           <Button 
             onClick={handleContinue} 
             disabled={isLoading || !!error}
             size="lg"
+            className="w-full sm:w-auto rounded-xl order-1"
           >
             Join the Session
+          </Button>
+          <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto rounded-xl order-2 sm:order-1">
+            Cancel
           </Button>
         </div>
       </DialogContent>

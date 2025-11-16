@@ -4,18 +4,19 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TrendingUp, Users, Calendar, DollarSign, FileText, UserCheck } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export default function AdminAnalytics() {
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading, isFetching } = useQuery({
     queryKey: ["admin-analytics"],
     queryFn: async () => {
       const [profiles, sessions, donations, resources, tutorProfiles] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("sessions").select("*"),
-        supabase.from("donations").select("*"),
+        supabase.from("donations").select("*").eq("verification_status", "verified"),
         supabase.from("resources").select("*", { count: "exact", head: true }),
         supabase.from("tutor_profiles").select("*"),
       ]);
@@ -40,24 +41,23 @@ export default function AdminAnalytics() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading analytics..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div>
                 <h2 className="text-3xl font-bold tracking-tight mb-2">Platform Analytics</h2>

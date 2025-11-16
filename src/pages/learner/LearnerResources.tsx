@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
 import { Download, FileText, Eye, Search } from "lucide-react";
@@ -13,6 +14,8 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { ResourcePreviewDialog } from "@/components/learner/ResourcePreviewDialog";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { useEffect } from "react";
 
 export default function LearnerResources() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,8 +23,10 @@ export default function LearnerResources() {
   const [selectedResource, setSelectedResource] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const itemsPerPage = 6;
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [yearLevelFilter, setYearLevelFilter] = useState<string>("all");
 
-  const { data: resources = [] } = useQuery({
+  const { data: resources = [], isLoading, isFetching, isSuccess } = useQuery({
     queryKey: ["approved-resources"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -37,21 +42,48 @@ export default function LearnerResources() {
         .select("user_id, full_name")
         .in("user_id", tutorIds);
       
+      // Fetch tutor year levels
+      const { data: tutorProfiles } = await supabase
+        .from("tutor_profiles")
+        .select("user_id, registered_year")
+        .in("user_id", tutorIds);
+      
       const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
-      return data.map(r => ({ ...r, tutor_name: profileMap.get(r.tutor_id) }));
+      const yearMap = new Map(tutorProfiles?.map(tp => [tp.user_id, tp.registered_year]) || []);
+      return data.map(r => ({ 
+        ...r, 
+        tutor_name: profileMap.get(r.tutor_id),
+        tutor_year: yearMap.get(r.tutor_id)
+      }));
     },
   });
 
-  // Filter resources by search query
+  // Clear initial load state once query is successful
+  useEffect(() => {
+    if (isSuccess) {
+      setInitialLoad(false);
+    }
+  }, [isSuccess]);
+
+  // Filter resources by search query and year level
   const filteredResources = resources.filter((resource: any) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      resource.title?.toLowerCase().includes(query) ||
-      resource.description?.toLowerCase().includes(query) ||
-      resource.tutor_name?.toLowerCase().includes(query) ||
-      resource.subject?.toLowerCase().includes(query)
-    );
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        resource.title?.toLowerCase().includes(query) ||
+        resource.description?.toLowerCase().includes(query) ||
+        resource.tutor_name?.toLowerCase().includes(query) ||
+        resource.subject?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+    
+    // Year level filter
+    if (yearLevelFilter !== "all") {
+      if (resource.tutor_year !== yearLevelFilter) return false;
+    }
+    
+    return true;
   });
 
   const totalPages = Math.ceil(filteredResources.length / itemsPerPage);
@@ -72,7 +104,7 @@ export default function LearnerResources() {
     }
 
     return (
-      <Pagination>
+      <Pagination className="mb-4">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
@@ -130,7 +162,8 @@ export default function LearnerResources() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <LearnerSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={initialLoad || isLoading || isFetching} message="Loading resources..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -145,7 +178,7 @@ export default function LearnerResources() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Learning Resources</h2>
@@ -154,18 +187,36 @@ export default function LearnerResources() {
                 </p>
               </div>
 
-              {/* Search Bar */}
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search resources by title, subject, or tutor..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-10"
-                />
+              {/* Search Bar and Filter */}
+              <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search resources by title, subject, or tutor..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <Select value={yearLevelFilter} onValueChange={(value) => {
+                  setYearLevelFilter(value);
+                  setCurrentPage(1);
+                }}>
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Year Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    <SelectItem value="1st Year">1st Year</SelectItem>
+                    <SelectItem value="2nd Year">2nd Year</SelectItem>
+                    <SelectItem value="3rd Year">3rd Year</SelectItem>
+                    <SelectItem value="4th Year">4th Year</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {paginatedResources.length === 0 ? (
@@ -191,7 +242,7 @@ export default function LearnerResources() {
                           <span className="truncate">{resource.title}</span>
                         </CardTitle>
                         <CardDescription className="text-xs sm:text-sm">
-                          By {resource.tutor_name || "Unknown Tutor"}
+                          By {resource.tutor_name || "Unknown Tutor"}{resource.tutor_year && ` (${resource.tutor_year})`}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3 sm:space-y-4 pt-0">

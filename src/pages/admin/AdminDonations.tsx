@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +42,7 @@ export default function AdminDonations() {
     };
   }, [queryClient]);
 
-  const { data: donations = [], isLoading } = useQuery({
+  const { data: donations = [], isLoading, isFetching } = useQuery({
     queryKey: ["admin-donations"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -109,24 +110,23 @@ export default function AdminDonations() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading donations..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div className="grid gap-2 md:grid-cols-3">
                 <Card>

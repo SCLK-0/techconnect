@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, UserCircle, Wifi, WifiOff, Zap, Star, Clock, Filter } from "lucide-react";
+import { Search, UserCircle, Wifi, WifiOff, Zap, Star, Clock, Filter, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 interface TutorProfile {
   id: string;
@@ -34,6 +35,7 @@ interface TutorProfile {
   rating?: number;
   review_count?: number;
   next_available?: string;
+  registered_year?: string;
   profiles: {
     full_name: string;
     avatar_url: string | null;
@@ -61,6 +63,7 @@ const FindTutors = () => {
   const [onlineFilter, setOnlineFilter] = useState<string>("all");
   const [ratingFilter, setRatingFilter] = useState<string>("all");
   const [subjectFilters, setSubjectFilters] = useState<string[]>([]);
+  const [yearLevelFilter, setYearLevelFilter] = useState<string>("all");
   
   const allSubjects = [
     "Programming",
@@ -217,7 +220,7 @@ const FindTutors = () => {
         // First get tutor profiles - filter by truly online tutors (active within 30 seconds)
         const { data: tutorData, error: tutorError } = await supabase
           .from("tutor_profiles")
-          .select("id, user_id, subject_expertise, bio, is_online, last_seen")
+          .select("id, user_id, subject_expertise, bio, is_online, last_seen, registered_year")
           .eq("status", "approved");
 
         if (tutorError) throw tutorError;
@@ -392,6 +395,11 @@ const FindTutors = () => {
       );
     }
 
+    // Year level filter
+    if (yearLevelFilter !== "all") {
+      filtered = filtered.filter((tutor) => tutor.registered_year === yearLevelFilter);
+    }
+
     // Fuzzy search with matchmaking
     if (searchQuery.trim()) {
       // Calculate match scores for each tutor
@@ -409,7 +417,7 @@ const FindTutors = () => {
 
     setFilteredTutors(filtered);
     setCurrentPage(1);
-  }, [searchQuery, tutors, onlineFilter, ratingFilter, subjectFilters]);
+  }, [searchQuery, tutors, onlineFilter, ratingFilter, subjectFilters, yearLevelFilter]);
 
   const totalPages = Math.ceil(filteredTutors.length / itemsPerPage);
   const paginatedTutors = filteredTutors.slice(
@@ -429,7 +437,7 @@ const FindTutors = () => {
     }
 
     return (
-      <Pagination>
+      <Pagination className="mb-4">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
@@ -488,7 +496,8 @@ const FindTutors = () => {
       <div className="flex min-h-screen w-full bg-background">
         <LearnerSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={loading} message="Loading tutors..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -503,7 +512,7 @@ const FindTutors = () => {
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Find Tutors</h2>
@@ -544,6 +553,19 @@ const FindTutors = () => {
                     <SelectItem value="4">4+ Stars</SelectItem>
                     <SelectItem value="3">3+ Stars</SelectItem>
                     <SelectItem value="2">2+ Stars</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={yearLevelFilter} onValueChange={setYearLevelFilter}>
+                  <SelectTrigger className="w-full sm:w-[140px]">
+                    <SelectValue placeholder="Year Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    <SelectItem value="1st Year">1st Year</SelectItem>
+                    <SelectItem value="2nd Year">2nd Year</SelectItem>
+                    <SelectItem value="3rd Year">3rd Year</SelectItem>
+                    <SelectItem value="4th Year">4th Year</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -636,11 +658,20 @@ const FindTutors = () => {
                         className="hover:shadow-xl hover:scale-[1.02] hover:border-primary/50 transition-all duration-300 cursor-pointer"
                         onClick={() => handleCardClick(tutor)}
                       >
-                      <CardHeader className="pb-3">
+                      <CardHeader className="pb-3 relative">
+                        <button
+                          className="absolute right-2 top-2 p-1.5 rounded-md hover:bg-accent transition-colors z-10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCardClick(tutor);
+                          }}
+                        >
+                          <Maximize2 className="h-4 w-4 text-muted-foreground" />
+                        </button>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                           <Avatar className="h-14 w-14 sm:h-16 sm:w-16">
                             <AvatarImage src={tutor.profiles.avatar_url || ""} />
-                            <AvatarFallback>
+                            <AvatarFallback className="bg-blue-500 text-white">
                               {tutor.profiles.full_name
                                 .split(" ")
                                 .map((n) => n[0])
@@ -648,7 +679,7 @@ const FindTutors = () => {
                                 .toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 pr-8">
                             <CardTitle className="text-base sm:text-lg truncate">
                               {tutor.profiles.full_name}
                             </CardTitle>
@@ -705,7 +736,7 @@ const FindTutors = () => {
                             <span className="truncate">Next available: {tutor.next_available}</span>
                           </div>
                         )}
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-3">
                           <Button 
                             className="w-full text-sm"
                             onClick={(e) => {

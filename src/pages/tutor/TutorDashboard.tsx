@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useInstantSessionNotifications } from "@/hooks/useInstantSessionNotifications";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 export default function TutorDashboard() {
   const { user } = useUserRole();
@@ -24,11 +25,12 @@ export default function TutorDashboard() {
   const [isOnline, setIsOnline] = useState(false);
   const [firstName, setFirstName] = useState<string | null>(null);
   const [tutorStatus, setTutorStatus] = useState<string>("");
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Enable instant session notifications
   useInstantSessionNotifications(user?.id, isOnline);
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading, isFetching: statsFetching } = useQuery({
     queryKey: ["tutor-stats", user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -40,7 +42,7 @@ export default function TutorDashboard() {
     enabled: !!user,
   });
 
-  const { data: recentSessions = [] } = useQuery({
+  const { data: recentSessions = [], isLoading: sessionsLoading, isFetching: sessionsFetching } = useQuery({
     queryKey: ["recent-sessions", user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -147,28 +149,37 @@ export default function TutorDashboard() {
     }
   };
 
+  // Clear initial load state once data is ready
+  useEffect(() => {
+    if (!statsLoading && !sessionsLoading && !statsFetching && !sessionsFetching && stats !== undefined && recentSessions.length >= 0) {
+      setInitialLoad(false);
+    }
+  }, [statsLoading, sessionsLoading, statsFetching, sessionsFetching, stats, recentSessions]);
+
+  // Show loading while data is being fetched or on initial load
+  const isLoading = initialLoad || statsLoading || sessionsLoading || statsFetching || sessionsFetching;
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <TutorSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading} message="Loading dashboard..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               {tutorStatus === "pending" && (
                 <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
@@ -213,17 +224,19 @@ export default function TutorDashboard() {
                   </h2>
                   <p className="text-muted-foreground">Here's your tutoring overview</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="online-status">Online Status</Label>
-                  <Switch
-                    id="online-status"
-                    checked={isOnline}
-                    onCheckedChange={toggleOnlineStatus}
-                    disabled={tutorStatus !== "approved"}
-                  />
-                  <Badge variant={isOnline ? "default" : "secondary"}>
-                    {isOnline ? "Online" : "Offline"}
-                  </Badge>
+                <div className="flex flex-col md:flex-row md:items-center gap-2">
+                  <Label htmlFor="online-status" className="hidden md:inline">Online Status</Label>
+                  <div className="flex flex-col md:flex-row items-center gap-2">
+                    <Switch
+                      id="online-status"
+                      checked={isOnline}
+                      onCheckedChange={toggleOnlineStatus}
+                      disabled={tutorStatus !== "approved"}
+                    />
+                    <Badge variant={isOnline ? "default" : "secondary"}>
+                      {isOnline ? "Online" : "Offline"}
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
@@ -292,7 +305,7 @@ export default function TutorDashboard() {
                 </Card>
               </div>
 
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <CardTitle>Recent Sessions</CardTitle>

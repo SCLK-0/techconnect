@@ -36,7 +36,7 @@ const subjects = [
 ];
 
 export default function EditProfile() {
-  const { user, role } = useUserRole();
+  const { user, role, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +50,7 @@ export default function EditProfile() {
   const [learnerInfo, setLearnerInfo] = useState<any>(null);
   const [subjectExpertise, setSubjectExpertise] = useState<string[]>([]);
   const [subjectsOfInterest, setSubjectsOfInterest] = useState<string[]>([]);
+  const [tutorStatus, setTutorStatus] = useState<string>("");
   const [loadingRoleData, setLoadingRoleData] = useState(true);
   
   // Store original values for cancel functionality
@@ -95,10 +96,16 @@ export default function EditProfile() {
         
         if (error) {
           console.error("Error loading tutor profile:", error);
+          console.error("Error details:", error.message, error.details, error.hint);
+        } else {
+          console.log("Loaded tutor data:", data);
         }
         tutorData = data;
         setTutorInfo(tutorData || {});
-        setSubjectExpertise(tutorData?.subject_expertise || []);
+        setTutorStatus(tutorData?.status || "");
+        const expertise = Array.isArray(tutorData?.subject_expertise) ? tutorData.subject_expertise : [];
+        setSubjectExpertise(expertise);
+        console.log("Set subject expertise:", expertise);
       } else if (role === "learner") {
         const { data, error } = await supabase
           .from("learner_profiles")
@@ -108,10 +115,15 @@ export default function EditProfile() {
         
         if (error) {
           console.error("Error loading learner profile:", error);
+          console.error("Error details:", error.message, error.details, error.hint);
+        } else {
+          console.log("Loaded learner data:", data);
         }
         learnerData = data;
         setLearnerInfo(learnerData || {});
-        setSubjectsOfInterest(learnerData?.subjects_of_interest || []);
+        const interests = Array.isArray(learnerData?.subjects_of_interest) ? learnerData.subjects_of_interest : [];
+        setSubjectsOfInterest(interests);
+        console.log("Set subjects of interest:", interests);
       }
       setLoadingRoleData(false);
 
@@ -216,6 +228,12 @@ export default function EditProfile() {
   const handleSave = async () => {
     if (!user) return;
 
+    // Validate bio length
+    if (bio.length > 500) {
+      toast.error("Bio must be 500 characters or less");
+      return;
+    }
+
     try {
       // Update basic profile
       const { error: profileError } = await supabase
@@ -235,6 +253,7 @@ export default function EditProfile() {
           .from("tutor_profiles")
           .update({
             subject_expertise: subjectExpertise,
+            bio: bio, // Also update bio in tutor_profiles
           })
           .eq("user_id", user.id);
 
@@ -252,14 +271,9 @@ export default function EditProfile() {
 
       toast.success("Profile updated successfully!");
       setIsEditing(false);
-      // Update original values with new saved values
-      setOriginalValues({
-        fullName,
-        bio,
-        avatarUrl,
-        subjectExpertise: [...subjectExpertise],
-        subjectsOfInterest: [...subjectsOfInterest],
-      });
+      
+      // Reload profile data from database to ensure UI is in sync
+      await loadProfile();
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -282,15 +296,24 @@ export default function EditProfile() {
     }
   };
 
+  // Determine which sidebar to use based on role (uses cached role for instant loading)
+  const Sidebar = role === "admin" ? AdminSidebar : role === "tutor" ? TutorSidebar : LearnerSidebar;
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-background">
+          <Sidebar />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+              <p className="text-sm text-muted-foreground">Loading profile...</p>
+            </div>
+          </div>
+        </div>
+      </SidebarProvider>
     );
   }
-
-  const Sidebar = role === "admin" ? AdminSidebar : role === "tutor" ? TutorSidebar : LearnerSidebar;
 
   return (
     <SidebarProvider>
@@ -311,8 +334,8 @@ export default function EditProfile() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
-            <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center overflow-x-hidden">
+            <div className="space-y-6 w-full max-w-sm md:max-w-5xl">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Profile</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">
@@ -320,9 +343,10 @@ export default function EditProfile() {
                 </p>
               </div>
 
+              <div className="pl-4 md:pl-0 space-y-6">
               {/* Avatar Section */}
-              <Card className="border-2">
-                <CardContent className="pt-6">
+              <Card className="border-2 w-full max-w-full overflow-hidden">
+                <CardContent className="pt-6 px-4 md:px-6">
                   <div className="flex flex-col md:flex-row items-center gap-6">
                     <div className="relative group">
                       <Avatar className="w-32 h-32 border-4 border-background shadow-xl">
@@ -353,17 +377,26 @@ export default function EditProfile() {
                       />
                     </div>
                     <div className="flex-1 text-center md:text-left space-y-2">
+                      <h2 className="text-2xl font-bold">{fullName || "Your Name"}</h2>
                       <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                        <h2 className="text-2xl font-bold mb-2">{fullName || "Your Name"}</h2>
                         <Badge variant={getRoleBadgeColor()} className="capitalize">
                           {role}
                         </Badge>
+                        {role === "tutor" && tutorStatus && (
+                          <Badge variant={
+                            tutorStatus === "approved" ? "default" : 
+                            tutorStatus === "pending" ? "secondary" : 
+                            "destructive"
+                          } className="capitalize">
+                            {tutorStatus}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center justify-center md:justify-start gap-2 text-muted-foreground">
                         <Mail className="w-4 h-4" />
-                        <span className="text-sm">{email}</span>
+                        <span className="text-sm break-all">{email}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground max-w-md">
+                      <p className="text-sm text-muted-foreground max-w-md line-clamp-3 break-words whitespace-pre-wrap overflow-wrap-anywhere">
                         {bio || "No bio yet. Tell others about yourself!"}
                       </p>
                     </div>
@@ -398,7 +431,7 @@ export default function EditProfile() {
                         id="fullName"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="John Doe"
+                        placeholder="Jomar Samsung"
                         disabled={!isEditing}
                       />
                     </div>
@@ -419,13 +452,19 @@ export default function EditProfile() {
                     <Textarea
                       id="bio"
                       value={bio}
-                      onChange={(e) => setBio(e.target.value)}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        if (newValue.length <= 500) {
+                          setBio(newValue);
+                        }
+                      }}
                       placeholder="Tell us about yourself, your interests, and what you're passionate about..."
                       rows={4}
-                      className="resize-none"
+                      className="resize-none min-h-[100px] max-h-[200px] overflow-y-auto custom-scrollbar break-words overflow-wrap-anywhere"
                       disabled={!isEditing}
+                      maxLength={500}
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className={`text-xs ${bio.length > 450 ? 'text-orange-500' : 'text-muted-foreground'}`}>
                       {bio.length}/500 characters
                     </p>
                   </div>
@@ -440,16 +479,6 @@ export default function EditProfile() {
                         </div>
                       ) : (
                         <>
-                          {tutorInfo?.status && (
-                            <div>
-                              <Label>Status</Label>
-                              <div className="mt-2">
-                                <Badge variant={tutorInfo.status === "approved" ? "default" : "secondary"}>
-                                  {tutorInfo.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          )}
                           <div className="space-y-4">
                             <Label>Subject Expertise *</Label>
                             <p className="text-sm text-muted-foreground">Select the subjects you can teach</p>
@@ -556,6 +585,7 @@ export default function EditProfile() {
                   )}
                 </CardContent>
               </Card>
+              </div>
             </div>
           </main>
         </div>

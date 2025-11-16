@@ -325,12 +325,17 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             
             if (hasOtherUsers !== bothUsersPresent) {
               setBothUsersPresent(hasOtherUsers);
+              const isMobile = window.innerWidth < 768;
               if (hasOtherUsers) {
                 console.log("✅ Other user connected - whiteboard enabled");
-                toast.success("Whiteboard connected");
+                if (!isMobile) {
+                  toast.success("Whiteboard connected");
+                }
               } else {
                 console.log("⏳ Other user disconnected - whiteboard disabled");
-                toast.info("Waiting for other user...");
+                if (!isMobile) {
+                  toast.info("Waiting for other user...");
+                }
               }
             }
             

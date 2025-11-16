@@ -10,12 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 export default function LearnerDashboard() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [upcomingSessions, setUpcomingSessions] = useState<number | null>(null);
   const [completedSessions, setCompletedSessions] = useState<number | null>(null);
   const [resourcesCount, setResourcesCount] = useState<number | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -79,7 +81,7 @@ export default function LearnerDashboard() {
     };
 
     fetchUserProfile();
-    fetchSessionStats();
+    fetchSessionStats().then(() => setInitialLoad(false));
 
     // Set up real-time subscription for sessions
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -140,7 +142,8 @@ export default function LearnerDashboard() {
       <div className="min-h-screen flex w-full bg-background">
         <LearnerSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={initialLoad} message="Loading dashboard..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -155,7 +158,7 @@ export default function LearnerDashboard() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div>
                 <h2 className="text-3xl font-bold tracking-tight mb-2">

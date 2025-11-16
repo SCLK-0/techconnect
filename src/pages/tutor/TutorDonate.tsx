@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 import instapayQR from "@/assets/instapay-qr-code.jpg";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 const donationSchema = z.object({
   amount: z.number().min(10, "Minimum donation is ₱10").max(100000, "Maximum donation is ₱100,000"),
@@ -91,25 +92,31 @@ export default function TutorDonate() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <TutorSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={!user} message="Loading..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Support TechConnect</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Your contribution helps us maintain and improve the platform
+                </p>
+              </div>
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -164,23 +171,27 @@ export default function TutorDonate() {
                       </p>
                     </div>
 
-                    <div className="border-t pt-4 space-y-2">
+                    <div className="border-t pt-4 space-y-3">
                       <Label htmlFor="proof-upload">Upload Proof of Payment</Label>
-                      <div className="flex items-center gap-2">
+                      <div className="space-y-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full justify-start"
+                          onClick={() => document.getElementById('proof-upload')?.click()}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          {proofFile ? proofFile.name : "Choose File"}
+                        </Button>
                         <Input
                           id="proof-upload"
                           type="file"
                           accept="image/*"
                           onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                          className="cursor-pointer"
+                          className="hidden"
                           required
                         />
                       </div>
-                      {proofFile && (
-                        <p className="text-sm text-muted-foreground">
-                          Selected: {proofFile.name}
-                        </p>
-                      )}
                       <p className="text-xs text-muted-foreground">
                         Upload a screenshot of your InstaPay payment confirmation
                       </p>

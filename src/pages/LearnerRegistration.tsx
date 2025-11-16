@@ -201,7 +201,7 @@ const LearnerRegistration = () => {
               <Label htmlFor="fullName" className="text-sm font-semibold">Full Name</Label>
               <Input
                 id="fullName"
-                placeholder="John Doe"
+                placeholder="Jomar Samsung"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required

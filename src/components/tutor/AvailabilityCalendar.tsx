@@ -307,7 +307,12 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
                 onSelect={(date) => date && handleDateClick(date)}
                 modifiers={modifiers}
                 modifiersStyles={modifiersStyles}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                disabled={(date) => {
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  tomorrow.setHours(0, 0, 0, 0);
+                  return date < tomorrow;
+                }}
                 className="rounded-md border pointer-events-auto mx-auto"
                 components={{
                   DayContent: CustomDayContent,
@@ -325,7 +330,12 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
                 onSelect={(dates) => handleDateClick(dates)}
                 modifiers={modifiers}
                 modifiersStyles={modifiersStyles}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                disabled={(date) => {
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  tomorrow.setHours(0, 0, 0, 0);
+                  return date < tomorrow;
+                }}
                 className="rounded-md border pointer-events-auto mx-auto"
                 components={{
                   DayContent: CustomDayContent,
@@ -363,13 +373,13 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
       </CardContent>
 
       <Dialog open={timeDialogOpen} onOpenChange={setTimeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              <Clock className="inline-block mr-2 h-5 w-5" />
+        <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] rounded-lg">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-base">
+              <Clock className="inline-block mr-2 h-4 w-4" />
               Set Time Slot
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs">
               {selectedDateForTime && `Set specific hours for ${format(selectedDateForTime, "MMMM d, yyyy")}`}
             </DialogDescription>
           </DialogHeader>
@@ -377,21 +387,25 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="start-time">Start Time</Label>
+                <Label htmlFor="start-time" className="text-xs">Start Time</Label>
                 <Input
                   id="start-time"
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  className="text-sm"
+                  style={{ fontSize: '14px' }}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="end-time">End Time</Label>
+                <Label htmlFor="end-time" className="text-xs">End Time</Label>
                 <Input
                   id="end-time"
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
+                  className="text-sm"
+                  style={{ fontSize: '14px' }}
                 />
               </div>
             </div>

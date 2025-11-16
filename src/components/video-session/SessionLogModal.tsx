@@ -67,10 +67,10 @@ export function SessionLogModal({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open ? null : onOpenChange(open)}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle>Session Log</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto rounded-2xl" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogHeader className="text-center space-y-2">
+          <DialogTitle className="break-words">Session Log</DialogTitle>
+          <DialogDescription className="break-words">
             Document what was accomplished during this session. This helps track progress and plan
             future sessions.
           </DialogDescription>
@@ -88,12 +88,13 @@ export function SessionLogModal({
               value={topicsCovered}
               onChange={(e) => setTopicsCovered(e.target.value)}
               rows={4}
+              className="rounded-xl break-words"
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={submitting || !topicsCovered.trim()}>
+          <Button onClick={handleSubmit} disabled={submitting || !topicsCovered.trim()} className="w-full h-11 rounded-xl">
             {submitting ? "Saving..." : "Save Log"}
           </Button>
         </DialogFooter>

@@ -18,6 +18,7 @@ import { FeedbackDialog } from "@/components/learner/FeedbackDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 interface Session {
   id: string;
@@ -46,11 +47,12 @@ export default function MySessions() {
   const [filter, setFilter] = useState<"pending" | "accepted" | "completed" | "cancelled" | "missed">("pending");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Enable session notifications
   useSessionNotifications(user?.id);
 
-  const { data: sessions = [] } = useQuery({
+  const { data: sessions = [], isLoading, isFetching, isSuccess } = useQuery({
     queryKey: ["learner-sessions", user?.id, filter],
     queryFn: async () => {
       if (!user) return [];
@@ -122,6 +124,13 @@ export default function MySessions() {
     },
   });
 
+  // Clear initial load state once query is successful
+  useEffect(() => {
+    if (isSuccess) {
+      setInitialLoad(false);
+    }
+  }, [isSuccess]);
+
   const totalPages = Math.ceil(sessions.length / itemsPerPage);
   const paginatedSessions = sessions.slice(
     (currentPage - 1) * itemsPerPage,
@@ -132,7 +141,8 @@ export default function MySessions() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <LearnerSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={initialLoad || isLoading || isFetching} message="Loading sessions..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -147,7 +157,7 @@ export default function MySessions() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold mb-2">Sessions</h2>
@@ -260,7 +270,7 @@ export default function MySessions() {
                       ))}
                     </div>
 
-                    <Pagination className="mt-6">
+                    <Pagination className="mt-6 mb-4">
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious

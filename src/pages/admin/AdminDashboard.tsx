@@ -9,9 +9,10 @@ import { NavLink } from "react-router-dom";
 import { Users, UserCheck, Activity, Calendar, Megaphone } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 export default function AdminDashboard() {
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading, isFetching } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
       const [userRoles, sessions, tutorProfiles] = await Promise.all([
@@ -38,24 +39,23 @@ export default function AdminDashboard() {
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading dashboard..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
               <div className="flex items-center gap-2">
-              <NotificationBell />
-              <UserMenu />
-            </div>
+                <NotificationBell />
+                <UserMenu />
+                <SidebarTrigger className="md:hidden" />
+              </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div>
                 <h2 className="text-3xl font-bold tracking-tight mb-2">Platform Overview</h2>

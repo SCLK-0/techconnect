@@ -1,8 +1,8 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Wifi, WifiOff, Clock, Zap } from "lucide-react";
+import { Star, Wifi, WifiOff, Clock, Zap, Maximize2 } from "lucide-react";
 
 interface TutorProfile {
   id: string;
@@ -13,6 +13,7 @@ interface TutorProfile {
   rating?: number;
   review_count?: number;
   next_available?: string;
+  registered_year?: string;
   profiles: {
     full_name: string;
     avatar_url: string | null;
@@ -38,16 +39,19 @@ export const TutorDetailDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle>Tutor Profile</DialogTitle>
+          <DialogDescription className="sr-only">
+            View detailed information about this tutor
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6">
-          <div className="flex items-start gap-4">
-            <Avatar className="h-20 w-20">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
               <AvatarImage src={tutor.profiles.avatar_url || ""} />
-              <AvatarFallback className="text-2xl">
+              <AvatarFallback className="text-2xl bg-blue-500 text-white">
                 {tutor.profiles.full_name
                   .split(" ")
                   .map((n) => n[0])
@@ -55,9 +59,12 @@ export const TutorDetailDialog = ({
                   .toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold">{tutor.profiles.full_name}</h3>
-              <div className="flex items-center gap-4 mt-2">
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-xl sm:text-2xl font-bold">{tutor.profiles.full_name}</h3>
+              {tutor.registered_year && (
+                <p className="text-sm text-muted-foreground mt-1">{tutor.registered_year}</p>
+              )}
+              <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 sm:gap-4 mt-2">
                 <div className="flex items-center gap-2">
                   {tutor.is_online ? (
                     <>
@@ -85,21 +92,26 @@ export const TutorDetailDialog = ({
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold mb-3">Subject Expertise</h4>
-            <div className="flex flex-wrap gap-2">
-              {tutor.subject_expertise.map((subject) => (
+            <h4 className="text-sm font-semibold mb-2 sm:mb-3">Subject Expertise</h4>
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+              {tutor.subject_expertise.slice(0, 5).map((subject) => (
                 <Badge key={subject} variant="secondary" className="text-sm">
                   {subject}
                 </Badge>
               ))}
+              {tutor.subject_expertise.length > 5 && (
+                <Badge variant="outline" className="text-sm">
+                  +{tutor.subject_expertise.length - 5} others
+                </Badge>
+              )}
             </div>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold mb-3">About</h4>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            <h4 className="text-sm font-semibold mb-2 sm:mb-3">About</h4>
+            <div className="text-sm text-muted-foreground leading-relaxed max-h-[120px] sm:max-h-[150px] overflow-y-auto p-3 pr-4 border rounded-lg bg-muted/30 custom-scrollbar break-words overflow-wrap-anywhere">
               {tutor.bio}
-            </p>
+            </div>
           </div>
 
           {tutor.next_available && (
@@ -109,9 +121,9 @@ export const TutorDetailDialog = ({
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
             <Button 
-              className="flex-1"
+              className="flex-1 w-full"
               onClick={() => {
                 onOpenChange(false);
                 onBookSession();
@@ -121,7 +133,7 @@ export const TutorDetailDialog = ({
             </Button>
             <Button 
               variant={tutor.is_online ? "default" : "outline"}
-              className="flex-1 relative"
+              className="flex-1 w-full relative"
               onClick={() => {
                 onOpenChange(false);
                 onInstantSession();
@@ -129,7 +141,7 @@ export const TutorDetailDialog = ({
               disabled={!tutor.is_online}
             >
               <Zap className="mr-2 h-4 w-4" />
-              {tutor.is_online ? "Start Instant Session" : "Tutor Offline"}
+              <span className="truncate">{tutor.is_online ? "Start Instant Session" : "Tutor Offline"}</span>
               {tutor.is_online && (
                 <span className="absolute top-1/2 -translate-y-1/2 right-3 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>

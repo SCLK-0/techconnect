@@ -90,14 +90,14 @@ export function InstantSessionWaitingModal({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open ? null : onOpenChange(open)}>
-      <DialogContent className="sm:max-w-[400px]" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            Waiting for Response
+      <DialogContent className="sm:max-w-[420px] w-[calc(100%-2rem)] rounded-2xl" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogHeader className="text-center space-y-2">
+          <DialogTitle className="flex items-center justify-center gap-2 break-words">
+            <Loader2 className="h-5 w-5 animate-spin text-primary flex-shrink-0" />
+            <span className="break-words">Waiting for Response</span>
           </DialogTitle>
-          <DialogDescription>
-            Waiting for {tutorName} to accept your instant session request...
+          <DialogDescription className="break-words text-center">
+            Waiting for <span className="font-medium break-words">{tutorName}</span> to accept your instant session request...
           </DialogDescription>
         </DialogHeader>
 
@@ -115,7 +115,7 @@ export function InstantSessionWaitingModal({
             variant="outline"
             onClick={handleCancel}
             disabled={isCancelling}
-            className="w-full"
+            className="w-full h-11 rounded-xl"
           >
             {isCancelling ? (
               <>

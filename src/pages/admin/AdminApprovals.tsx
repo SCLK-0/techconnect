@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ export default function AdminApprovals() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const { data: pendingTutors = [], isLoading, error } = useQuery({
+  const { data: pendingTutors = [], isLoading, isFetching, error } = useQuery({
     queryKey: ["pending-tutors"],
     queryFn: async () => {
       console.log("Fetching pending tutors...");
@@ -99,7 +100,7 @@ export default function AdminApprovals() {
     }
 
     return (
-      <Pagination className="mt-6">
+      <Pagination className="mt-6 mb-4">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
@@ -157,19 +158,23 @@ export default function AdminApprovals() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 bg-card">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <SidebarTrigger />
-              <h1 className="text-lg sm:text-xl font-semibold">Tutor Approvals</h1>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4">
-              <NotificationBell />
-              <UserMenu />
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading approvals..." />
+          <header className="h-16 border-b flex items-center justify-center px-3 py-4">
+            <div className="w-full max-w-7xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserMenu />
+                <SidebarTrigger className="md:hidden" />
+              </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
@@ -206,6 +211,7 @@ export default function AdminApprovals() {
                             <CardTitle className="flex items-center gap-2">
                               <UserIcon className="h-5 w-5" />
                               {tutor.profiles?.full_name || "Unknown"}
+                              {tutor.registered_year && <span className="text-sm font-normal text-muted-foreground">({tutor.registered_year})</span>}
                             </CardTitle>
                             <CardDescription className="flex items-center gap-4">
                               <span className="flex items-center gap-1">

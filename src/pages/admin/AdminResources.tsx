@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,10 +14,12 @@ import { CheckCircle, XCircle, FileText, Download, ExternalLink, FileCheck } fro
 import { format } from "date-fns";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import { ResourcePreviewDialog } from "@/components/learner/ResourcePreviewDialog";
 
 export default function AdminResources() {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedResource, setSelectedResource] = useState<any>(null);
   const itemsPerPage = 7;
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export default function AdminResources() {
     };
   }, [queryClient]);
 
-  const { data: pendingResources = [], isLoading } = useQuery({
+  const { data: pendingResources = [], isLoading, isFetching } = useQuery({
     queryKey: ["pending-resources"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -50,7 +53,28 @@ export default function AdminResources() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Fetch tutor profiles with names
+      const tutorIds = [...new Set(data?.map(r => r.tutor_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", tutorIds);
+
+      // Fetch tutor year levels
+      const { data: tutorProfiles } = await supabase
+        .from("tutor_profiles")
+        .select("user_id, registered_year")
+        .in("user_id", tutorIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]));
+      const yearMap = new Map(tutorProfiles?.map(tp => [tp.user_id, tp.registered_year]));
+
+      return data?.map(resource => ({
+        ...resource,
+        tutor_name: profileMap.get(resource.tutor_id) || "Unknown",
+        tutor_year: yearMap.get(resource.tutor_id)
+      }));
     },
   });
 
@@ -100,7 +124,7 @@ export default function AdminResources() {
     }
 
     return (
-      <Pagination className="mt-6">
+      <Pagination className="mt-6 mb-4">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
@@ -158,19 +182,23 @@ export default function AdminResources() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 bg-card">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <SidebarTrigger />
-              <h1 className="text-lg sm:text-xl font-semibold">Resource Approval</h1>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4">
-              <NotificationBell />
-              <UserMenu />
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading resources..." />
+          <header className="h-16 border-b flex items-center justify-center px-3 py-4">
+            <div className="w-full max-w-7xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserMenu />
+                <SidebarTrigger className="md:hidden" />
+              </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
@@ -209,7 +237,7 @@ export default function AdminResources() {
                               <span className="truncate">{resource.title}</span>
                             </CardTitle>
                             <CardDescription>
-                              Uploaded {format(new Date(resource.created_at), "MMM dd, yyyy")}
+                              Uploaded by {resource.tutor_name}{resource.tutor_year && ` (${resource.tutor_year})`} on {format(new Date(resource.created_at), "MMM dd, yyyy")}
                             </CardDescription>
                           </div>
                           <Badge className="flex-shrink-0">Pending Review</Badge>
@@ -228,10 +256,12 @@ export default function AdminResources() {
                             <FileText className="h-4 w-4" />
                             {resource.file_type || "File"}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Download className="h-4 w-4" />
-                            {resource.download_count || 0} downloads
-                          </span>
+                          {resource.download_count > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Download className="h-4 w-4" />
+                              {resource.download_count} downloads
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-2 pt-4">
@@ -239,7 +269,7 @@ export default function AdminResources() {
                             variant="outline"
                             size="sm"
                             className="sm:flex-none"
-                            onClick={() => window.open(resource.file_url, "_blank")}
+                            onClick={() => setSelectedResource(resource)}
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Preview
@@ -281,6 +311,15 @@ export default function AdminResources() {
           </main>
         </div>
       </div>
+
+      {/* Resource Preview Dialog */}
+      {selectedResource && (
+        <ResourcePreviewDialog
+          resource={selectedResource}
+          open={!!selectedResource}
+          onOpenChange={(open) => !open && setSelectedResource(null)}
+        />
+      )}
     </SidebarProvider>
   );
 }

@@ -254,7 +254,7 @@ Your tutor dashboard shows:
 - Pending session requests
 - Recent sessions
 - Earnings summary
-- Student feedback
+- Learner feedback
 
 **[INSERT IMAGE: Tutor dashboard]**  
 *Image location: `docs/images/tutor-dashboard.png`*
@@ -315,7 +315,7 @@ Your tutor dashboard shows:
 1. When online, you'll see instant requests pop up
 2. Review the request details:
    - Subject
-   - Student's question
+   - Learner's question
    - Estimated duration
 3. Click **"Accept"** or **"Decline"**
 4. If accepted, session starts immediately
@@ -327,7 +327,7 @@ Your tutor dashboard shows:
 
 #### Before the Session
 
-1. Review student's profile and request
+1. Review learner's profile and request
 2. Prepare materials if needed
 3. Join 2-3 minutes early
 4. Test your equipment
@@ -358,15 +358,15 @@ Use the session tools:
 
 ### Managing Students
 
-#### View Your Students
+#### View Your Learners
 
-1. Go to **"My Tutees"** in the sidebar
-2. See all students you've tutored
-3. View session history with each student
+1. Go to **"My Learners"** in the sidebar
+2. See all learners you've tutored
+3. View session history with each learner
 4. Track their progress
 
-**[INSERT IMAGE: Tutees list]**  
-*Image location: `docs/images/my-tutees.png`*
+**[INSERT IMAGE: Learners list]**  
+*Image location: `docs/images/my-learners.png`*
 
 ### Viewing Feedback
 
@@ -824,7 +824,7 @@ A: Currently through the donation system. Payment integration coming soon.
 **Q: Can I set my own rates?**  
 A: Yes, you set your hourly rate in your profile settings.
 
-**Q: What if a student is disruptive?**  
+**Q: What if a learner is disruptive?**  
 A: You can end the session and report the issue to admin.
 
 ---
@@ -907,7 +907,7 @@ docs/
     ├── instant-request-popup.png
     ├── active-session-tutor.png
     ├── tutor-sessions.png
-    ├── my-tutees.png
+    ├── my-learners.png
     ├── tutor-feedback.png
     ├── tutor-donations.png
     ├── admin-dashboard.png

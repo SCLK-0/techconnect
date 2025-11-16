@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +41,7 @@ export const ResourcePreviewDialog = ({
       return (
         <iframe
           src={`${resource.file_url}#toolbar=1&navpanes=0&scrollbar=1`}
-          className="w-full h-[400px] border-0 rounded"
+          className="w-full h-[300px] sm:h-[400px] border-0 rounded-lg"
           title="PDF Preview"
         />
       );
@@ -53,7 +53,7 @@ export const ResourcePreviewDialog = ({
         <img
           src={resource.file_url}
           alt={resource.title}
-          className="w-full h-auto max-h-[400px] object-contain rounded"
+          className="w-full h-auto max-h-[300px] sm:max-h-[400px] object-contain rounded-lg"
         />
       );
     }
@@ -63,7 +63,7 @@ export const ResourcePreviewDialog = ({
       return (
         <iframe
           src={resource.file_url}
-          className="w-full h-[400px] border-0 bg-white rounded"
+          className="w-full h-[300px] sm:h-[400px] border-0 bg-white rounded-lg"
           title="Text Preview"
         />
       );
@@ -74,7 +74,7 @@ export const ResourcePreviewDialog = ({
       return (
         <iframe
           src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resource.file_url)}`}
-          className="w-full h-[400px] border-0 rounded"
+          className="w-full h-[300px] sm:h-[400px] border-0 rounded-lg"
           title="Office Document Preview"
         />
       );
@@ -98,25 +98,28 @@ export const ResourcePreviewDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-4">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2 text-lg">
+      <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-4 sm:p-6 rounded-2xl">
+        <DialogHeader className="pb-2 sm:pb-3 pr-8">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             {getFileIcon(resource.file_type)}
             <span className="truncate">{resource.title}</span>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Preview and download learning resource
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto space-y-3">
+        <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2 flex-wrap text-xs">
             <Badge variant="secondary" className="text-xs">
               {resource.file_type.toUpperCase()}
             </Badge>
             {resource.tutor_name && (
               <span className="text-muted-foreground">
-                By {resource.tutor_name}
+                By {resource.tutor_name}{resource.tutor_year && ` (${resource.tutor_year})`}
               </span>
             )}
-            {resource.download_count !== undefined && (
+            {resource.download_count > 0 && (
               <span className="text-muted-foreground">
                 {resource.download_count} downloads
               </span>
@@ -124,15 +127,15 @@ export const ResourcePreviewDialog = ({
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold mb-1">Description</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <h4 className="text-xs sm:text-sm font-semibold mb-1.5">Description</h4>
+            <div className="text-xs text-muted-foreground leading-relaxed max-h-[80px] sm:max-h-[100px] overflow-y-auto p-2 pr-3 border rounded-lg bg-muted/30 custom-scrollbar break-words overflow-wrap-anywhere">
               {resource.description || "No description provided"}
-            </p>
+            </div>
           </div>
 
-          <div className="border rounded overflow-hidden bg-muted/30">
+          <div className="border rounded-lg overflow-hidden bg-muted/30">
             <div className="p-2 bg-muted/50 border-b">
-              <h4 className="text-xs font-semibold">Preview</h4>
+              <h4 className="text-xs sm:text-sm font-semibold">Preview</h4>
             </div>
             <div className="p-2">
               {getFilePreview()}
@@ -140,15 +143,14 @@ export const ResourcePreviewDialog = ({
           </div>
         </div>
 
-        <div className="flex gap-2 pt-3 border-t">
+        <div className="flex gap-2 pt-3 border-t mt-2">
           <Button 
-            size="sm"
             className="w-full"
             onClick={() => {
               onDownload();
             }}
           >
-            <Download className="mr-2 h-3 w-3" />
+            <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
         </div>

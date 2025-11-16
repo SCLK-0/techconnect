@@ -132,19 +132,26 @@ export function OnlineStatusToggle() {
   const isDisabled = loading || tutorStatus !== "approved";
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-t">
-      <div className={`${isOnline ? "text-green-500" : "text-muted-foreground"}`}>
-        {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+    <div className="flex items-center justify-between gap-2 px-4 py-3 border-t">
+      <div className="flex items-center gap-2">
+        <div className={`${isOnline ? "text-green-500" : "text-muted-foreground"}`}>
+          {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+        </div>
+        <Label htmlFor="online-status" className="cursor-pointer text-sm">
+          Online Status
+        </Label>
       </div>
-      <Label htmlFor="online-status" className="flex-1 cursor-pointer text-sm">
-        {isOnline ? "Online" : "Offline"}
-      </Label>
-      <Switch
-        id="online-status"
-        checked={isOnline}
-        onCheckedChange={toggleOnlineStatus}
-        disabled={isDisabled}
-      />
+      <div className="flex items-center gap-2">
+        <Switch
+          id="online-status"
+          checked={isOnline}
+          onCheckedChange={toggleOnlineStatus}
+          disabled={isDisabled}
+        />
+        <span className="text-sm text-muted-foreground">
+          {isOnline ? "Online" : "Offline"}
+        </span>
+      </div>
     </div>
   );
 }

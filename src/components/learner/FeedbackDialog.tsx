@@ -67,10 +67,10 @@ export function FeedbackDialog({ sessionId }: FeedbackDialogProps) {
           Leave Feedback
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Session Feedback</DialogTitle>
-          <DialogDescription>Share your experience with this session</DialogDescription>
+      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] rounded-2xl">
+        <DialogHeader className="text-center space-y-2">
+          <DialogTitle className="break-words">Session Feedback</DialogTitle>
+          <DialogDescription className="break-words">Share your experience with this session</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -104,11 +104,11 @@ export function FeedbackDialog({ sessionId }: FeedbackDialogProps) {
               rows={4}
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <div className="flex flex-col gap-2">
+            <Button type="submit" className="w-full h-11 rounded-xl">Submit Feedback</Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="w-full h-11 rounded-xl">
               Cancel
             </Button>
-            <Button type="submit">Submit Feedback</Button>
           </div>
         </form>
       </DialogContent>

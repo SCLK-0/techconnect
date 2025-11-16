@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Users, BookOpen, Video, Sparkles } from "lucide-react";
+import { GraduationCap, Users, BookOpen, Video, Sparkles, ArrowRight, Gift, Star } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.png";
 import { useEffect } from "react";
@@ -90,7 +90,7 @@ const Index = () => {
               <Button size="lg" asChild className="text-lg px-8 shadow-lg hover:shadow-xl transition-all group">
                 <Link to="/role-selection">
                   Get Started
-                  <Sparkles className="ml-2 w-4 h-4 group-hover:rotate-12 transition-transform" />
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="text-lg px-8 border-2 hover:bg-accent/10">
@@ -102,7 +102,7 @@ const Index = () => {
             <div className="w-full max-w-2xl pt-4">
               <div className="text-center p-6 rounded-xl border border-primary/20 bg-card/50 backdrop-blur-sm">
                 <div className="inline-flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
+                  <Gift className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Limited Offer</span>
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-bold mb-1">
@@ -123,7 +123,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-              <Sparkles className="w-4 h-4 text-primary" />
+              <Star className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-primary">Platform Features</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
@@ -179,12 +179,12 @@ const Index = () => {
                 Ready to Start Learning?
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                Join thousands of students already learning from peer experts
+                Be among the first to experience peer-to-peer learning
               </p>
               <Button size="lg" asChild className="text-lg px-10 shadow-xl hover:shadow-2xl transition-all group">
                 <Link to="/role-selection">
                   Join TechConnect
-                  <Sparkles className="ml-2 w-4 h-4 group-hover:rotate-12 transition-transform" />
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </div>

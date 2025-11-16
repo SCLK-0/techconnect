@@ -16,7 +16,7 @@ A modern, real-time tutoring platform connecting learners with tutors for person
 - 📊 Comprehensive dashboard with session analytics
 - 🗓️ Manage availability and schedule
 - 🔔 Receive instant session requests
-- 👥 Track tutees and session history
+- 👥 Track learners and session history
 - 💰 Donation system for voluntary contributions
 - 📝 View learner feedback
 

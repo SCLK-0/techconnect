@@ -67,10 +67,10 @@ export function SessionFeedbackModal({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open ? null : onOpenChange(open)}>
-      <DialogContent className="sm:max-w-md" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle>Session Feedback</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] rounded-2xl" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogHeader className="text-center space-y-2">
+          <DialogTitle className="break-words">Session Feedback</DialogTitle>
+          <DialogDescription className="break-words">
             How was your session? Your feedback helps us improve the experience.
           </DialogDescription>
         </DialogHeader>
@@ -114,7 +114,7 @@ export function SessionFeedbackModal({
         </div>
 
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={submitting || rating === 0}>
+          <Button onClick={handleSubmit} disabled={submitting || rating === 0} className="w-full h-11 rounded-xl">
             {submitting ? "Submitting..." : "Submit Feedback"}
           </Button>
         </DialogFooter>

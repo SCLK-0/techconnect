@@ -102,7 +102,7 @@ export function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 sm:w-80 max-h-96">
+      <DropdownMenuContent align="end" className="w-72 sm:w-80 max-h-[32rem]">
         <DropdownMenuLabel className="flex justify-between items-center">
           <span>Notifications</span>
           {unreadCount > 0 && (
@@ -117,7 +117,7 @@ export function NotificationBell() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <div className="max-h-64 overflow-y-auto">
+        <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               No notifications
@@ -132,11 +132,11 @@ export function NotificationBell() {
                   }`}
                   onClick={() => markAsRead(notification.id)}
                 >
-                  <div className="font-medium text-sm">{notification.title}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="font-medium text-sm line-clamp-1 w-full">{notification.title}</div>
+                  <div className="text-xs text-muted-foreground line-clamp-3 w-full mt-1 whitespace-normal break-words">
                     {notification.message}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-2">
                     {new Date(notification.created_at).toLocaleString()}
                   </div>
                 </DropdownMenuItem>

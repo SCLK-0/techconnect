@@ -195,19 +195,19 @@ export function InstantSessionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[450px]" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            Start Instant Session
+      <DialogContent className="sm:max-w-[420px] w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto rounded-2xl" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogHeader className="text-center space-y-2">
+          <DialogTitle className="flex items-center justify-center gap-2 break-words text-lg">
+            <Zap className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="break-words">Start Instant Session</span>
           </DialogTitle>
-          <DialogDescription>
-            Connect with {tutorName} right now for an immediate tutoring session.
+          <DialogDescription className="break-words text-center">
+            Connect with <span className="break-words font-medium">{tutorName}</span> right now for an immediate tutoring session.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
             <FormField
               control={form.control}
               name="duration"
@@ -216,7 +216,7 @@ export function InstantSessionDialog({
                   <FormLabel className="text-sm font-medium">Duration</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-11 rounded-xl">
                         <SelectValue placeholder="Select session duration" />
                       </SelectTrigger>
                     </FormControl>
@@ -228,9 +228,7 @@ export function InstantSessionDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  <div className="h-5">
-                    <FormMessage className="text-xs" />
-                  </div>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -244,29 +242,32 @@ export function InstantSessionDialog({
                   <FormControl>
                     <Input
                       placeholder="e.g., Automotive Basics"
-                      className="h-10"
+                      className="h-11 break-words rounded-xl"
                       {...field}
                       maxLength={100}
                     />
                   </FormControl>
-                  <div className="h-5">
-                    <FormMessage className="text-xs" />
-                  </div>
+                  <FormMessage className="text-xs break-words" />
                 </FormItem>
               )}
             />
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-2 flex-col gap-2">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full h-11 rounded-xl"
+              >
+                {isSubmitting ? "Starting..." : "Start Now"}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
+                className="w-full h-11 rounded-xl"
               >
                 Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Starting..." : "Start Now"}
               </Button>
             </DialogFooter>
           </form>

@@ -4,11 +4,40 @@ import { User, Session } from "@supabase/supabase-js";
 
 export type UserRole = "admin" | "tutor" | "learner" | null;
 
+const ROLE_CACHE_KEY = "techconnect_user_role";
+const USER_ID_CACHE_KEY = "techconnect_user_id";
+
 export const useUserRole = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<UserRole>(null);
+  
+  // Initialize role from localStorage cache for instant loading
+  const [role, setRole] = useState<UserRole>(() => {
+    try {
+      const cachedRole = localStorage.getItem(ROLE_CACHE_KEY);
+      return cachedRole as UserRole;
+    } catch {
+      return null;
+    }
+  });
+  
   const [loading, setLoading] = useState(true);
+
+  // Helper to update role and cache it
+  const updateRole = (newRole: UserRole, userId?: string) => {
+    setRole(newRole);
+    try {
+      if (newRole && userId) {
+        localStorage.setItem(ROLE_CACHE_KEY, newRole);
+        localStorage.setItem(USER_ID_CACHE_KEY, userId);
+      } else {
+        localStorage.removeItem(ROLE_CACHE_KEY);
+        localStorage.removeItem(USER_ID_CACHE_KEY);
+      }
+    } catch (error) {
+      console.error("Error caching role:", error);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -18,27 +47,62 @@ export const useUserRole = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Clear cache on sign out
+        if (event === "SIGNED_OUT") {
+          updateRole(null);
+          setLoading(false);
+          return;
+        }
+        
         // Defer role fetching with setTimeout to prevent deadlock
         if (session?.user) {
-          setTimeout(() => {
-            supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", session.user.id)
-              .single()
-              .then(({ data, error }) => {
-                if (error) {
-                  console.error("Error fetching role on auth change:", error);
-                } else {
-                  console.log("User role:", data?.role);
-                  setRole(data?.role as UserRole ?? null);
-                }
-              });
-          }, 0);
+          // Check if cached role matches current user
+          const cachedUserId = localStorage.getItem(USER_ID_CACHE_KEY);
+          const cachedRole = localStorage.getItem(ROLE_CACHE_KEY) as UserRole;
+          
+          if (cachedUserId === session.user.id && cachedRole) {
+            // Use cached role immediately
+            setRole(cachedRole);
+            setLoading(false);
+            
+            // Still fetch in background to ensure it's up to date
+            setTimeout(() => {
+              supabase
+                .from("user_roles")
+                .select("role")
+                .eq("user_id", session.user.id)
+                .single()
+                .then(({ data, error }) => {
+                  if (!error && data?.role !== cachedRole) {
+                    console.log("Role updated from cache:", cachedRole, "to:", data?.role);
+                    updateRole(data?.role as UserRole, session.user.id);
+                  }
+                });
+            }, 0);
+          } else {
+            // Fetch role from database
+            setTimeout(() => {
+              supabase
+                .from("user_roles")
+                .select("role")
+                .eq("user_id", session.user.id)
+                .single()
+                .then(({ data, error }) => {
+                  if (error) {
+                    console.error("Error fetching role on auth change:", error);
+                    setLoading(false);
+                  } else {
+                    console.log("User role:", data?.role);
+                    updateRole(data?.role as UserRole ?? null, session.user.id);
+                    setLoading(false);
+                  }
+                });
+            }, 0);
+          }
         } else {
-          setRole(null);
+          updateRole(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
@@ -55,21 +119,46 @@ export const useUserRole = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single()
-          .then(({ data, error: roleError }) => {
-            if (roleError) {
-              console.error("Error fetching role:", roleError);
-            } else {
-              console.log("User role:", data?.role);
-            }
-            setRole(data?.role as UserRole ?? null);
-            setLoading(false);
-          });
+        // Check if cached role matches current user
+        const cachedUserId = localStorage.getItem(USER_ID_CACHE_KEY);
+        const cachedRole = localStorage.getItem(ROLE_CACHE_KEY) as UserRole;
+        
+        if (cachedUserId === session.user.id && cachedRole) {
+          // Use cached role immediately
+          setRole(cachedRole);
+          setLoading(false);
+          
+          // Still fetch in background to ensure it's up to date
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single()
+            .then(({ data, error: roleError }) => {
+              if (!roleError && data?.role !== cachedRole) {
+                console.log("Role updated from cache:", cachedRole, "to:", data?.role);
+                updateRole(data?.role as UserRole, session.user.id);
+              }
+            });
+        } else {
+          // Fetch role from database
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single()
+            .then(({ data, error: roleError }) => {
+              if (roleError) {
+                console.error("Error fetching role:", roleError);
+              } else {
+                console.log("User role:", data?.role);
+              }
+              updateRole(data?.role as UserRole ?? null, session.user.id);
+              setLoading(false);
+            });
+        }
       } else {
+        updateRole(null);
         setLoading(false);
       }
     });

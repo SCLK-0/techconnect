@@ -23,9 +23,9 @@ import { GlobalInstantRequestsWidget } from "@/components/tutor/GlobalInstantReq
 const menuItems = [
   { title: "Dashboard", url: "/tutor/dashboard", icon: LayoutDashboard },
   { title: "Sessions", url: "/tutor/sessions", icon: Clock },
-  { title: "My Tutees", url: "/tutor/tutees", icon: Users },
+  { title: "My Learners", url: "/tutor/tutees", icon: Users },
   { title: "Availability", url: "/tutor/availability", icon: Calendar },
-  { title: "Student Feedback", url: "/tutor/feedback", icon: Star },
+  { title: "Learner Feedback", url: "/tutor/feedback", icon: Star },
   { title: "Resources", url: "/tutor/resources", icon: FileText },
   { title: "Announcements", url: "/announcements", icon: Megaphone },
   { title: "Donate", url: "/tutor/donate", icon: Heart },

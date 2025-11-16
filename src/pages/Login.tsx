@@ -40,6 +40,24 @@ const Login = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Check if user is active
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("is_active")
+          .eq("user_id", data.user.id)
+          .single();
+
+        // If user is not active, sign them out and show error
+        if (profileData && !profileData.is_active) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Account Deactivated",
+            description: "Your account has been deactivated. Please contact an administrator.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         // Get user role
         const { data: roleData } = await supabase
           .from("user_roles")

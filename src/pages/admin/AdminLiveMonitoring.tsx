@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Activity, Users, Video } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { seedAdminData } from "@/utils/seedAdminData";
@@ -22,7 +23,7 @@ export default function AdminLiveMonitoring() {
     seedAdminData();
   }, []);
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading, isFetching } = useQuery({
     queryKey: ["live-stats"],
     queryFn: async () => {
       // Get tutors who are marked online and have been active in last 2 minutes
@@ -129,7 +130,7 @@ export default function AdminLiveMonitoring() {
     }
 
     return (
-      <Pagination className="mt-6">
+      <Pagination className="mt-6 mb-4">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
@@ -187,89 +188,97 @@ export default function AdminLiveMonitoring() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading monitoring..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
-                  <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="TechConnect Logo" className="h-8 w-8 object-contain" />
+                <span className="font-semibold text-lg hidden sm:inline">TechConnect</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <NotificationBell />
                 <UserMenu />
+                <SidebarTrigger className="md:hidden" />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pt-8 pb-6 overflow-auto flex justify-center">
-            <div className="grid gap-2 md:grid-cols-2 mb-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Online Tutors</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.onlineTutors || 0}</div>
-                  <p className="text-xs text-muted-foreground">Currently available</p>
-                </CardContent>
-              </Card>
+          <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
+            <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight mb-2">Live Monitoring</h2>
+                <p className="text-muted-foreground">
+                  Real-time view of active sessions and online tutors.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Online Tutors</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.onlineTutors || 0}</div>
+                    <p className="text-xs text-muted-foreground">Currently available</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                    <Video className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.activeSessions || 0}</div>
+                    <p className="text-xs text-muted-foreground">In progress or waiting</p>
+                  </CardContent>
+                </Card>
+              </div>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-                  <Video className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Active Sessions
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.activeSessions || 0}</div>
-                  <p className="text-xs text-muted-foreground">In progress or waiting</p>
+                  {stats?.sessions && stats.sessions.length > 0 ? (
+                    <>
+                      <div className="space-y-4">
+                        {paginatedSessions?.map((session: any) => (
+                        <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium">{session.subject}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Tutor: {session.tutor?.full_name || "Unknown"} • Learner: {session.learner?.full_name || "Unknown"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge variant={session.session_status === "in_progress" ? "default" : "secondary"}>
+                              {session.session_status}
+                            </Badge>
+                             <button
+                              onClick={() => window.open(`/video-session/${session.id}?monitor=true`, '_blank')}
+                              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                            >
+                              Monitor
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      </div>
+                      
+                      {renderPagination()}
+                    </>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">No active sessions</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5" />
-                  Active Sessions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {stats?.sessions && stats.sessions.length > 0 ? (
-                  <>
-                    <div className="space-y-4">
-                      {paginatedSessions?.map((session: any) => (
-                      <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">{session.subject}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Tutor: {session.tutor?.full_name || "Unknown"} • Learner: {session.learner?.full_name || "Unknown"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant={session.session_status === "in_progress" ? "default" : "secondary"}>
-                            {session.session_status}
-                          </Badge>
-                           <button
-                            onClick={() => window.open(`/video-session/${session.id}?monitor=true`, '_blank')}
-                            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
-                          >
-                            Monitor
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    </div>
-                    
-                    {renderPagination()}
-                  </>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">No active sessions</p>
-                )}
-              </CardContent>
-            </Card>
           </main>
         </div>
       </div>
