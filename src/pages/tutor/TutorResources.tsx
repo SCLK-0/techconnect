@@ -51,21 +51,38 @@ export default function TutorResources() {
       // Verify user is authenticated
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError || !authUser) {
+        console.error("Auth error:", authError);
         throw new Error("Authentication required. Please log in again.");
       }
+
+      console.log("Authenticated user ID:", authUser.id);
 
       const fileExt = file.name.split(".").pop();
       const filePath = `${authUser.id}/${crypto.randomUUID()}.${fileExt}`;
 
+      console.log("Uploading file to storage:", filePath);
       const { error: uploadError } = await supabase.storage
         .from("resources")
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw new Error(`Storage error: ${uploadError.message}`);
+      }
 
+      console.log("File uploaded successfully, getting public URL");
       const { data: { publicUrl } } = supabase.storage
         .from("resources")
         .getPublicUrl(filePath);
+
+      console.log("Inserting resource record:", {
+        tutor_id: authUser.id,
+        title,
+        description,
+        file_url: publicUrl,
+        file_type: fileExt || "unknown",
+        status: "pending",
+      });
 
       const { error: insertError } = await supabase
         .from("resources")
@@ -79,9 +96,11 @@ export default function TutorResources() {
         });
 
       if (insertError) {
-        console.error("Insert error:", insertError);
+        console.error("Database insert error:", insertError);
         throw new Error(`Database error: ${insertError.message}`);
       }
+
+      console.log("Resource uploaded successfully!");
     },
     onSuccess: () => {
       toast.success("Resource uploaded! Awaiting admin approval.");
