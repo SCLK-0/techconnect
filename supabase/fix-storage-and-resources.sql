@@ -83,18 +83,18 @@ CREATE POLICY "allow_authenticated_select"
   TO authenticated
   USING (true);  -- Allow any authenticated user to view
 
-CREATE POLICY "allow_own_update"
+CREATE POLICY "allow_authenticated_update"
   ON public.resources
   FOR UPDATE
   TO authenticated
-  USING (tutor_id = auth.uid())
-  WITH CHECK (tutor_id = auth.uid());
+  USING (true)  -- Allow any authenticated user to update
+  WITH CHECK (true);
 
-CREATE POLICY "allow_own_delete"
+CREATE POLICY "allow_authenticated_delete"
   ON public.resources
   FOR DELETE
   TO authenticated
-  USING (tutor_id = auth.uid());
+  USING (true);  -- Allow any authenticated user to delete
 
 -- ============================================
 -- PART 3: Verification

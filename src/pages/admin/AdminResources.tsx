@@ -56,17 +56,28 @@ export default function AdminResources() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
+      console.log("Updating resource:", { id, status });
+      
+      const { data, error } = await supabase
         .from("resources")
         .update({ status })
-        .eq("id", id);
-      if (error) throw error;
+        .eq("id", id)
+        .select();
+      
+      if (error) {
+        console.error("Update error:", error);
+        throw error;
+      }
+      
+      console.log("Update successful:", data);
+      return data;
     },
     onSuccess: (_, variables) => {
       toast.success(`Resource ${variables.status === "approved" ? "approved" : "rejected"}`);
       queryClient.invalidateQueries({ queryKey: ["pending-resources"] });
     },
     onError: (error: any) => {
+      console.error("Mutation error:", error);
       toast.error(error.message || "Failed to update status");
     },
   });
