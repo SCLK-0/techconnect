@@ -47,8 +47,15 @@ export default function TutorResources() {
       if (!file || !user) throw new Error("Missing required data");
 
       setUploading(true);
+      
+      // Verify user is authenticated
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser) {
+        throw new Error("Authentication required. Please log in again.");
+      }
+
       const fileExt = file.name.split(".").pop();
-      const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${authUser.id}/${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("resources")
@@ -63,7 +70,7 @@ export default function TutorResources() {
       const { error: insertError } = await supabase
         .from("resources")
         .insert({
-          tutor_id: user.id,
+          tutor_id: authUser.id,
           title,
           description,
           file_url: publicUrl,
@@ -71,7 +78,10 @@ export default function TutorResources() {
           status: "pending",
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw new Error(`Database error: ${insertError.message}`);
+      }
     },
     onSuccess: () => {
       toast.success("Resource uploaded! Awaiting admin approval.");
