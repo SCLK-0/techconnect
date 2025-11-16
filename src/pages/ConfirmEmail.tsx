@@ -19,6 +19,38 @@ const ConfirmEmail = () => {
     let pollInterval: NodeJS.Timeout;
     let isConfirmed = false;
     
+    // IMMEDIATE CHECK: If this is an OAuth callback (has access_token), check if it's an admin
+    const checkIfAdminOAuth = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hasOAuthToken = hashParams.has('access_token');
+      
+      if (hasOAuthToken) {
+        console.log("🔍 OAuth callback detected on confirm-email page");
+        
+        // Get the session immediately
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          console.log("👤 User session found, checking role...");
+          
+          // Check if user is admin
+          const { data: roleData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single();
+          
+          if (roleData?.role === "admin") {
+            console.log("🔐 Admin OAuth detected! Redirecting to admin/login...");
+            // Redirect admin OAuth to admin login page immediately
+            navigate("/admin/login", { replace: true });
+            return true; // Signal that we're redirecting
+          }
+        }
+      }
+      return false; // Not an admin OAuth
+    };
+    
     // Listen for confirmation from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'email_confirmed' && e.newValue === 'true') {
@@ -31,6 +63,10 @@ const ConfirmEmail = () => {
     window.addEventListener('storage', handleStorageChange);
     
     const checkConfirmation = async () => {
+      // First check if this is an admin OAuth - if so, redirect immediately
+      const isAdminOAuth = await checkIfAdminOAuth();
+      if (isAdminOAuth) return; // Stop processing if redirecting
+      
       // Don't check again if already confirmed or if we should stop checking
       if (isConfirmed || shouldStopChecking.current) return;
       
