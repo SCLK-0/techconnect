@@ -12,10 +12,13 @@ import logo from "@/assets/logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import { ResourcePreviewDialog } from "@/components/learner/ResourcePreviewDialog";
 
 export default function LearnerResources() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedResource, setSelectedResource] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const itemsPerPage = 6;
 
   const { data: resources = [] } = useQuery({
@@ -172,37 +175,48 @@ export default function LearnerResources() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
                   {paginatedResources.map((resource) => (
-                    <Card key={resource.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <FileText className="w-5 h-5" />
-                          {resource.title}
+                    <Card 
+                      key={resource.id} 
+                      className="hover:shadow-xl hover:scale-[1.02] hover:border-primary/50 transition-all duration-300 cursor-pointer"
+                      onClick={() => {
+                        setSelectedResource(resource);
+                        setIsPreviewOpen(true);
+                      }}
+                    >
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                          <span className="truncate">{resource.title}</span>
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-xs sm:text-sm">
                           By {resource.tutor_name || "Unknown Tutor"}
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">{resource.description}</p>
+                      <CardContent className="space-y-3 sm:space-y-4 pt-0">
+                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                          {resource.description || "No description provided"}
+                        </p>
                         <div className="flex gap-2">
                           <Button 
                             variant="outline" 
-                            className="flex-1"
-                            onClick={() => {
-                              // Use Office Online Viewer for better preview
-                              const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resource.file_url)}`;
-                              window.open(viewerUrl, '_blank', 'width=1200,height=800');
-                              toast.success("Opening preview in new window");
+                            size="sm"
+                            className="flex-1 text-xs sm:text-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedResource(resource);
+                              setIsPreviewOpen(true);
                             }}
                           >
-                            <Eye className="w-4 h-4 mr-2" />
+                            <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                             Preview
                           </Button>
                           <Button 
-                            className="flex-1" 
-                            onClick={async () => {
+                            size="sm"
+                            className="flex-1 text-xs sm:text-sm" 
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               await supabase.rpc('increment_resource_downloads', { 
                                 resource_id: resource.id 
                               });
@@ -210,7 +224,7 @@ export default function LearnerResources() {
                               toast.success("Download started");
                             }}
                           >
-                            <Download className="w-4 h-4 mr-2" />
+                            <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                             Download
                           </Button>
                         </div>
@@ -225,6 +239,21 @@ export default function LearnerResources() {
           </main>
         </div>
       </div>
+
+      <ResourcePreviewDialog
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        resource={selectedResource}
+        onDownload={async () => {
+          if (selectedResource) {
+            await supabase.rpc('increment_resource_downloads', { 
+              resource_id: selectedResource.id 
+            });
+            window.open(selectedResource.file_url, '_blank');
+            toast.success("Download started");
+          }
+        }}
+      />
     </SidebarProvider>
   );
 }
