@@ -19,6 +19,10 @@ DROP POLICY IF EXISTS "Tutors can delete their own resources" ON storage.objects
 DROP POLICY IF EXISTS "Authenticated users can upload to resources" ON storage.objects;
 DROP POLICY IF EXISTS "Public Access" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated uploads to resources" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public read access to resources" ON storage.objects;
+DROP POLICY IF EXISTS "Allow users to update their own files in resources" ON storage.objects;
+DROP POLICY IF EXISTS "Allow users to delete their own files in resources" ON storage.objects;
 
 -- Create new storage policies for resources bucket
 CREATE POLICY "Allow authenticated uploads to resources"
@@ -66,6 +70,12 @@ DROP POLICY IF EXISTS "enable_insert_for_authenticated_users" ON public.resource
 DROP POLICY IF EXISTS "enable_select_for_users_and_approved" ON public.resources;
 DROP POLICY IF EXISTS "enable_update_for_own_resources" ON public.resources;
 DROP POLICY IF EXISTS "enable_delete_for_own_resources" ON public.resources;
+DROP POLICY IF EXISTS "allow_authenticated_insert" ON public.resources;
+DROP POLICY IF EXISTS "allow_authenticated_select" ON public.resources;
+DROP POLICY IF EXISTS "allow_authenticated_update" ON public.resources;
+DROP POLICY IF EXISTS "allow_authenticated_delete" ON public.resources;
+DROP POLICY IF EXISTS "allow_own_update" ON public.resources;
+DROP POLICY IF EXISTS "allow_own_delete" ON public.resources;
 
 -- Re-enable RLS
 ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
