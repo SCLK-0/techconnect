@@ -33,14 +33,72 @@ export const ResourcePreviewDialog = ({
     return <FileText className="h-5 w-5" />;
   };
 
-  const canPreviewInline = (fileType: string) => {
-    const previewableTypes = ['pdf', 'txt', 'jpg', 'jpeg', 'png', 'gif'];
-    return previewableTypes.includes(fileType.toLowerCase());
+  const getFilePreview = () => {
+    const fileType = resource.file_type.toLowerCase();
+    
+    // PDF files
+    if (fileType === 'pdf') {
+      return (
+        <iframe
+          src={`${resource.file_url}#toolbar=1&navpanes=1&scrollbar=1`}
+          className="w-full h-[600px] border-0 rounded"
+          title="PDF Preview"
+        />
+      );
+    }
+    
+    // Image files
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileType)) {
+      return (
+        <img
+          src={resource.file_url}
+          alt={resource.title}
+          className="w-full h-auto max-h-[600px] object-contain rounded"
+        />
+      );
+    }
+    
+    // Text files
+    if (fileType === 'txt') {
+      return (
+        <iframe
+          src={resource.file_url}
+          className="w-full h-[600px] border-0 bg-white rounded"
+          title="Text Preview"
+        />
+      );
+    }
+    
+    // Office documents (Word, Excel, PowerPoint)
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileType)) {
+      return (
+        <iframe
+          src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resource.file_url)}`}
+          className="w-full h-[600px] border-0 rounded"
+          title="Office Document Preview"
+        />
+      );
+    }
+    
+    // For other file types, show a message
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] text-center p-8 bg-muted/30 rounded">
+        <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Preview not available</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          This file type cannot be previewed in the browser.
+        </p>
+        <Button onClick={() => window.open(resource.file_url, '_blank')}>
+          <ExternalLink className="mr-2 h-4 w-4" />
+          Open in New Tab
+        </Button>
+      </div>
+    );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {getFileIcon(resource.file_type)}
@@ -48,7 +106,7 @@ export const ResourcePreviewDialog = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
             <Badge variant="secondary" className="text-sm">
               {resource.file_type.toUpperCase()}
@@ -72,55 +130,34 @@ export const ResourcePreviewDialog = ({
             </p>
           </div>
 
-          {canPreviewInline(resource.file_type) && (
-            <div className="border rounded-lg overflow-hidden bg-muted/30">
-              <div className="p-4 bg-muted/50 border-b">
-                <h4 className="text-sm font-semibold">Preview</h4>
-              </div>
-              <div className="p-4">
-                {resource.file_type.toLowerCase() === 'pdf' ? (
-                  <iframe
-                    src={resource.file_url}
-                    className="w-full h-[500px] border-0"
-                    title="PDF Preview"
-                  />
-                ) : ['jpg', 'jpeg', 'png', 'gif'].includes(resource.file_type.toLowerCase()) ? (
-                  <img
-                    src={resource.file_url}
-                    alt={resource.title}
-                    className="w-full h-auto max-h-[500px] object-contain"
-                  />
-                ) : resource.file_type.toLowerCase() === 'txt' ? (
-                  <iframe
-                    src={resource.file_url}
-                    className="w-full h-[500px] border-0 bg-white"
-                    title="Text Preview"
-                  />
-                ) : null}
-              </div>
+          <div className="border rounded-lg overflow-hidden bg-muted/30">
+            <div className="p-3 bg-muted/50 border-b">
+              <h4 className="text-sm font-semibold">File Preview</h4>
             </div>
-          )}
-
-          <div className="flex gap-3 pt-4">
-            <Button 
-              variant="outline"
-              className="flex-1"
-              onClick={() => window.open(resource.file_url, '_blank')}
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Open in New Tab
-            </Button>
-            <Button 
-              className="flex-1"
-              onClick={() => {
-                onDownload();
-                onOpenChange(false);
-              }}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
+            <div className="p-4">
+              {getFilePreview()}
+            </div>
           </div>
+        </div>
+
+        <div className="flex gap-3 pt-4 border-t">
+          <Button 
+            variant="outline"
+            className="flex-1"
+            onClick={() => window.open(resource.file_url, '_blank')}
+          >
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Open in New Tab
+          </Button>
+          <Button 
+            className="flex-1"
+            onClick={() => {
+              onDownload();
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
