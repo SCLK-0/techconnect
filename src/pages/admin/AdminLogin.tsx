@@ -51,19 +51,24 @@ const AdminLogin = () => {
           // Wait to ensure toast is visible
           await new Promise(resolve => setTimeout(resolve, 1200));
           navigate("/admin/dashboard", { replace: true });
-        } else if (isCallback) {
-          // Only show error and sign out if this was a new login attempt
-          console.log("❌ Not an admin, denying access");
-          toast({
-            title: "Access Denied",
-            description: "You don't have admin privileges.",
-            variant: "destructive",
-            duration: 3000,
-          });
-          // Wait to show toast before signing out
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          await supabase.auth.signOut();
-          setLoading(false);
+        } else {
+          // User is not an admin - check if this was an OAuth attempt
+          const wasOAuthAttempt = sessionStorage.getItem('admin_oauth_attempt') === 'true' || isCallback;
+          
+          if (wasOAuthAttempt) {
+            console.log("❌ Not an admin, denying access");
+            sessionStorage.removeItem('admin_oauth_attempt'); // Clean up
+            toast({
+              title: "Access Denied",
+              description: "You don't have admin privileges.",
+              variant: "destructive",
+              duration: 3000,
+            });
+            // Wait to show toast before signing out
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await supabase.auth.signOut();
+            setLoading(false);
+          }
         }
       } else if (isCallback) {
         console.log("⚠️ OAuth callback but no session found");
