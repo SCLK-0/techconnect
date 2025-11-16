@@ -202,23 +202,23 @@ export default function AdminResources() {
                     {paginatedResources.map((resource: any) => (
                     <Card key={resource.id}>
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 flex-1 min-w-0">
                             <CardTitle className="flex items-center gap-2">
-                              <FileText className="h-5 w-5" />
-                              {resource.title}
+                              <FileText className="h-5 w-5 flex-shrink-0" />
+                              <span className="truncate">{resource.title}</span>
                             </CardTitle>
                             <CardDescription>
                               Uploaded {format(new Date(resource.created_at), "MMM dd, yyyy")}
                             </CardDescription>
                           </div>
-                          <Badge>Pending Review</Badge>
+                          <Badge className="flex-shrink-0">Pending Review</Badge>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div>
                           <h4 className="font-semibold mb-1">Description</h4>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground line-clamp-3 break-words">
                             {resource.description || "No description provided"}
                           </p>
                         </div>

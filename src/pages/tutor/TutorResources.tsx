@@ -289,15 +289,19 @@ export default function TutorResources() {
                     {paginatedResources.map((resource) => (
                     <Card key={resource.id}>
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 flex-1 min-w-0">
                             <CardTitle className="flex items-center gap-2">
-                              <FileText className="w-5 h-5" />
-                              {resource.title}
+                              <FileText className="w-5 h-5 flex-shrink-0" />
+                              <span className="truncate">{resource.title}</span>
                             </CardTitle>
-                            <CardDescription>{resource.description}</CardDescription>
+                            <CardDescription className="line-clamp-2 break-words">
+                              {resource.description}
+                            </CardDescription>
                           </div>
-                          {getStatusBadge(resource.status)}
+                          <div className="flex-shrink-0">
+                            {getStatusBadge(resource.status)}
+                          </div>
                         </div>
                       </CardHeader>
                     </Card>

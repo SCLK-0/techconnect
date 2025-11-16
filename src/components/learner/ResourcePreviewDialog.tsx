@@ -142,17 +142,8 @@ export const ResourcePreviewDialog = ({
 
         <div className="flex gap-2 pt-3 border-t">
           <Button 
-            variant="outline"
             size="sm"
-            className="flex-1"
-            onClick={() => window.open(resource.file_url, '_blank')}
-          >
-            <ExternalLink className="mr-2 h-3 w-3" />
-            Open
-          </Button>
-          <Button 
-            size="sm"
-            className="flex-1"
+            className="w-full"
             onClick={() => {
               onDownload();
             }}
