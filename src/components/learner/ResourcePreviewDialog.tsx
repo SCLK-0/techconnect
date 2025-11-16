@@ -40,8 +40,8 @@ export const ResourcePreviewDialog = ({
     if (fileType === 'pdf') {
       return (
         <iframe
-          src={`${resource.file_url}#toolbar=1&navpanes=1&scrollbar=1`}
-          className="w-full h-[600px] border-0 rounded"
+          src={`${resource.file_url}#toolbar=1&navpanes=0&scrollbar=1`}
+          className="w-full h-[400px] border-0 rounded"
           title="PDF Preview"
         />
       );
@@ -53,7 +53,7 @@ export const ResourcePreviewDialog = ({
         <img
           src={resource.file_url}
           alt={resource.title}
-          className="w-full h-auto max-h-[600px] object-contain rounded"
+          className="w-full h-auto max-h-[400px] object-contain rounded"
         />
       );
     }
@@ -63,7 +63,7 @@ export const ResourcePreviewDialog = ({
       return (
         <iframe
           src={resource.file_url}
-          className="w-full h-[600px] border-0 bg-white rounded"
+          className="w-full h-[400px] border-0 bg-white rounded"
           title="Text Preview"
         />
       );
@@ -74,7 +74,7 @@ export const ResourcePreviewDialog = ({
       return (
         <iframe
           src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resource.file_url)}`}
-          className="w-full h-[600px] border-0 rounded"
+          className="w-full h-[400px] border-0 rounded"
           title="Office Document Preview"
         />
       );
@@ -82,14 +82,14 @@ export const ResourcePreviewDialog = ({
     
     // For other file types, show a message
     return (
-      <div className="flex flex-col items-center justify-center h-[400px] text-center p-8 bg-muted/30 rounded">
-        <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Preview not available</h3>
-        <p className="text-sm text-muted-foreground mb-4">
+      <div className="flex flex-col items-center justify-center h-[250px] text-center p-6 bg-muted/30 rounded">
+        <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+        <h3 className="text-base font-semibold mb-1">Preview not available</h3>
+        <p className="text-xs text-muted-foreground mb-3">
           This file type cannot be previewed in the browser.
         </p>
-        <Button onClick={() => window.open(resource.file_url, '_blank')}>
-          <ExternalLink className="mr-2 h-4 w-4" />
+        <Button size="sm" onClick={() => window.open(resource.file_url, '_blank')}>
+          <ExternalLink className="mr-2 h-3 w-3" />
           Open in New Tab
         </Button>
       </div>
@@ -98,64 +98,66 @@ export const ResourcePreviewDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             {getFileIcon(resource.file_type)}
-            {resource.title}
+            <span className="truncate">{resource.title}</span>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Badge variant="secondary" className="text-sm">
+        <div className="flex-1 overflow-y-auto space-y-3">
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <Badge variant="secondary" className="text-xs">
               {resource.file_type.toUpperCase()}
             </Badge>
             {resource.tutor_name && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground">
                 By {resource.tutor_name}
               </span>
             )}
             {resource.download_count !== undefined && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground">
                 {resource.download_count} downloads
               </span>
             )}
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold mb-2">Description</h4>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            <h4 className="text-xs font-semibold mb-1">Description</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {resource.description || "No description provided"}
             </p>
           </div>
 
-          <div className="border rounded-lg overflow-hidden bg-muted/30">
-            <div className="p-3 bg-muted/50 border-b">
-              <h4 className="text-sm font-semibold">File Preview</h4>
+          <div className="border rounded overflow-hidden bg-muted/30">
+            <div className="p-2 bg-muted/50 border-b">
+              <h4 className="text-xs font-semibold">Preview</h4>
             </div>
-            <div className="p-4">
+            <div className="p-2">
               {getFilePreview()}
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3 pt-4 border-t">
+        <div className="flex gap-2 pt-3 border-t">
           <Button 
             variant="outline"
+            size="sm"
             className="flex-1"
             onClick={() => window.open(resource.file_url, '_blank')}
           >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Open in New Tab
+            <ExternalLink className="mr-2 h-3 w-3" />
+            Open
           </Button>
           <Button 
+            size="sm"
             className="flex-1"
             onClick={() => {
               onDownload();
             }}
           >
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="mr-2 h-3 w-3" />
             Download
           </Button>
         </div>
