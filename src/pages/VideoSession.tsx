@@ -609,7 +609,6 @@ export default function VideoSession() {
         // Update peer ID in database first
         await updateSessionPeerId(id);
         console.log(`✅ ${role} peer ID updated:`, id);
-        // toast.success("Connected to peer network"); // Removed - too noisy
         
         // For both tutor and learner: Check if session is already in progress and the other party is present
         // This handles rejoining scenarios
@@ -630,6 +629,7 @@ export default function VideoSession() {
             toast.info("Reconnecting to learner...");
             
             const call = newPeer.call(currentSession.learner_peer_id, stream);
+            callRef.current = call;
             
             call.on("stream", (remoteStream) => {
               console.log("✅ Remote learner stream received:", remoteStream.getTracks());
@@ -643,10 +643,9 @@ export default function VideoSession() {
               setRemoteStream(remoteStream);
               setIsConnected(true);
               
-              // Broadcast current state on rejoin (with delay)
+              // Broadcast current state on rejoin
               setTimeout(() => {
                 if (sessionChannelRef.current && stream) {
-                  // Check actual track state
                   const videoTrack = stream.getVideoTracks()[0];
                   const actualCameraState = videoTrack?.enabled ?? false;
                   
@@ -659,7 +658,7 @@ export default function VideoSession() {
                       screenSharing: isScreenSharing
                     }
                   });
-                  console.log("📡 Broadcast state on rejoin - camera:", actualCameraState, "(track:", videoTrack?.enabled, ") screenSharing:", isScreenSharing);
+                  console.log("📡 Broadcast state on rejoin - camera:", actualCameraState, "screenSharing:", isScreenSharing);
                 }
               }, 500);
               
@@ -680,6 +679,20 @@ export default function VideoSession() {
             call.on("error", (err) => {
               console.error("📞 Call error:", err);
               toast.error("Failed to reconnect to learner");
+            });
+            
+            call.on("close", () => {
+              console.log("📞 Call closed - learner disconnected");
+              setIsConnected(false);
+              setRemoteStream(null);
+              if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = null;
+              }
+              toast.info("Learner disconnected");
+              
+              if (currentSession.session_status === "in_progress") {
+                attemptReconnection();
+              }
             });
           }
           else if (role === "learner" && currentSession.tutor_peer_id) {
@@ -905,18 +918,8 @@ export default function VideoSession() {
                 setRemotePeerId(learnerPeerId);
                 console.log("📞 Tutor calling learner:", learnerPeerId);
                 
-                // Wait a bit for learner's peer to be fully ready, then call with retry
-                const attemptCall = (attempt = 1, maxAttempts = 5) => {
-                  const delay = attempt * 1000; // 1s, 2s, 3s, 4s, 5s
-                  
-                  setTimeout(() => {
-                    if (!newPeer || newPeer.destroyed) {
-                      console.log("❌ Peer destroyed, cannot call");
-                      return;
-                    }
-                    
-                    console.log(`📞 Calling learner (attempt ${attempt}/${maxAttempts}):`, learnerPeerId);
-                    const call = newPeer.call(learnerPeerId, stream);
+                const call = newPeer.call(learnerPeerId, stream);
+                callRef.current = call;
                 
                 call.on("stream", (remoteStream) => {
                   console.log("✅ Remote learner stream received:", remoteStream.getTracks());
@@ -929,12 +932,11 @@ export default function VideoSession() {
                   }
                   
                   setRemoteStream(remoteStream);
-                  setIsConnected(true); // Set connected immediately when stream is received
+                  setIsConnected(true);
                   
-                  // Broadcast current state when connection is established (with delay)
+                  // Broadcast current state when connection is established
                   setTimeout(() => {
                     if (sessionChannelRef.current && stream) {
-                      // Check actual track state
                       const videoTrack = stream.getVideoTracks()[0];
                       const actualCameraState = videoTrack?.enabled ?? false;
                       
@@ -947,51 +949,28 @@ export default function VideoSession() {
                           screenSharing: isScreenSharing
                         }
                       });
-                      console.log("📡 Tutor broadcast state on connection - camera:", actualCameraState, "(track:", videoTrack?.enabled, ") screenSharing:", isScreenSharing);
+                      console.log("📡 Tutor broadcast state on connection - camera:", actualCameraState, "screenSharing:", isScreenSharing);
                     }
                   }, 500);
                   
-                  // Set video with retry logic
-                  const setLearnerVideo = (attempts = 0) => {
-                    if (attempts > 3) return;
-                    
-                    setTimeout(() => {
-                      if (remoteVideoRef.current && remoteStream) {
-                        console.log(`Attempt ${attempts + 1}: Setting remote learner video stream`);
-                        remoteVideoRef.current.srcObject = remoteStream;
-                        remoteVideoRef.current.play()
-                          .then(() => {
-                            console.log("✅ Learner video playing");
-                            // toast.success("✅ Connected to learner!"); // Removed - too noisy
-                          })
-                          .catch(e => {
-                            console.log(`❌ Learner video play error (attempt ${attempts + 1}):`, e);
-                            if (attempts < 3) setLearnerVideo(attempts + 1);
-                          });
-                      }
-                    }, 100 * (attempts + 1));
-                  };
-                  
-                  setLearnerVideo();
+                  // Set video element
+                  setTimeout(() => {
+                    if (remoteVideoRef.current && remoteStream) {
+                      console.log("Setting remote learner video stream");
+                      remoteVideoRef.current.srcObject = remoteStream;
+                      remoteVideoRef.current.play()
+                        .then(() => console.log("✅ Learner video playing"))
+                        .catch(e => console.log("❌ Learner video play error:", e));
+                    }
+                  }, 100);
                 });
-                    
-                    // Handle call errors with retry
-                    call.on("error", (err) => {
-                      console.error(`📞 Call error (attempt ${attempt}):`, err);
-                      
-                      // Retry if peer unavailable and haven't exceeded max attempts
-                      if (err.type === "peer-unavailable" && attempt < maxAttempts) {
-                        console.log(`🔄 Learner peer not ready, retrying in ${(attempt + 1)}s...`);
-                        attemptCall(attempt + 1, maxAttempts);
-                      } else if (attempt >= maxAttempts) {
-                        toast.error("Could not connect to learner. They may need to refresh.");
-                      } else {
-                        toast.error(`Connection error: ${err.type}`);
-                      }
-                    });
-                    
-                    // Detect call close/disconnect
-                    call.on("close", () => {
+                
+                call.on("error", (err) => {
+                  console.error("📞 Call error:", err);
+                  toast.error(`Connection error: ${err.type}`);
+                });
+                
+                call.on("close", () => {
                   console.log("📞 Call closed - learner disconnected");
                   setIsConnected(false);
                   setRemoteStream(null);
@@ -1000,16 +979,10 @@ export default function VideoSession() {
                   }
                   toast.info("Learner disconnected");
                   
-                      // Trigger automatic reconnection
-                      if (newSession.session_status === "in_progress") {
-                        attemptReconnection();
-                      }
-                    });
-                  }, delay);
-                };
-                
-                // Start calling with retry logic
-                attemptCall();
+                  if (newSession.session_status === "in_progress") {
+                    attemptReconnection();
+                  }
+                });
               }
             }
           }
