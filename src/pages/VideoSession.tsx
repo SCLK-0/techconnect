@@ -904,9 +904,19 @@ export default function VideoSession() {
               if (learnerPeerId && learnerPeerId !== remotePeerId && newPeer) {
                 setRemotePeerId(learnerPeerId);
                 console.log("📞 Tutor calling learner:", learnerPeerId);
-                // toast.info("Connecting to learner..."); // Removed - too noisy
                 
-                const call = newPeer.call(learnerPeerId, stream);
+                // Wait a bit for learner's peer to be fully ready, then call with retry
+                const attemptCall = (attempt = 1, maxAttempts = 5) => {
+                  const delay = attempt * 1000; // 1s, 2s, 3s, 4s, 5s
+                  
+                  setTimeout(() => {
+                    if (!newPeer || newPeer.destroyed) {
+                      console.log("❌ Peer destroyed, cannot call");
+                      return;
+                    }
+                    
+                    console.log(`📞 Calling learner (attempt ${attempt}/${maxAttempts}):`, learnerPeerId);
+                    const call = newPeer.call(learnerPeerId, stream);
                 
                 call.on("stream", (remoteStream) => {
                   console.log("✅ Remote learner stream received:", remoteStream.getTracks());
@@ -964,15 +974,24 @@ export default function VideoSession() {
                   
                   setLearnerVideo();
                 });
-                
-                // Handle call errors
-                call.on("error", (err) => {
-                  console.error("📞 Call error:", err);
-                  toast.error("Failed to connect to learner");
-                });
-                
-                // Detect call close/disconnect
-                call.on("close", () => {
+                    
+                    // Handle call errors with retry
+                    call.on("error", (err) => {
+                      console.error(`📞 Call error (attempt ${attempt}):`, err);
+                      
+                      // Retry if peer unavailable and haven't exceeded max attempts
+                      if (err.type === "peer-unavailable" && attempt < maxAttempts) {
+                        console.log(`🔄 Learner peer not ready, retrying in ${(attempt + 1)}s...`);
+                        attemptCall(attempt + 1, maxAttempts);
+                      } else if (attempt >= maxAttempts) {
+                        toast.error("Could not connect to learner. They may need to refresh.");
+                      } else {
+                        toast.error(`Connection error: ${err.type}`);
+                      }
+                    });
+                    
+                    // Detect call close/disconnect
+                    call.on("close", () => {
                   console.log("📞 Call closed - learner disconnected");
                   setIsConnected(false);
                   setRemoteStream(null);
@@ -981,11 +1000,16 @@ export default function VideoSession() {
                   }
                   toast.info("Learner disconnected");
                   
-                  // Trigger automatic reconnection
-                  if (newSession.session_status === "in_progress") {
-                    attemptReconnection();
-                  }
-                });
+                      // Trigger automatic reconnection
+                      if (newSession.session_status === "in_progress") {
+                        attemptReconnection();
+                      }
+                    });
+                  }, delay);
+                };
+                
+                // Start calling with retry logic
+                attemptCall();
               }
             }
           }
