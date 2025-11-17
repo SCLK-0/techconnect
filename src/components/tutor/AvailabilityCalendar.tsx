@@ -168,24 +168,33 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
     try {
       const dateStr = selectedDateForTime.toISOString().split('T')[0];
       
-      const { error } = await supabase
+      const payload = {
+        tutor_id: tutorId,
+        date: dateStr,
+        is_available: true,
+        start_time: startTime,
+        end_time: endTime,
+      };
+      
+      console.log("Saving time slot with payload:", payload);
+      
+      const { data, error } = await supabase
         .from("tutor_day_availability")
-        .upsert({
-          tutor_id: tutorId,
-          date: dateStr,
-          is_available: true,
-          start_time: startTime,
-          end_time: endTime,
-        }, { onConflict: 'tutor_id,date' });
+        .upsert(payload, { onConflict: 'tutor_id,date' })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
 
+      console.log("Time slot saved successfully:", data);
       toast.success("Time slot saved");
       setTimeDialogOpen(false);
       onUpdate();
     } catch (error: any) {
       console.error("Error saving time slot:", error);
-      toast.error("Failed to save time slot");
+      toast.error(`Failed to save time slot: ${error.message || 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
