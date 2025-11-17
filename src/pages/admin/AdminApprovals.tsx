@@ -9,55 +9,52 @@ import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, User as UserIcon, Mail, BookOpen, UserCheck } from "lucide-react";
+import { CheckCircle, XCircle, User as UserIcon, Mail, BookOpen, UserCheck, RotateCcw } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 export default function AdminApprovals() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<"pending" | "rejected">("pending");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const fetchTutorsByStatus = async (status: string) => {
+    const { data: tutorProfiles, error: tutorError } = await supabase
+      .from("tutor_profiles")
+      .select("*")
+      .eq("status", status)
+      .order("created_at", { ascending: false });
+
+    if (tutorError) {
+      console.error(`Error fetching ${status} tutors:`, tutorError);
+      toast.error(`Failed to load applications: ${tutorError.message}`);
+      throw tutorError;
+    }
+
+    const userIds = tutorProfiles?.map(t => t.user_id) || [];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("full_name, user_id")
+      .in("user_id", userIds);
+
+    return tutorProfiles?.map(tutor => ({
+      ...tutor,
+      profiles: profiles?.find(p => p.user_id === tutor.user_id) || { full_name: "Unknown", user_id: tutor.user_id }
+    })) || [];
+  };
+
   const { data: pendingTutors = [], isLoading, isFetching, error } = useQuery({
     queryKey: ["pending-tutors"],
-    queryFn: async () => {
-      console.log("Fetching pending tutors...");
-      
-      // Fetch tutor profiles
-      const { data: tutorProfiles, error: tutorError } = await supabase
-        .from("tutor_profiles")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
+    queryFn: () => fetchTutorsByStatus("pending"),
+  });
 
-      if (tutorError) {
-        console.error("Error fetching tutor profiles:", tutorError);
-        toast.error(`Failed to load applications: ${tutorError.message}`);
-        throw tutorError;
-      }
-
-      // Fetch profiles for these tutors
-      const userIds = tutorProfiles?.map(t => t.user_id) || [];
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("full_name, user_id")
-        .in("user_id", userIds);
-
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        // Don't throw, just continue without profile data
-      }
-
-      // Merge tutor profiles with profile data
-      const tutorsWithProfiles = tutorProfiles?.map(tutor => ({
-        ...tutor,
-        profiles: profiles?.find(p => p.user_id === tutor.user_id) || { full_name: "Unknown", user_id: tutor.user_id }
-      })) || [];
-
-      console.log("Fetched pending tutors:", tutorsWithProfiles);
-      return tutorsWithProfiles;
-    },
+  const { data: rejectedTutors = [], isLoading: isLoadingRejected } = useQuery({
+    queryKey: ["rejected-tutors"],
+    queryFn: () => fetchTutorsByStatus("rejected"),
+    enabled: activeTab === "rejected",
   });
 
   // Show error toast if query fails
@@ -76,14 +73,16 @@ export default function AdminApprovals() {
     onSuccess: (_, variables) => {
       toast.success(`Tutor ${variables.status === "approved" ? "approved" : "rejected"}`);
       queryClient.invalidateQueries({ queryKey: ["pending-tutors"] });
+      queryClient.invalidateQueries({ queryKey: ["rejected-tutors"] });
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to update status");
     },
   });
 
-  const totalPages = Math.ceil(pendingTutors.length / itemsPerPage);
-  const paginatedTutors = pendingTutors.slice(
+  const currentTutors = activeTab === "pending" ? pendingTutors : rejectedTutors;
+  const totalPages = Math.ceil(currentTutors.length / itemsPerPage);
+  const paginatedTutors = currentTutors.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -176,15 +175,28 @@ export default function AdminApprovals() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold mb-2">Pending Applications</h2>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Review and approve tutor applications</p>
-                </div>
-                <Badge variant="secondary" className="text-sm sm:text-base px-3 py-1 sm:px-4 sm:py-2">
-                  {pendingTutors.length} Pending
-                </Badge>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold mb-2">Tutor Applications</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">Review and manage tutor applications</p>
               </div>
+
+              <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as "pending" | "rejected"); setCurrentPage(1); }}>
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                  <TabsTrigger value="pending" className="gap-2">
+                    Pending
+                    {pendingTutors.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">{pendingTutors.length}</Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="rejected" className="gap-2">
+                    Rejected
+                    {rejectedTutors.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">{rejectedTutors.length}</Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="pending" className="space-y-4 mt-6">
 
               {isLoading ? (
                 <Card>
@@ -192,12 +204,14 @@ export default function AdminApprovals() {
                     Loading applications...
                   </CardContent>
                 </Card>
-              ) : pendingTutors.length === 0 ? (
+              ) : currentTutors.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center">
                     <UserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">All caught up!</h3>
-                    <p className="text-muted-foreground">No pending tutor applications</p>
+                    <p className="text-muted-foreground">
+                      {activeTab === "pending" ? "No pending tutor applications" : "No rejected tutors"}
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
@@ -244,27 +258,42 @@ export default function AdminApprovals() {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                          <Button
-                            className="flex-1"
-                            onClick={() =>
-                              updateStatusMutation.mutate({ id: tutor.id, status: "approved" })
-                            }
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={() =>
-                              updateStatusMutation.mutate({ id: tutor.id, status: "rejected" })
-                            }
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
+                          {activeTab === "pending" ? (
+                            <>
+                              <Button
+                                className="flex-1"
+                                onClick={() =>
+                                  updateStatusMutation.mutate({ id: tutor.id, status: "approved" })
+                                }
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                className="flex-1"
+                                onClick={() =>
+                                  updateStatusMutation.mutate({ id: tutor.id, status: "rejected" })
+                                }
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              className="w-full"
+                              onClick={() =>
+                                updateStatusMutation.mutate({ id: tutor.id, status: "approved" })
+                              }
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Re-approve Tutor
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -274,6 +303,88 @@ export default function AdminApprovals() {
                   {renderPagination()}
                 </>
               )}
+                </TabsContent>
+
+                <TabsContent value="rejected" className="space-y-4 mt-6">
+                  {isLoadingRejected ? (
+                    <Card>
+                      <CardContent className="py-8 text-center">
+                        Loading rejected tutors...
+                      </CardContent>
+                    </Card>
+                  ) : rejectedTutors.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-8 text-center">
+                        <UserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No rejected tutors</h3>
+                        <p className="text-muted-foreground">All tutor applications have been approved or are pending</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <>
+                      <div className="grid gap-2">
+                        {paginatedTutors.map((tutor: any) => (
+                          <Card key={tutor.id} className="border-red-200">
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                  <CardTitle className="flex items-center gap-2">
+                                    <UserIcon className="h-5 w-5" />
+                                    {tutor.profiles?.full_name || "Unknown"}
+                                    {tutor.registered_year && <span className="text-sm font-normal text-muted-foreground">({tutor.registered_year})</span>}
+                                  </CardTitle>
+                                  <CardDescription className="flex items-center gap-4">
+                                    <span className="flex items-center gap-1">
+                                      <Mail className="h-3 w-3" />
+                                      {tutor.profiles?.user_id?.substring(0, 8)}...
+                                    </span>
+                                  </CardDescription>
+                                </div>
+                                <Badge variant="destructive">Rejected</Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                  <BookOpen className="h-4 w-4" />
+                                  Subject Expertise
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {tutor.subject_expertise?.map((subject: string) => (
+                                    <Badge key={subject} variant="secondary">
+                                      {subject}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <h4 className="font-semibold mb-2">Bio</h4>
+                                <p className="text-sm text-muted-foreground">{tutor.bio}</p>
+                              </div>
+
+                              <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                                <Button
+                                  className="w-full"
+                                  onClick={() =>
+                                    updateStatusMutation.mutate({ id: tutor.id, status: "approved" })
+                                  }
+                                  disabled={updateStatusMutation.isPending}
+                                >
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Re-approve Tutor
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                      
+                      {renderPagination()}
+                    </>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           </main>
         </div>
