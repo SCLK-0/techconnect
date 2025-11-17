@@ -110,7 +110,7 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
 
       const { error } = await supabase
         .from("tutor_day_availability")
-        .upsert(inserts, { onConflict: 'tutor_id,date' });
+        .upsert(inserts);
 
       if (error) throw error;
 
@@ -141,7 +141,7 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
 
       const { error } = await supabase
         .from("tutor_day_availability")
-        .upsert(inserts, { onConflict: 'tutor_id,date' });
+        .upsert(inserts);
 
       if (error) throw error;
 
@@ -180,7 +180,7 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
       
       const { data, error } = await supabase
         .from("tutor_day_availability")
-        .upsert(payload, { onConflict: 'tutor_id,date' })
+        .upsert(payload)
         .select();
 
       if (error) {
