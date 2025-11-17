@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users, Sparkles, Eye, EyeOff } from "lucide-react";
@@ -16,6 +17,7 @@ const registrationSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
   bio: z.string().trim().min(10, "Bio must be at least 10 characters").max(500, "Bio must be less than 500 characters"),
   subjects: z.array(z.string()).min(1, "Please select at least one subject").max(10, "Maximum 10 subjects allowed"),
+  registeredYear: z.string().min(1, "Please select your year level"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
@@ -48,6 +50,7 @@ const TutorRegistration = () => {
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [otherSubject, setOtherSubject] = useState("");
   const [bio, setBio] = useState("");
+  const [registeredYear, setRegisteredYear] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -74,6 +77,7 @@ const TutorRegistration = () => {
       fullName,
       bio,
       subjects: finalSubjects,
+      registeredYear,
       password,
     });
     
@@ -134,6 +138,7 @@ const TutorRegistration = () => {
             full_name: fullName,
             bio: bio,
             subject_expertise: finalSubjects,
+            registered_year: registeredYear,
             is_tutor: true,
           },
         },
@@ -236,6 +241,21 @@ const TutorRegistration = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="registeredYear" className="text-sm font-semibold">Year Level</Label>
+              <Select value={registeredYear} onValueChange={setRegisteredYear} required>
+                <SelectTrigger id="registeredYear">
+                  <SelectValue placeholder="Select your year level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1st Year">1st Year</SelectItem>
+                  <SelectItem value="2nd Year">2nd Year</SelectItem>
+                  <SelectItem value="3rd Year">3rd Year</SelectItem>
+                  <SelectItem value="4th Year">4th Year</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-4">
