@@ -4,7 +4,7 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $$
 BEGIN
   -- Only proceed if user was just confirmed and has tutor metadata
   IF NEW.email_confirmed_at IS NOT NULL 
@@ -37,4 +37,4 @@ BEGIN
   
   RETURN NEW;
 END;
-$;
+$$;
