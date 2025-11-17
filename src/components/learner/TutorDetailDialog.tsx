@@ -10,6 +10,7 @@ interface TutorProfile {
   subject_expertise: string[];
   bio: string;
   is_online: boolean;
+  is_in_session: boolean;
   rating?: number;
   review_count?: number;
   next_available?: string;
@@ -66,7 +67,12 @@ export const TutorDetailDialog = ({
               )}
               <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 sm:gap-4 mt-2">
                 <div className="flex items-center gap-2">
-                  {tutor.is_online ? (
+                  {tutor.is_in_session ? (
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                      <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                      <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">In Session</span>
+                    </div>
+                  ) : tutor.is_online ? (
                     <>
                       <Wifi className="h-4 w-4 text-green-500" />
                       <span className="text-sm text-green-500 font-medium">Online</span>
@@ -132,17 +138,19 @@ export const TutorDetailDialog = ({
               Book Session
             </Button>
             <Button 
-              variant={tutor.is_online ? "default" : "outline"}
+              variant={tutor.is_online && !tutor.is_in_session ? "default" : "outline"}
               className="flex-1 w-full relative"
               onClick={() => {
                 onOpenChange(false);
                 onInstantSession();
               }}
-              disabled={!tutor.is_online}
+              disabled={!tutor.is_online || tutor.is_in_session}
             >
               <Zap className="mr-2 h-4 w-4" />
-              <span className="truncate">{tutor.is_online ? "Start Instant Session" : "Tutor Offline"}</span>
-              {tutor.is_online && (
+              <span className="truncate">
+                {tutor.is_in_session ? "Tutor In Session" : tutor.is_online ? "Start Instant Session" : "Tutor Offline"}
+              </span>
+              {tutor.is_online && !tutor.is_in_session && (
                 <span className="absolute top-1/2 -translate-y-1/2 right-3 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>

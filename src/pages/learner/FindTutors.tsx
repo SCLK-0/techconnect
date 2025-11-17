@@ -32,6 +32,7 @@ interface TutorProfile {
   subject_expertise: string[];
   bio: string;
   is_online: boolean;
+  is_in_session: boolean;
   rating?: number;
   review_count?: number;
   next_available?: string;
@@ -252,6 +253,19 @@ const FindTutors = () => {
           .select("*")
           .in("tutor_id", userIds);
 
+        // Check which tutors are currently in active sessions
+        const now = new Date();
+        const { data: activeSessions } = await supabase
+          .from("sessions")
+          .select("tutor_id, scheduled_at, duration_minutes, session_status")
+          .in("tutor_id", userIds)
+          .eq("session_status", "in_progress");
+
+        // Create a set of tutor IDs that are currently in session
+        const tutorsInSession = new Set(
+          activeSessions?.map(session => session.tutor_id) || []
+        );
+
         // Fetch ratings for each tutor
         const tutorsWithRatings = await Promise.all(
           tutorsWithActualStatus?.map(async (tutor) => {
@@ -266,6 +280,7 @@ const FindTutors = () => {
             
             return {
               ...tutor,
+              is_in_session: tutorsInSession.has(tutor.user_id),
               rating: ratingData?.[0]?.average_rating || null,
               review_count: ratingData?.[0]?.total_reviews || null,
               next_available: nextAvailable,
@@ -296,7 +311,7 @@ const FindTutors = () => {
     const refetchInterval = setInterval(fetchTutors, 10000);
 
     // Set up real-time subscription for immediate tutor online status changes
-    const channel = supabase
+    const profileChannel = supabase
       .channel('tutor_profiles_changes')
       .on(
         'postgres_changes',
@@ -330,9 +345,43 @@ const FindTutors = () => {
       )
       .subscribe();
 
+    // Set up real-time subscription for session status changes
+    const sessionChannel = supabase
+      .channel('sessions_status_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'sessions'
+        },
+        (payload) => {
+          const session = payload.new as any;
+          const isInSession = session.session_status === 'in_progress';
+          
+          // Update tutor's in_session status
+          setTutors((prevTutors) =>
+            prevTutors.map((tutor) =>
+              tutor.user_id === session.tutor_id
+                ? { ...tutor, is_in_session: isInSession }
+                : tutor
+            )
+          );
+          setFilteredTutors((prevTutors) =>
+            prevTutors.map((tutor) =>
+              tutor.user_id === session.tutor_id
+                ? { ...tutor, is_in_session: isInSession }
+                : tutor
+            )
+          );
+        }
+      )
+      .subscribe();
+
     return () => {
       clearInterval(refetchInterval);
-      supabase.removeChannel(channel);
+      supabase.removeChannel(profileChannel);
+      supabase.removeChannel(sessionChannel);
     };
   }, [toast]);
 
@@ -684,7 +733,14 @@ const FindTutors = () => {
                               {tutor.profiles.full_name}
                             </CardTitle>
                             <div className="flex flex-wrap items-center gap-2 mt-1">
-                              {tutor.is_online ? (
+                              {tutor.is_in_session ? (
+                                <>
+                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                                    <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+                                    <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">In Session</span>
+                                  </div>
+                                </>
+                              ) : tutor.is_online ? (
                                 <>
                                   <Wifi className="h-3 w-3 text-green-500 flex-shrink-0" />
                                   <span className="text-xs text-green-500">Online</span>
@@ -747,17 +803,19 @@ const FindTutors = () => {
                             Book Session
                           </Button>
                           <Button 
-                            variant={tutor.is_online ? "default" : "outline"}
+                            variant={tutor.is_online && !tutor.is_in_session ? "default" : "outline"}
                             className="w-full relative pr-8 text-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleInstantSession(tutor);
                             }}
-                            disabled={!tutor.is_online}
+                            disabled={!tutor.is_online || tutor.is_in_session}
                           >
                             <Zap className="mr-2 h-4 w-4 flex-shrink-0" />
-                            <span className="truncate">{tutor.is_online ? "Start Instant Session" : "Instant"}</span>
-                            {tutor.is_online && (
+                            <span className="truncate">
+                              {tutor.is_in_session ? "In Session" : tutor.is_online ? "Start Instant Session" : "Instant"}
+                            </span>
+                            {tutor.is_online && !tutor.is_in_session && (
                               <span className="absolute top-1/2 -translate-y-1/2 right-2 flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
