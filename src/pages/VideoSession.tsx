@@ -337,10 +337,15 @@ export default function VideoSession() {
 
       // Initialize PeerJS for monitoring - will receive streams from both tutor and learner
       const newPeer = new Peer(`monitor-${user!.id}-${Date.now()}`, {
+        secure: true,
+        pingInterval: 5000,
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
             { urls: "stun:stun1.l.google.com:19302" },
+            { urls: "stun:stun2.l.google.com:19302" },
+            { urls: "stun:stun3.l.google.com:19302" },
+            { urls: "stun:stun4.l.google.com:19302" },
             { 
               urls: "turn:openrelay.metered.ca:80",
               username: "openrelayproject",
@@ -350,10 +355,16 @@ export default function VideoSession() {
               urls: "turn:openrelay.metered.ca:443",
               username: "openrelayproject",
               credential: "openrelayproject"
+            },
+            {
+              urls: "turn:openrelay.metered.ca:443?transport=tcp",
+              username: "openrelayproject",
+              credential: "openrelayproject"
             }
           ],
           sdpSemantics: 'unified-plan',
-          iceTransportPolicy: 'all'
+          iceTransportPolicy: 'all',
+          iceCandidatePoolSize: 10
         },
         debug: 2,
       });
@@ -577,17 +588,19 @@ export default function VideoSession() {
         }
       }, 100);
 
-      // Initialize PeerJS with public server (fallback until self-hosted is deployed)
+      // Initialize PeerJS - using default cloud server (more reliable than 0.peerjs.com)
       const newPeer = new Peer(user!.id, {
-          host: '0.peerjs.com',
-          port: 443,
-          path: '/peerjs',
+          // Don't specify host/port to use PeerJS cloud server (peerjs.com)
+          // This is more reliable than the old 0.peerjs.com server
           secure: true,
           pingInterval: 5000, // Ping every 5 seconds to keep connection alive
           config: {
             iceServers: [
               { urls: "stun:stun.l.google.com:19302" },
               { urls: "stun:stun1.l.google.com:19302" },
+              { urls: "stun:stun2.l.google.com:19302" },
+              { urls: "stun:stun3.l.google.com:19302" },
+              { urls: "stun:stun4.l.google.com:19302" },
               { 
                 urls: "turn:openrelay.metered.ca:80",
                 username: "openrelayproject",
@@ -721,35 +734,74 @@ export default function VideoSession() {
       
       // Handle peer disconnection
       newPeer.on("disconnected", () => {
-        console.log("⚠️ Peer disconnected from server - attempting immediate reconnect");
+        console.log("⚠️ Peer disconnected from server");
         setIsConnected(false);
         
-        // Immediately try to reconnect to PeerJS server
-        if (!newPeer.destroyed) {
-          console.log("🔄 Reconnecting to PeerJS server...");
-          newPeer.reconnect();
-          toast.info("Reconnecting...");
-        }
+        // Don't immediately reconnect - let the error handler manage it
+        // This prevents reconnection loops
       });
       
-      // Handle peer errors
+      // Handle peer errors with proper backoff
+      let reconnectTimeout: NodeJS.Timeout | null = null;
+      let reconnectAttempt = 0;
+      const maxReconnectAttempts = 3;
+      
       newPeer.on("error", (error) => {
         console.error("❌ Peer error:", error);
         
-        // Handle server connection errors
+        // Handle server connection errors with exponential backoff
         if (error.type === "server-error" || error.message?.includes("Lost connection to server")) {
-          console.log("🔄 PeerJS server connection lost - reconnecting...");
-          toast.warning("Connection interrupted - reconnecting...");
+          console.log("🔄 PeerJS server connection lost");
           
-          // Try to reconnect to PeerJS server
-          setTimeout(() => {
-            if (!newPeer.destroyed) {
-              console.log("🔄 Attempting PeerJS server reconnect...");
-              newPeer.reconnect();
+          // Clear any existing reconnect timeout
+          if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+          }
+          
+          // Only show toast on first error, not on every reconnect attempt
+          if (reconnectAttempt === 0) {
+            toast.warning("Connection interrupted - reconnecting...", { duration: 3000 });
+          }
+          
+          reconnectAttempt++;
+          
+          if (reconnectAttempt > maxReconnectAttempts) {
+            console.log("❌ Max PeerJS reconnect attempts reached");
+            toast.error("Unable to connect to video server. Please refresh the page.");
+            reconnectAttempt = 0;
+            return;
+          }
+          
+          // Exponential backoff: 2s, 4s, 8s
+          const delay = Math.min(2000 * Math.pow(2, reconnectAttempt - 1), 8000);
+          console.log(`🔄 Will attempt PeerJS reconnect ${reconnectAttempt}/${maxReconnectAttempts} in ${delay}ms`);
+          
+          reconnectTimeout = setTimeout(() => {
+            if (!newPeer.destroyed && newPeer.disconnected) {
+              console.log(`🔄 Attempting PeerJS server reconnect (${reconnectAttempt}/${maxReconnectAttempts})...`);
+              try {
+                newPeer.reconnect();
+                // Reset counter on successful reconnect
+                setTimeout(() => {
+                  if (!newPeer.disconnected) {
+                    reconnectAttempt = 0;
+                    console.log("✅ PeerJS reconnected successfully");
+                  }
+                }, 2000);
+              } catch (e) {
+                console.error("Error during reconnect:", e);
+              }
             }
-          }, 1000);
+          }, delay);
           
           return;
+        }
+        
+        // Reset reconnect counter for non-server errors
+        reconnectAttempt = 0;
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+            }
         }
         
         if (error.type === "peer-unavailable") {
