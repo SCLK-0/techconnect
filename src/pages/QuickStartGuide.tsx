@@ -281,7 +281,7 @@ export default function QuickStartGuide() {
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <Button size="lg" onClick={() => navigate("/auth")}>
+          <Button size="lg" onClick={() => navigate("/role-selection")}>
             Get Started Now
           </Button>
         </div>
