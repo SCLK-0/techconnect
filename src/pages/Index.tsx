@@ -54,7 +54,12 @@ const Index = () => {
               TechConnect
             </span>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/quick-start">Quick Start</Link>
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </nav>
 
@@ -95,9 +100,6 @@ const Index = () => {
               </Button>
               <Button size="lg" variant="outline" asChild className="text-lg px-8 border-2 hover:bg-accent/10">
                 <Link to="/login">Sign In</Link>
-              </Button>
-              <Button size="lg" variant="ghost" asChild className="text-lg px-8">
-                <Link to="/quick-start">Quick Start Guide</Link>
               </Button>
             </div>
 
