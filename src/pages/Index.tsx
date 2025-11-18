@@ -96,6 +96,9 @@ const Index = () => {
               <Button size="lg" variant="outline" asChild className="text-lg px-8 border-2 hover:bg-accent/10">
                 <Link to="/login">Sign In</Link>
               </Button>
+              <Button size="lg" variant="ghost" asChild className="text-lg px-8">
+                <Link to="/quick-start">Quick Start Guide</Link>
+              </Button>
             </div>
 
             {/* Promotion Banner - Below CTA buttons */}

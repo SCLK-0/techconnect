@@ -39,6 +39,7 @@ import Donate from "./pages/Donate";
 import EditProfile from "./pages/EditProfile";
 import Settings from "./pages/Settings";
 import VideoSession from "./pages/VideoSession";
+import QuickStartGuide from "./pages/QuickStartGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/quick-start" element={<QuickStartGuide />} />
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin/login" element={<AdminLogin />} />
