@@ -579,6 +579,11 @@ export default function VideoSession() {
 
       // Initialize PeerJS with better configuration including TURN servers
       const newPeer = new Peer(user!.id, {
+          host: '0.peerjs.com',
+          port: 443,
+          path: '/peerjs',
+          secure: true,
+          pingInterval: 5000, // Ping every 5 seconds to keep connection alive
           config: {
             iceServers: [
               { urls: "stun:stun.l.google.com:19302" },
@@ -716,26 +721,37 @@ export default function VideoSession() {
       
       // Handle peer disconnection
       newPeer.on("disconnected", () => {
-        console.log("⚠️ Peer disconnected from server");
+        console.log("⚠️ Peer disconnected from server - attempting immediate reconnect");
         setIsConnected(false);
-        toast.warning("Connection lost - attempting to reconnect...");
-        // Try immediate reconnect first
-        setTimeout(() => {
-          if (!newPeer.destroyed && newPeer.disconnected) {
-            newPeer.reconnect();
-          }
-        }, 1000);
-        // Also trigger full reconnection logic
-        setTimeout(() => {
-          if (!isConnected && sessionStatus === "in_progress") {
-            attemptReconnection();
-          }
-        }, 3000);
+        
+        // Immediately try to reconnect to PeerJS server
+        if (!newPeer.destroyed) {
+          console.log("🔄 Reconnecting to PeerJS server...");
+          newPeer.reconnect();
+          toast.info("Reconnecting...");
+        }
       });
       
       // Handle peer errors
       newPeer.on("error", (error) => {
         console.error("❌ Peer error:", error);
+        
+        // Handle server connection errors
+        if (error.type === "server-error" || error.message?.includes("Lost connection to server")) {
+          console.log("🔄 PeerJS server connection lost - reconnecting...");
+          toast.warning("Connection interrupted - reconnecting...");
+          
+          // Try to reconnect to PeerJS server
+          setTimeout(() => {
+            if (!newPeer.destroyed) {
+              console.log("🔄 Attempting PeerJS server reconnect...");
+              newPeer.reconnect();
+            }
+          }, 1000);
+          
+          return;
+        }
+        
         if (error.type === "peer-unavailable") {
           console.log("Peer unavailable - will retry connection");
           toast.warning("Peer unavailable - retrying...");
