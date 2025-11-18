@@ -105,6 +105,12 @@ export default function VideoSession() {
   const [peer, setPeer] = useState<Peer | null>(null);
   const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Debug logging for whiteboard connection status
+  useEffect(() => {
+    const peerConnectedStatus = isConnected && remoteStream !== null;
+    console.log("🔗 Whiteboard peer status - isConnected:", isConnected, "remoteStream:", remoteStream !== null, "=> isPeerConnected:", peerConnectedStatus);
+  }, [isConnected, remoteStream]);
   const [activePanel, setActivePanel] = useState<"whiteboard" | "assets">("whiteboard");
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
