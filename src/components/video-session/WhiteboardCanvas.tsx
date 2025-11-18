@@ -328,9 +328,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
               const isMobile = window.innerWidth < 768;
               if (hasOtherUsers) {
                 console.log("✅ Other user connected - whiteboard enabled");
-                if (!isMobile) {
-                  toast.success("Whiteboard connected");
-                }
+                // Toast removed - whiteboard connection is automatic
               } else {
                 console.log("⏳ Other user disconnected - whiteboard disabled");
                 if (!isMobile) {
@@ -888,10 +886,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   useEffect(() => {
     if (!canvas || isMonitorMode) return;
 
-    // Whiteboard is only enabled when BOTH conditions are met:
-    // 1. Both users are present in the whiteboard channel (bothUsersPresent)
-    // 2. Peer video connection is active (isPeerConnected)
-    const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
+    // Whiteboard is enabled when both users are present in the whiteboard channel
+    // Video peer connection is NOT required - whiteboard uses Supabase realtime independently
+    const isWhiteboardEnabled = bothUsersPresent;
 
     if (isWhiteboardEnabled) {
       // Enable interaction
@@ -927,7 +924,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       });
       
       canvas.renderAll();
-      console.log("⏳ Waiting for connection - whiteboard disabled (bothUsers:", bothUsersPresent, "peerConnected:", isPeerConnected, ")");
+      console.log("⏳ Waiting for other user - whiteboard disabled (bothUsers:", bothUsersPresent, ")");
     }
   }, [bothUsersPresent, isPeerConnected, canvas, isMonitorMode, activeTool]);
 
@@ -1290,8 +1287,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       return;
     }
 
-    // Check if whiteboard is enabled (both users present AND peer connected)
-    const isEnabled = bothUsersPresent && isPeerConnected;
+    // Check if whiteboard is enabled (both users present - peer connection not required)
+    const isEnabled = bothUsersPresent;
     
     if (!isEnabled) {
       // Completely disable when not connected
@@ -1551,8 +1548,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
     await saveWhiteboardState(canvas, userId);
   };
 
-  // Whiteboard is enabled only when both users are present AND peer is connected
-  const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
+  // Whiteboard is enabled when both users are present (peer connection not required)
+  const isWhiteboardEnabled = bothUsersPresent;
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20">
@@ -1677,8 +1674,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         <div className="absolute inset-0 flex items-center justify-center">
           <canvas ref={canvasRef} className="shadow-lg" />
           
-          {/* Waiting for connection overlay - shows when either peer is disconnected OR whiteboard presence is missing */}
-          {!isMonitorMode && (!bothUsersPresent || !isPeerConnected) && (
+          {/* Waiting for connection overlay - shows when whiteboard presence is missing */}
+          {!isMonitorMode && !bothUsersPresent && (
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40 pointer-events-none">
               <div className="bg-white/90 rounded-lg px-6 py-4 shadow-lg">
                 <p className="text-sm font-medium text-gray-700">

@@ -577,13 +577,12 @@ export default function VideoSession() {
         }
       }, 100);
 
-      // Initialize PeerJS with self-hosted server for reliability
+      // Initialize PeerJS with public server (fallback until self-hosted is deployed)
       const newPeer = new Peer(user!.id, {
-          host: 'techconnect-peerjs-server.onrender.com',
+          host: '0.peerjs.com',
           port: 443,
           path: '/peerjs',
           secure: true,
-          key: 'techconnect',
           pingInterval: 5000, // Ping every 5 seconds to keep connection alive
           config: {
             iceServers: [
