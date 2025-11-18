@@ -801,7 +801,6 @@ export default function VideoSession() {
         reconnectAttempt = 0;
         if (reconnectTimeout) {
           clearTimeout(reconnectTimeout);
-            }
         }
         
         if (error.type === "peer-unavailable") {
