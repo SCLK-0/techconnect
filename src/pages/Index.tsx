@@ -118,7 +118,7 @@ const Index = () => {
                 </p>
                 <Button asChild variant="default" size="sm" className="gap-2">
                   <a 
-                    href="https://docs.google.com/forms/d/1CZo161xuodoW-5sm47IqrKORZTK2MJu3DBdHF4PHJm0/edit" 
+                    href="https://docs.google.com/forms/d/e/1FAIpQLScCnBXKIhpiBbzD7l4X3ZBqv52K0VRf2I1cKnUL7Edl1F_lHw/viewform?usp=dialog" 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
