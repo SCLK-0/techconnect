@@ -110,12 +110,22 @@ const Index = () => {
                   <Gift className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Limited Offer</span>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-1">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-2">
                   Win <span className="text-primary">₱1,000</span>
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  Test our system and get a chance to win
+                <p className="text-sm text-muted-foreground mb-3">
+                  To be eligible in winning, you must answer this form and try our system
                 </p>
+                <Button asChild variant="default" size="sm" className="gap-2">
+                  <a 
+                    href="https://docs.google.com/forms/d/1CZo161xuodoW-5sm47IqrKORZTK2MJu3DBdHF4PHJm0/edit" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    Fill Out Form
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                </Button>
               </div>
             </div>
           </div>
