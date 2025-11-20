@@ -3,10 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Wifi, WifiOff, Clock, Zap, Maximize2 } from "lucide-react";
-// Temporarily removed to fix modal issue
-// import { TutorRatingTagsDisplay } from "@/components/feedback/RatingTags";
-// import { useQuery } from "@tanstack/react-query";
-// import { supabase } from "@/integrations/supabase/client";
+import { TutorRatingTagsSection } from "./TutorRatingTagsSection";
 
 interface TutorProfile {
   id: string;
@@ -40,9 +37,6 @@ export const TutorDetailDialog = ({
   onBookSession,
   onInstantSession,
 }: TutorDetailDialogProps) => {
-  // Temporarily removed rating tags query to fix modal
-  // const { data: tutorTags } = useQuery({...});
-
   if (!tutor) return null;
 
   return (
@@ -120,7 +114,7 @@ export const TutorDetailDialog = ({
             </div>
           </div>
 
-          {/* Temporarily removed rating tags display */}
+          <TutorRatingTagsSection tutorUserId={tutor.user_id} />
 
           <div>
             <h4 className="text-sm font-semibold mb-2 sm:mb-3">About</h4>
