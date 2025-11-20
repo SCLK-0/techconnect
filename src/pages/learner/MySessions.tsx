@@ -16,6 +16,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
 import { FeedbackDialog } from "@/components/learner/FeedbackDialog";
 import { RescheduleSessionDialog } from "@/components/learner/RescheduleSessionDialog";
+import { CancelSessionDialog } from "@/components/learner/CancelSessionDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
@@ -55,6 +56,8 @@ export default function MySessions() {
   const [initialLoad, setInitialLoad] = useState(true);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedSessionForReschedule, setSelectedSessionForReschedule] = useState<Session | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedSessionForCancel, setSelectedSessionForCancel] = useState<Session | null>(null);
 
   // Enable session notifications
   useSessionNotifications(user?.id);
@@ -130,22 +133,7 @@ export default function MySessions() {
     enabled: !!user,
   });
 
-  const cancelSessionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const { error } = await supabase
-        .from("sessions")
-        .update({ status: "cancelled" })
-        .eq("id", sessionId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Session cancelled successfully");
-      queryClient.invalidateQueries({ queryKey: ["learner-sessions"] });
-    },
-    onError: () => {
-      toast.error("Failed to cancel session");
-    },
-  });
+  // Removed old cancelSessionMutation - now using CancelSessionDialog
 
   // Clear initial load state once query is successful
   useEffect(() => {
@@ -241,7 +229,10 @@ export default function MySessions() {
                               {filter === "pending" && (
                                 <Button
                                   variant="outline"
-                                  onClick={() => cancelSessionMutation.mutate(session.id)}
+                                  onClick={() => {
+                                    setSelectedSessionForCancel(session);
+                                    setCancelDialogOpen(true);
+                                  }}
                                 >
                                   <X className="mr-2 h-4 w-4" />
                                   Cancel
@@ -376,6 +367,20 @@ export default function MySessions() {
           tutorSubjects={selectedSessionForReschedule.profiles?.subject_expertise || []}
           rejectionReason={selectedSessionForReschedule.rejection_reason}
           cancelledReason={selectedSessionForReschedule.cancelled_reason}
+        />
+      )}
+
+      {selectedSessionForCancel && (
+        <CancelSessionDialog
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          sessionId={selectedSessionForCancel.id}
+          userId={user?.id || ""}
+          tutorName={selectedSessionForCancel.profiles?.full_name || "Tutor"}
+          subject={selectedSessionForCancel.subject}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["learner-sessions"] });
+          }}
         />
       )}
     </SidebarProvider>
