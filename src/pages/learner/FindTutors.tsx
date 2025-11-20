@@ -579,6 +579,15 @@ const FindTutors = () => {
     );
   };
 
+  // Add error boundary
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading user...</p>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -930,14 +939,21 @@ function FavoriteButton({ tutorId, learnerId }: FavoriteButtonProps) {
   useEffect(() => {
     const checkFavorite = async () => {
       if (!learnerId) return;
-      const { data } = await supabase
-        .from('favorite_tutors')
-        .select('id')
-        .eq('learner_id', learnerId)
-        .eq('tutor_id', tutorId)
-        .single();
-      
-      setIsFavorited(!!data);
+      try {
+        const { data, error } = await supabase
+          .from('favorite_tutors')
+          .select('id')
+          .eq('learner_id', learnerId)
+          .eq('tutor_id', tutorId)
+          .single();
+        
+        if (!error) {
+          setIsFavorited(!!data);
+        }
+      } catch (error) {
+        // Silently fail if table doesn't exist yet
+        console.log('Favorite check failed:', error);
+      }
     };
     checkFavorite();
   }, [tutorId, learnerId, setIsFavorited]);
