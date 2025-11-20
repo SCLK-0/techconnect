@@ -163,8 +163,8 @@ const FindTutors = () => {
   };
 
   const handleCardClick = (tutor: TutorProfile) => {
-    setSelectedTutor(tutor);
-    setIsDetailDialogOpen(true);
+    // Temporarily disabled modal - just open booking directly
+    handleBookSession(tutor);
   };
 
   const handleBookSession = (tutor: TutorProfile) => {
