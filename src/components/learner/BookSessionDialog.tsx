@@ -97,13 +97,14 @@ export function BookSessionDialog({
     }
   }, [open, tutorId]);
 
-  // Temporarily disabled to fix modal
-  // useEffect(() => {
-  //   const selectedDate = form.watch("date");
-  //   if (selectedDate && tutorId) {
-  //     loadBookedSessions(selectedDate);
-  //   }
-  // }, [form.watch("date"), tutorId]);
+  // Watch for date changes and load booked sessions
+  const selectedDate = form.watch("date");
+  
+  useEffect(() => {
+    if (selectedDate && tutorId) {
+      loadBookedSessions(selectedDate);
+    }
+  }, [selectedDate, tutorId]);
 
   const loadTutorAvailability = async () => {
     const { data: weeklySlots } = await supabase
