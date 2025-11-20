@@ -15,6 +15,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import React, { useState } from "react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 export default function Announcements() {
   const { role, loading } = useUserRole();
@@ -171,6 +172,7 @@ export default function Announcements() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center overflow-x-hidden">
             <div className="space-y-6 w-full max-w-sm md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Announcements</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { RejectSessionDialog } from "@/components/tutor/RejectSessionDialog";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 export default function TutorRequests() {
   const { user } = useUserRole();
@@ -94,6 +95,7 @@ export default function TutorRequests() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Session Requests</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

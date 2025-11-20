@@ -16,6 +16,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { ResourcePreviewDialog } from "@/components/learner/ResourcePreviewDialog";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { useEffect } from "react";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 export default function LearnerResources() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -180,6 +181,7 @@ export default function LearnerResources() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Learning Resources</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

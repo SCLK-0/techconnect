@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { BookSessionDialog } from "@/components/learner/BookSessionDialog";
 import { InstantSessionDialog } from "@/components/learner/InstantSessionDialog";
 import { InstantSessionWaitingModal } from "@/components/learner/InstantSessionWaitingModal";
@@ -613,6 +614,7 @@ const FindTutors = () => {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Find Tutors</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

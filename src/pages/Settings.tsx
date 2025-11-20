@@ -10,6 +10,7 @@ import logo from "@/assets/logo.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useUserRole } from "@/hooks/useUserRole";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 export default function Settings() {
   const { role, loading } = useUserRole();
@@ -39,6 +40,7 @@ export default function Settings() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Settings</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

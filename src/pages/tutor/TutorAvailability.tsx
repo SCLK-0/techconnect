@@ -15,6 +15,7 @@ import { AvailabilityCalendar } from "@/components/tutor/AvailabilityCalendar";
 import { toast } from "sonner";
 import { Clock, Trash2, Copy } from "lucide-react";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -221,6 +222,7 @@ export default function TutorAvailability() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Availability</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

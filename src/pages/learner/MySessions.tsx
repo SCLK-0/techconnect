@@ -21,6 +21,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 interface Session {
   id: string;
@@ -170,6 +171,7 @@ export default function MySessions() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold mb-2">Sessions</h2>
                 <p className="text-sm md:text-base text-muted-foreground">

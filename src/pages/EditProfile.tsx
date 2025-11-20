@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 const subjects = [
   "Programming",
@@ -336,6 +337,7 @@ export default function EditProfile() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center overflow-x-hidden">
             <div className="space-y-6 w-full max-w-sm md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Profile</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">

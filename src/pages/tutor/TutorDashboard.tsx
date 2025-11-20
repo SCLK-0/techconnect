@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Star, Clock, CheckCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -181,6 +182,7 @@ export default function TutorDashboard() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               {tutorStatus === "pending" && (
                 <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
                   <CardContent className="pt-6">
