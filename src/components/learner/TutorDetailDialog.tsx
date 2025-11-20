@@ -3,9 +3,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Wifi, WifiOff, Clock, Zap, Maximize2 } from "lucide-react";
-import { TutorRatingTagsDisplay } from "@/components/feedback/RatingTags";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+// Temporarily removed to fix modal issue
+// import { TutorRatingTagsDisplay } from "@/components/feedback/RatingTags";
+// import { useQuery } from "@tanstack/react-query";
+// import { supabase } from "@/integrations/supabase/client";
 
 interface TutorProfile {
   id: string;
@@ -39,37 +40,10 @@ export const TutorDetailDialog = ({
   onBookSession,
   onInstantSession,
 }: TutorDetailDialogProps) => {
-  // Fetch tutor's rating tags - must be called before any conditional returns
-  const { data: tutorTags } = useQuery({
-    queryKey: ['tutor-tags', tutor?.user_id],
-    queryFn: async () => {
-      if (!tutor?.user_id) return [];
-      try {
-        const { data, error } = await supabase
-          .rpc('get_tutor_rating_tags', { tutor_user_id: tutor.user_id });
-        if (error) {
-          console.log('Rating tags error:', error);
-          return [];
-        }
-        return data || [];
-      } catch (error) {
-        console.log('Rating tags query failed:', error);
-        return [];
-      }
-    },
-    enabled: !!tutor?.user_id && open,
-  });
+  // Temporarily removed rating tags query to fix modal
+  // const { data: tutorTags } = useQuery({...});
 
-  // Early return after all hooks
-  if (!tutor) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <p>Loading...</p>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  if (!tutor) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -146,12 +120,7 @@ export const TutorDetailDialog = ({
             </div>
           </div>
 
-          {tutorTags && tutorTags.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold mb-2 sm:mb-3">Top Qualities</h4>
-              <TutorRatingTagsDisplay tags={tutorTags} limit={5} />
-            </div>
-          )}
+          {/* Temporarily removed rating tags display */}
 
           <div>
             <h4 className="text-sm font-semibold mb-2 sm:mb-3">About</h4>
