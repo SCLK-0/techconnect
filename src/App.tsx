@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { useMissedSessionsChecker } from "./hooks/useMissedSessionsChecker";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -13,6 +14,7 @@ import TutorRegistration from "./pages/TutorRegistration";
 import ConfirmEmail from "./pages/ConfirmEmail";
 import LearnerDashboard from "./pages/learner/LearnerDashboard";
 import FindTutors from "./pages/learner/FindTutors";
+import FavoriteTutors from "./pages/learner/FavoriteTutors";
 import MySessions from "./pages/learner/MySessions";
 import LearnerResources from "./pages/learner/LearnerResources";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
@@ -44,12 +46,16 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+const App = () => {
+  // Automatically check and mark missed sessions every 2 minutes
+  useMissedSessionsChecker();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/quick-start" element={<QuickStartGuide />} />
@@ -75,6 +81,14 @@ const App = () => (
             element={
               <ProtectedRoute allowedRoles={["learner"]}>
                 <FindTutors />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/learner/favorites" 
+            element={
+              <ProtectedRoute allowedRoles={["learner"]}>
+                <FavoriteTutors />
               </ProtectedRoute>
             } 
           />
@@ -283,6 +297,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

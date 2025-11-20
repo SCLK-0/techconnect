@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Search, UserCircle, Wifi, WifiOff, Zap, Star, Clock, Filter, Maximize2 } from "lucide-react";
+import { Search, UserCircle, Wifi, WifiOff, Zap, Star, Clock, Filter, Maximize2, Heart } from "lucide-react";
+import { useFavoriteTutor } from "@/hooks/useFavoriteTutor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -178,35 +179,73 @@ const FindTutors = () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    // Check next 7 days
-    for (let i = 0; i < 7; i++) {
+    // Check next 14 days for better accuracy
+    for (let i = 0; i < 14; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
       const dateStr = checkDate.toISOString().split('T')[0];
       const dayOfWeek = checkDate.getDay();
       
-      // Check day-specific override
+      // Check day-specific override first (higher priority)
       const dayOverride = dayOverrides.find(d => d.date === dateStr);
+      
+      // If explicitly marked unavailable, skip this day
       if (dayOverride && !dayOverride.is_available) continue;
       
-      // Get time slots for this day
-      const daySlots = weeklySlots.filter(slot => slot.day_of_week === dayOfWeek && slot.is_available);
-      if (daySlots.length === 0 && !dayOverride?.is_available) continue;
+      // If day override has specific time slots, use those
+      if (dayOverride?.start_time && dayOverride?.end_time) {
+        const [startHours, startMinutes] = dayOverride.start_time.split(':').map(Number);
+        const [endHours, endMinutes] = dayOverride.end_time.split(':').map(Number);
+        const startTimeInMinutes = startHours * 60 + startMinutes;
+        const endTimeInMinutes = endHours * 60 + endMinutes;
+        
+        // Validate time range
+        if (endTimeInMinutes > startTimeInMinutes) {
+          const slotTime = new Date(checkDate);
+          slotTime.setHours(startHours, startMinutes, 0, 0);
+          
+          if (slotTime > now) {
+            const timeStr = dayOverride.start_time.slice(0, 5);
+            if (i === 0) {
+              return `Today at ${timeStr}`;
+            } else if (i === 1) {
+              return `Tomorrow at ${timeStr}`;
+            } else {
+              const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+              return `${days[dayOfWeek]} at ${timeStr}`;
+            }
+          }
+        }
+        continue; // Skip weekly slots if day override exists
+      }
       
-      // Find earliest available time
+      // Fall back to weekly recurring schedule
+      const daySlots = weeklySlots.filter(slot => slot.day_of_week === dayOfWeek && slot.is_available);
+      if (daySlots.length === 0) continue;
+      
+      // Find earliest valid time slot
       for (const slot of daySlots) {
-        const [hours, minutes] = slot.start_time.split(':').map(Number);
+        // Validate time range
+        const [startHours, startMinutes] = slot.start_time.split(':').map(Number);
+        const [endHours, endMinutes] = slot.end_time.split(':').map(Number);
+        const startTimeInMinutes = startHours * 60 + startMinutes;
+        const endTimeInMinutes = endHours * 60 + endMinutes;
+        
+        // Skip invalid time ranges
+        if (endTimeInMinutes <= startTimeInMinutes) continue;
+        
         const slotTime = new Date(checkDate);
-        slotTime.setHours(hours, minutes, 0, 0);
+        slotTime.setHours(startHours, startMinutes, 0, 0);
         
         if (slotTime > now) {
+          const timeStr = slot.start_time.slice(0, 5);
           if (i === 0) {
-            return `Today at ${slot.start_time}`;
+            return `Today at ${timeStr}`;
           } else if (i === 1) {
-            return `Tomorrow at ${slot.start_time}`;
+            return `Tomorrow at ${timeStr}`;
           } else {
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            return `${days[dayOfWeek]} at ${slot.start_time}`;
+            return `${days[dayOfWeek]} at ${timeStr}`;
           }
         }
       }
@@ -708,15 +747,18 @@ const FindTutors = () => {
                         onClick={() => handleCardClick(tutor)}
                       >
                       <CardHeader className="pb-3 relative">
-                        <button
-                          className="absolute right-2 top-2 p-1.5 rounded-md hover:bg-accent transition-colors z-10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCardClick(tutor);
-                          }}
-                        >
-                          <Maximize2 className="h-4 w-4 text-muted-foreground" />
-                        </button>
+                        <div className="absolute right-2 top-2 flex gap-1 z-10">
+                          <FavoriteButton tutorId={tutor.user_id} learnerId={user?.id} />
+                          <button
+                            className="p-1.5 rounded-md hover:bg-accent transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCardClick(tutor);
+                            }}
+                          >
+                            <Maximize2 className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </div>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                           <Avatar className="h-14 w-14 sm:h-16 sm:w-16">
                             <AvatarImage src={tutor.profiles.avatar_url || ""} />
@@ -874,5 +916,50 @@ const FindTutors = () => {
     </SidebarProvider>
   );
 };
+
+// Favorite Button Component
+interface FavoriteButtonProps {
+  tutorId: string;
+  learnerId: string | undefined;
+}
+
+function FavoriteButton({ tutorId, learnerId }: FavoriteButtonProps) {
+  const { isFavorited, setIsFavorited, toggleFavorite, isLoading } = useFavoriteTutor(tutorId, learnerId);
+
+  // Check if already favorited on mount
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!learnerId) return;
+      const { data } = await supabase
+        .from('favorite_tutors')
+        .select('id')
+        .eq('learner_id', learnerId)
+        .eq('tutor_id', tutorId)
+        .single();
+      
+      setIsFavorited(!!data);
+    };
+    checkFavorite();
+  }, [tutorId, learnerId, setIsFavorited]);
+
+  return (
+    <button
+      className="p-1.5 rounded-md hover:bg-accent transition-colors"
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleFavorite();
+      }}
+      disabled={isLoading}
+    >
+      <Heart
+        className={`h-4 w-4 transition-colors ${
+          isFavorited
+            ? "fill-red-500 text-red-500"
+            : "text-muted-foreground hover:text-red-500"
+        }`}
+      />
+    </button>
+  );
+}
 
 export default FindTutors;

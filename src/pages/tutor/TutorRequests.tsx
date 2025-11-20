@@ -14,11 +14,14 @@ import { Calendar, Clock, User, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { RejectSessionDialog } from "@/components/tutor/RejectSessionDialog";
 
 export default function TutorRequests() {
   const { user } = useUserRole();
   const queryClient = useQueryClient();
   const [initialLoad, setInitialLoad] = useState(true);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
 
 
   const { data: requests = [], isLoading, isFetching, isSuccess } = useQuery({
@@ -152,10 +155,10 @@ export default function TutorRequests() {
                         <Button
                           variant="outline"
                           className="flex-1"
-                          onClick={() => updateStatusMutation.mutate({ 
-                            sessionId: request.id, 
-                            status: "rejected" 
-                          })}
+                          onClick={() => {
+                            setSelectedSession(request);
+                            setRejectDialogOpen(true);
+                          }}
                         >
                           <X className="mr-2 h-4 w-4" />
                           Decline
@@ -169,6 +172,20 @@ export default function TutorRequests() {
           </main>
         </div>
       </div>
+
+      {selectedSession && (
+        <RejectSessionDialog
+          open={rejectDialogOpen}
+          onOpenChange={setRejectDialogOpen}
+          sessionId={selectedSession.id}
+          tutorId={user?.id || ""}
+          learnerName={selectedSession.profiles?.full_name || "Learner"}
+          subject={selectedSession.subject}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["session-requests"] });
+          }}
+        />
+      )}
     </SidebarProvider>
   );
 }

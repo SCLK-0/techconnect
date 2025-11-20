@@ -115,6 +115,19 @@ export default function TutorAvailability() {
   const addSlot = async () => {
     if (!user) return;
     
+    // Validate that end time is after start time
+    const [startHours, startMinutes] = newSlot.start_time.split(":").map(Number);
+    const [endHours, endMinutes] = newSlot.end_time.split(":").map(Number);
+    const startTimeInMinutes = startHours * 60 + startMinutes;
+    const endTimeInMinutes = endHours * 60 + endMinutes;
+    
+    if (endTimeInMinutes <= startTimeInMinutes) {
+      toast.error("Invalid time range", {
+        description: "End time must be after start time"
+      });
+      return;
+    }
+    
     const { error } = await supabase
       .from("tutor_availability")
       .insert({

@@ -3,6 +3,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Wifi, WifiOff, Clock, Zap, Maximize2 } from "lucide-react";
+import { TutorRatingTagsDisplay } from "@/components/feedback/RatingTags";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TutorProfile {
   id: string;
@@ -36,6 +39,22 @@ export const TutorDetailDialog = ({
   onBookSession,
   onInstantSession,
 }: TutorDetailDialogProps) => {
+  // Fetch tutor's rating tags
+  const { data: tutorTags } = useQuery({
+    queryKey: ['tutor-tags', tutor?.user_id],
+    queryFn: async () => {
+      if (!tutor?.user_id) return [];
+      const { data, error } = await supabase
+        .rpc('get_tutor_rating_tags', { tutor_user_id: tutor.user_id });
+      if (error) {
+        console.error('Error fetching tutor tags:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!tutor?.user_id && open,
+  });
+
   if (!tutor) return null;
 
   return (
@@ -112,6 +131,13 @@ export const TutorDetailDialog = ({
               )}
             </div>
           </div>
+
+          {tutorTags && tutorTags.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold mb-2 sm:mb-3">Top Qualities</h4>
+              <TutorRatingTagsDisplay tags={tutorTags} limit={5} />
+            </div>
+          )}
 
           <div>
             <h4 className="text-sm font-semibold mb-2 sm:mb-3">About</h4>

@@ -28,10 +28,10 @@ import { toast } from "sonner";
 const menuItems = [
   { title: "Dashboard", url: "/learner/dashboard", icon: LayoutDashboard },
   { title: "Find Tutors", url: "/learner/find-tutors", icon: Search },
+  { title: "Favorites", url: "/learner/favorites", icon: Heart },
   { title: "My Sessions", url: "/learner/sessions", icon: Calendar },
   { title: "Resources", url: "/learner/resources", icon: FileText },
   { title: "Announcements", url: "/announcements", icon: Megaphone },
-  { title: "Donate", url: "/donate", icon: Heart },
 ];
 
 export const LearnerSidebar = () => {

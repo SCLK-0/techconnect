@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, User, CalendarDays, X, Video } from "lucide-react";
+import { Calendar, Clock, User, CalendarDays, X, Video, RefreshCw } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { UserMenu } from "@/components/UserMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
 import { FeedbackDialog } from "@/components/learner/FeedbackDialog";
+import { RescheduleSessionDialog } from "@/components/learner/RescheduleSessionDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
@@ -27,8 +28,12 @@ interface Session {
   subject: string;
   status: string;
   session_type: string;
+  rejection_reason?: string;
+  cancelled_reason?: string;
+  tutor_id: string;
   tutor: {
     full_name: string;
+    subject_expertise?: string[];
   };
 }
 
@@ -48,6 +53,8 @@ export default function MySessions() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [initialLoad, setInitialLoad] = useState(true);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [selectedSessionForReschedule, setSelectedSessionForReschedule] = useState<Session | null>(null);
 
   // Enable session notifications
   useSessionNotifications(user?.id);
@@ -96,13 +103,29 @@ export default function MySessions() {
       if (error) throw error;
       
       const tutorIds = data?.map(s => s.tutor_id) || [];
+      
+      // Get profiles
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, full_name")
         .in("user_id", tutorIds);
       
+      // Get tutor profiles for subject expertise
+      const { data: tutorProfiles } = await supabase
+        .from("tutor_profiles")
+        .select("user_id, subject_expertise")
+        .in("user_id", tutorIds);
+      
       const profileMap = new Map(profiles?.map(p => [p.user_id, { full_name: p.full_name }]) || []);
-      return data?.map(s => ({ ...s, profiles: profileMap.get(s.tutor_id) })) || [];
+      const tutorProfileMap = new Map(tutorProfiles?.map(tp => [tp.user_id, tp.subject_expertise]) || []);
+      
+      return data?.map(s => ({ 
+        ...s, 
+        profiles: {
+          ...profileMap.get(s.tutor_id),
+          subject_expertise: tutorProfileMap.get(s.tutor_id) || []
+        }
+      })) || [];
     },
     enabled: !!user,
   });
@@ -265,6 +288,30 @@ export default function MySessions() {
                                 <FeedbackDialog sessionId={session.id} />
                               )}
                             </div>
+                            
+                            {/* Show rejection/cancellation reason and reschedule option */}
+                            {(session.rejection_reason || session.cancelled_reason) && (
+                              <div className="mt-4 p-3 bg-muted rounded-lg space-y-2">
+                                <p className="text-sm font-medium">
+                                  {session.rejection_reason ? 'Rejection Reason:' : 'Cancellation Reason:'}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {session.rejection_reason || session.cancelled_reason}
+                                </p>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedSessionForReschedule(session);
+                                    setRescheduleDialogOpen(true);
+                                  }}
+                                  className="w-full mt-2"
+                                >
+                                  <RefreshCw className="mr-2 h-4 w-4" />
+                                  Reschedule with {session.profiles?.full_name}
+                                </Button>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
@@ -319,6 +366,18 @@ export default function MySessions() {
           </main>
         </div>
       </div>
+
+      {selectedSessionForReschedule && (
+        <RescheduleSessionDialog
+          open={rescheduleDialogOpen}
+          onOpenChange={setRescheduleDialogOpen}
+          tutorId={selectedSessionForReschedule.tutor_id}
+          tutorName={selectedSessionForReschedule.profiles?.full_name || "Tutor"}
+          tutorSubjects={selectedSessionForReschedule.profiles?.subject_expertise || []}
+          rejectionReason={selectedSessionForReschedule.rejection_reason}
+          cancelledReason={selectedSessionForReschedule.cancelled_reason}
+        />
+      )}
     </SidebarProvider>
   );
 }

@@ -88,6 +88,7 @@ export function BookSessionDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tutorAvailability, setTutorAvailability] = useState<any[]>([]);
   const [dayOverrides, setDayOverrides] = useState<any[]>([]);
+  const [bookedSessions, setBookedSessions] = useState<any[]>([]);
 
   useEffect(() => {
     if (open && tutorId) {
@@ -95,6 +96,13 @@ export function BookSessionDialog({
       loadDayOverrides();
     }
   }, [open, tutorId]);
+
+  useEffect(() => {
+    const selectedDate = form.watch("date");
+    if (selectedDate && tutorId) {
+      loadBookedSessions(selectedDate);
+    }
+  }, [form.watch("date"), tutorId]);
 
   const loadTutorAvailability = async () => {
     const { data: weeklySlots } = await supabase
@@ -113,6 +121,24 @@ export function BookSessionDialog({
       .eq("tutor_id", tutorId);
     
     setDayOverrides(data || []);
+  };
+
+  const loadBookedSessions = async (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data } = await supabase
+      .from("sessions")
+      .select("scheduled_at, duration_minutes")
+      .eq("tutor_id", tutorId)
+      .in("status", ["pending", "accepted", "in_progress"])
+      .gte("scheduled_at", startOfDay.toISOString())
+      .lte("scheduled_at", endOfDay.toISOString());
+    
+    setBookedSessions(data || []);
   };
 
   const form = useForm<BookSessionFormValues>({
@@ -147,6 +173,20 @@ export function BookSessionDialog({
     const dateStr = selectedDate.toISOString().split('T')[0];
     const [hours, minutes] = time.split(":").map(Number);
     const timeInMinutes = hours * 60 + minutes;
+    
+    // Check if this time slot conflicts with any booked sessions
+    const proposedStart = new Date(selectedDate);
+    proposedStart.setHours(hours, minutes, 0, 0);
+    
+    const hasBookingConflict = bookedSessions.some(session => {
+      const sessionStart = new Date(session.scheduled_at);
+      const sessionEnd = new Date(sessionStart.getTime() + session.duration_minutes * 60000);
+      
+      // Check if the proposed time falls within an existing session
+      return proposedStart >= sessionStart && proposedStart < sessionEnd;
+    });
+    
+    if (hasBookingConflict) return false;
     
     // Check for day-specific time slots first
     const dayOverride = dayOverrides.find(d => d.date === dateStr);

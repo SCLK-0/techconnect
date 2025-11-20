@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { MessageSquare, Star } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { RatingTags, type RatingTag } from "@/components/feedback/RatingTags";
 
 interface FeedbackDialogProps {
   sessionId: string;
@@ -25,24 +26,55 @@ export function FeedbackDialog({ sessionId }: FeedbackDialogProps) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<RatingTag[]>([]);
   const queryClient = useQueryClient();
+
+  const handleTagToggle = (tag: RatingTag) => {
+    setSelectedTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
 
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("feedback").insert({
-        session_id: sessionId,
-        user_id: user.id,
-        rating,
-        comment,
-      });
-      if (error) throw error;
+      
+      // Insert feedback
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from("feedback")
+        .insert({
+          session_id: sessionId,
+          user_id: user.id,
+          rating,
+          comment,
+        })
+        .select()
+        .single();
+      
+      if (feedbackError) throw feedbackError;
+      
+      // Insert rating tags if any selected
+      if (selectedTags.length > 0 && feedbackData) {
+        const tagInserts = selectedTags.map(tag => ({
+          feedback_id: feedbackData.id,
+          tag: tag,
+        }));
+        
+        const { error: tagsError } = await supabase
+          .from("feedback_tags")
+          .insert(tagInserts);
+        
+        if (tagsError) throw tagsError;
+      }
     },
     onSuccess: () => {
       toast.success("Feedback submitted!");
       setOpen(false);
       setRating(0);
       setComment("");
+      setSelectedTags([]);
       queryClient.invalidateQueries({ queryKey: ["learner-sessions"] });
     },
     onError: (error) => {
@@ -95,7 +127,15 @@ export function FeedbackDialog({ sessionId }: FeedbackDialogProps) {
             </div>
           </div>
           <div>
-            <Label htmlFor="comment">Comment</Label>
+            <Label>What did you like? (Optional)</Label>
+            <p className="text-xs text-muted-foreground mb-2">Select all that apply</p>
+            <RatingTags 
+              selectedTags={selectedTags}
+              onTagToggle={handleTagToggle}
+            />
+          </div>
+          <div>
+            <Label htmlFor="comment">Comment (Optional)</Label>
             <Textarea
               id="comment"
               value={comment}
