@@ -39,23 +39,37 @@ export const TutorDetailDialog = ({
   onBookSession,
   onInstantSession,
 }: TutorDetailDialogProps) => {
-  // Fetch tutor's rating tags
+  // Fetch tutor's rating tags - must be called before any conditional returns
   const { data: tutorTags } = useQuery({
     queryKey: ['tutor-tags', tutor?.user_id],
     queryFn: async () => {
       if (!tutor?.user_id) return [];
-      const { data, error } = await supabase
-        .rpc('get_tutor_rating_tags', { tutor_user_id: tutor.user_id });
-      if (error) {
-        console.error('Error fetching tutor tags:', error);
+      try {
+        const { data, error } = await supabase
+          .rpc('get_tutor_rating_tags', { tutor_user_id: tutor.user_id });
+        if (error) {
+          console.error('Error fetching tutor tags:', error);
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.error('Error in tutor tags query:', error);
         return [];
       }
-      return data || [];
     },
     enabled: !!tutor?.user_id && open,
   });
 
-  if (!tutor) return null;
+  // Early return after all hooks
+  if (!tutor) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <p>Loading...</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
