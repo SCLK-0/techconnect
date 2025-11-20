@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { useState, useEffect } from "react";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 export default function TutorTutees() {
   const { user } = useUserRole();
@@ -210,6 +211,7 @@ export default function TutorTutees() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">My Learners</h2>
                 <p className="text-sm sm:text-base text-muted-foreground mb-4">

@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 import instapayQR from "@/assets/instapay-qr-code.jpg";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 const donationSchema = z.object({
   amount: z.number().min(10, "Minimum donation is ₱10").max(100000, "Maximum donation is ₱100,000"),
@@ -110,6 +111,7 @@ export default function TutorDonate() {
 
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
+              <MaintenanceBanner />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Support TechConnect</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">
