@@ -39,6 +39,7 @@ export const TutorDetailDialog = ({
   onBookSession,
   onInstantSession,
 }: TutorDetailDialogProps) => {
+  // Temporarily disabled - will enable after migrations are confirmed
   // Fetch tutor's rating tags - must be called before any conditional returns
   const { data: tutorTags } = useQuery({
     queryKey: ['tutor-tags', tutor?.user_id],
@@ -48,16 +49,16 @@ export const TutorDetailDialog = ({
         const { data, error } = await supabase
           .rpc('get_tutor_rating_tags', { tutor_user_id: tutor.user_id });
         if (error) {
-          console.error('Error fetching tutor tags:', error);
+          console.log('Rating tags not available yet:', error);
           return [];
         }
         return data || [];
       } catch (error) {
-        console.error('Error in tutor tags query:', error);
+        console.log('Rating tags feature pending migration');
         return [];
       }
     },
-    enabled: !!tutor?.user_id && open,
+    enabled: false, // Disabled until migrations are confirmed
   });
 
   // Early return after all hooks
