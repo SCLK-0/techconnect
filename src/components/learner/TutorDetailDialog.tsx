@@ -3,7 +3,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Wifi, WifiOff, Clock, Zap, Maximize2 } from "lucide-react";
-import { TutorRatingTagsSection } from "./TutorRatingTagsSection";
 
 interface TutorProfile {
   id: string;
@@ -114,7 +113,7 @@ export const TutorDetailDialog = ({
             </div>
           </div>
 
-          <TutorRatingTagsSection tutorUserId={tutor.user_id} />
+          {/* Rating tags removed - causing blank screen */}
 
           <div>
             <h4 className="text-sm font-semibold mb-2 sm:mb-3">About</h4>
