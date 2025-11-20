@@ -13,6 +13,7 @@ import logo from "@/assets/logo.png";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 import { LearnerSidebar } from "@/components/learner/LearnerSidebar";
 import { BookSessionDialog } from "@/components/learner/BookSessionDialog";
 import { InstantSessionDialog } from "@/components/learner/InstantSessionDialog";
@@ -46,6 +47,7 @@ interface TutorProfile {
 
 const FindTutors = () => {
   const navigate = useNavigate();
+  const { user } = useUserRole();
   const [tutors, setTutors] = useState<TutorProfile[]>([]);
   const [filteredTutors, setFilteredTutors] = useState<TutorProfile[]>([]);
   const [loading, setLoading] = useState(true);
