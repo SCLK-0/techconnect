@@ -108,6 +108,7 @@ export default function TutorAvailability() {
       .order("date", { ascending: true });
 
     if (!error && data) {
+      console.log("Loaded day availability from database:", data);
       setDayAvailability(data);
       setInitialLoad(false);
     }
@@ -125,6 +126,30 @@ export default function TutorAvailability() {
     if (endTimeInMinutes <= startTimeInMinutes) {
       toast.error("Invalid time range", {
         description: "End time must be after start time"
+      });
+      return;
+    }
+    
+    // Check for overlapping slots on the same day
+    const existingSlotsForDay = slots.filter(s => s.day_of_week === newSlot.day_of_week);
+    
+    const hasOverlap = existingSlotsForDay.some(slot => {
+      const [slotStartHours, slotStartMinutes] = slot.start_time.split(':').map(Number);
+      const [slotEndHours, slotEndMinutes] = slot.end_time.split(':').map(Number);
+      const slotStartInMinutes = slotStartHours * 60 + slotStartMinutes;
+      const slotEndInMinutes = slotEndHours * 60 + slotEndMinutes;
+      
+      // Check if time ranges overlap
+      return (
+        (startTimeInMinutes >= slotStartInMinutes && startTimeInMinutes < slotEndInMinutes) ||
+        (endTimeInMinutes > slotStartInMinutes && endTimeInMinutes <= slotEndInMinutes) ||
+        (startTimeInMinutes <= slotStartInMinutes && endTimeInMinutes >= slotEndInMinutes)
+      );
+    });
+    
+    if (hasOverlap) {
+      toast.error("Time slot overlaps with existing slot", {
+        description: `${DAYS[newSlot.day_of_week]} already has a conflicting time slot`,
       });
       return;
     }
@@ -180,22 +205,72 @@ export default function TutorAvailability() {
   const duplicateToAllDays = async (slot: TimeSlot) => {
     if (!user) return;
     
-    const slots = DAYS.map((_, idx) => ({
-      tutor_id: user.id,
-      day_of_week: idx,
-      start_time: slot.start_time,
-      end_time: slot.end_time,
-      is_available: true,
-    }));
+    // Validate time range
+    if (slot.end_time <= slot.start_time) {
+      toast.error("End time must be after start time");
+      return;
+    }
+    
+    // Calculate time in minutes for overlap checking
+    const [startHours, startMinutes] = slot.start_time.split(':').map(Number);
+    const [endHours, endMinutes] = slot.end_time.split(':').map(Number);
+    const startTimeInMinutes = startHours * 60 + startMinutes;
+    const endTimeInMinutes = endHours * 60 + endMinutes;
+    
+    // Check for overlaps on each day and only add to days without conflicts
+    const slotsToAdd = [];
+    const skippedDays = [];
+    
+    for (let dayIdx = 0; dayIdx < DAYS.length; dayIdx++) {
+      const existingSlotsForDay = slots.filter(s => s.day_of_week === dayIdx);
+      
+      const hasOverlap = existingSlotsForDay.some(existingSlot => {
+        const [slotStartHours, slotStartMinutes] = existingSlot.start_time.split(':').map(Number);
+        const [slotEndHours, slotEndMinutes] = existingSlot.end_time.split(':').map(Number);
+        const slotStartInMinutes = slotStartHours * 60 + slotStartMinutes;
+        const slotEndInMinutes = slotEndHours * 60 + slotEndMinutes;
+        
+        return (
+          (startTimeInMinutes >= slotStartInMinutes && startTimeInMinutes < slotEndInMinutes) ||
+          (endTimeInMinutes > slotStartInMinutes && endTimeInMinutes <= slotEndInMinutes) ||
+          (startTimeInMinutes <= slotStartInMinutes && endTimeInMinutes >= slotEndInMinutes)
+        );
+      });
+      
+      if (!hasOverlap) {
+        slotsToAdd.push({
+          tutor_id: user.id,
+          day_of_week: dayIdx,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          is_available: slot.is_available,
+        });
+      } else {
+        skippedDays.push(DAYS[dayIdx]);
+      }
+    }
+    
+    if (slotsToAdd.length === 0) {
+      toast.error("All days have conflicting time slots", {
+        description: "Please remove overlapping slots first",
+      });
+      return;
+    }
 
     const { error } = await supabase
       .from("tutor_availability")
-      .insert(slots);
+      .insert(slotsToAdd);
 
     if (error) {
-      toast.error("Failed to duplicate");
+      toast.error("Failed to add to all days");
     } else {
-      toast.success("Time slot duplicated to all days");
+      if (skippedDays.length > 0) {
+        toast.success(`Added to ${slotsToAdd.length} days`, {
+          description: `Skipped ${skippedDays.join(', ')} due to conflicts`,
+        });
+      } else {
+        toast.success(`Time slot added to all days (${slot.is_available ? 'Available' : 'Unavailable'})`);
+      }
       loadAvailability();
     }
   };
@@ -272,10 +347,25 @@ export default function TutorAvailability() {
                         />
                       </div>
                     </div>
-                    <Button onClick={addSlot} className="w-full sm:w-auto">
-                      <Clock className="mr-2 h-4 w-4" />
-                      Add Time Slot
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={newSlot.is_available}
+                        onCheckedChange={(checked) => setNewSlot({ ...newSlot, is_available: checked })}
+                      />
+                      <Label className="cursor-pointer">
+                        {newSlot.is_available ? "Available" : "Unavailable"}
+                      </Label>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button onClick={addSlot} className="flex-1">
+                        <Clock className="mr-2 h-4 w-4" />
+                        Add Time Slot
+                      </Button>
+                      <Button onClick={() => duplicateToAllDays(newSlot)} variant="outline" className="flex-1">
+                        <Copy className="mr-2 h-4 w-4" />
+                        Add to All Days
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

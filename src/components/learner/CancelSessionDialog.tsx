@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X } from "lucide-react";
+import { sendSessionCancelledEmail } from "@/utils/sendNotificationEmail";
 
 interface CancelSessionDialogProps {
   open: boolean;
@@ -67,6 +68,61 @@ export function CancelSessionDialog({
       if (error) throw error;
 
       if (data?.success) {
+        // Send email notification to tutor
+        try {
+          // Get tutor ID from the session since RPC doesn't return it
+          const { data: sessionData, error: sessionError } = await supabase
+            .from("sessions")
+            .select("tutor_id")
+            .eq("id", sessionId)
+            .single();
+
+          if (sessionError || !sessionData?.tutor_id) {
+            console.error("Error fetching session tutor_id:", sessionError);
+            throw new Error("Could not find tutor for this session");
+          }
+
+          const tutorId = sessionData.tutor_id;
+
+          const { data: tutorProfile, error: tutorError } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", tutorId)
+            .single();
+
+          const { data: learnerProfile, error: learnerError } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", userId)
+            .single();
+
+          // Get tutor's email using RPC function
+          const { data: tutorEmail, error: emailError } = await supabase
+            .rpc('get_user_email', { user_id: tutorId });
+
+          if (tutorError) {
+            console.error("Error fetching tutor profile:", tutorError);
+          }
+          if (learnerError) {
+            console.error("Error fetching learner profile:", learnerError);
+          }
+          if (emailError) {
+            console.error("Error fetching tutor email:", emailError);
+          }
+
+          if (tutorEmail) {
+            await sendSessionCancelledEmail(
+              tutorEmail,
+              tutorProfile?.full_name || "Tutor",
+              learnerProfile?.full_name || "A learner",
+              subject,
+              reason
+            );
+          }
+        } catch (emailError) {
+          console.error("Error sending cancellation email:", emailError);
+        }
+
         toast.success(`Session cancelled. ${data.notified_user} has been notified.`);
         onSuccess();
         onOpenChange(false);

@@ -31,13 +31,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sendSessionRequestEmail } from "@/utils/sendNotificationEmail";
 
 const instantSessionSchema = z.object({
-  duration: z.string().min(1, "Please select session duration"),
-  subject: z.string()
+  duration: z.coerce.number()
+    .min(10, "Minimum duration is 10 minutes")
+    .max(30, "Maximum duration is 30 minutes"),
+  subjectCategory: z.string().min(1, "Please select a subject category"),
+  specificTopic: z.string()
     .trim()
-    .min(1, "Subject is required")
-    .max(100, "Subject must be less than 100 characters"),
+    .min(1, "Please specify what you need help with")
+    .max(100, "Topic must be less than 100 characters"),
 });
 
 type InstantSessionFormValues = z.infer<typeof instantSessionSchema>;
@@ -51,12 +55,7 @@ interface InstantSessionDialogProps {
   onSessionCreated?: (sessionId: string) => void;
 }
 
-const durations = [
-  { value: "30", label: "30 minutes" },
-  { value: "60", label: "1 hour" },
-  { value: "90", label: "1.5 hours" },
-  { value: "120", label: "2 hours" },
-];
+
 
 export function InstantSessionDialog({
   open,
@@ -71,8 +70,9 @@ export function InstantSessionDialog({
   const form = useForm<InstantSessionFormValues>({
     resolver: zodResolver(instantSessionSchema),
     defaultValues: {
-      subject: tutorSubjects[0] || "",
-      duration: "60",
+      subjectCategory: tutorSubjects[0] || "",
+      specificTopic: "",
+      duration: "30",
     },
   });
 
@@ -149,6 +149,9 @@ export function InstantSessionDialog({
         return;
       }
 
+      // Combine subject category and specific topic
+      const subject = `${values.subjectCategory} - ${values.specificTopic.trim()}`;
+
       // Create instant session with pending status
       const { data, error } = await supabase
         .from("sessions")
@@ -157,7 +160,7 @@ export function InstantSessionDialog({
           learner_id: user.id,
           scheduled_at: now.toISOString(),
           duration_minutes: durationMinutes,
-          subject: values.subject.trim(),
+          subject: subject,
           status: "pending",
           session_type: "instant",
         })
@@ -165,6 +168,48 @@ export function InstantSessionDialog({
         .single();
 
       if (error) throw error;
+
+      // Send email notification to tutor
+      try {
+        const { data: tutorProfile, error: tutorError } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", tutorId)
+          .single();
+
+        const { data: learnerProfile, error: learnerError } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", user.id)
+          .single();
+
+        // Get tutor's email using RPC function
+        const { data: tutorEmail, error: emailError } = await supabase
+          .rpc('get_user_email', { user_id: tutorId });
+
+        if (tutorError) {
+          console.error("Error fetching tutor profile:", tutorError);
+        }
+        if (learnerError) {
+          console.error("Error fetching learner profile:", learnerError);
+        }
+        if (emailError) {
+          console.error("Error fetching tutor email:", emailError);
+        }
+
+        if (tutorEmail) {
+          await sendSessionRequestEmail(
+            tutorEmail,
+            tutorProfile?.full_name || "Tutor",
+            learnerProfile?.full_name || "A learner",
+            subject,
+            "Instant session"
+          );
+        }
+      } catch (emailError) {
+        console.error("Error sending instant session request email:", emailError);
+        // Don't fail the booking if email fails
+      }
 
       // Close this dialog
       form.reset();
@@ -203,6 +248,9 @@ export function InstantSessionDialog({
           </DialogTitle>
           <DialogDescription className="break-words text-center">
             Connect with <span className="break-words font-medium">{tutorName}</span> right now for an immediate tutoring session.
+            <span className="block mt-2 text-xs text-muted-foreground">
+              ⏱️ Instant sessions are limited to 10-30 minutes only
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -213,17 +261,41 @@ export function InstantSessionDialog({
               name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium">Duration</FormLabel>
+                  <FormLabel className="text-sm font-medium">Duration (minutes)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Enter duration in minutes"
+                      min={10}
+                      max={30}
+                      className="h-11 rounded-xl"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs">
+                    Enter a duration between 10-30 minutes
+                  </FormDescription>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="subjectCategory"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Subject Category</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="h-11 rounded-xl">
-                        <SelectValue placeholder="Select session duration" />
+                        <SelectValue placeholder="Select subject category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {durations.map((duration) => (
-                        <SelectItem key={duration.value} value={duration.value}>
-                          {duration.label}
+                      {tutorSubjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -235,18 +307,21 @@ export function InstantSessionDialog({
 
             <FormField
               control={form.control}
-              name="subject"
+              name="specificTopic"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium">Subject</FormLabel>
+                  <FormLabel className="text-sm font-medium">Specific Topic</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Automotive Basics"
+                      placeholder="e.g., Python loops and functions, Arduino basics..."
                       className="h-11 break-words rounded-xl"
                       {...field}
                       maxLength={100}
                     />
                   </FormControl>
+                  <FormDescription className="text-xs text-muted-foreground">
+                    What specifically do you need help with?
+                  </FormDescription>
                   <FormMessage className="text-xs break-words" />
                 </FormItem>
               )}

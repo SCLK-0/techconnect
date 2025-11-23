@@ -9,6 +9,7 @@ import {
   Eraser,
   Image,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -47,6 +48,11 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
+  
+  // Debug: Log isPeerConnected prop changes
+  useEffect(() => {
+    console.log("🔌 WhiteboardCanvas isPeerConnected prop changed:", isPeerConnected);
+  }, [isPeerConnected]);
   const activeToolRef = useRef<Tool>("select");
   const [drawColor, setDrawColor] = useState("#000000");
   const drawColorRef = useRef("#000000");
@@ -68,6 +74,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   const remoteDrawingPaths = useRef<Record<string, any>>({});
   const isDrawing = useRef(false);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const initCanvas = async () => {
@@ -122,7 +129,6 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       if (isMonitorMode) {
         fabricCanvas.selection = false;
         fabricCanvas.skipTargetFind = true;
-        fabricCanvas.interactive = false;
         fabricCanvas.defaultCursor = "default";
         fabricCanvas.hoverCursor = "default";
         fabricCanvas.moveCursor = "default";
@@ -411,6 +417,35 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             });
             console.log(`✅ ${displayName} presence tracked on channel`);
             
+            // Manually check for other users after a short delay
+            setTimeout(() => {
+              const state = channel.presenceState();
+              console.log(`🔍 Manual presence check after tracking:`, state);
+              const presences: Record<string, UserPresence> = {};
+              
+              Object.keys(state).forEach((key) => {
+                const presenceArray = state[key] as any[];
+                if (presenceArray.length > 0) {
+                  const presence = presenceArray[0];
+                  if (presence.userId && presence.userId !== user.id) {
+                    presences[presence.userId] = {
+                      userId: presence.userId,
+                      userName: presence.userName,
+                      editingObjectId: presence.editingObjectId,
+                      color: presence.color,
+                    };
+                  }
+                }
+              });
+              
+              if (Object.keys(presences).length > 0) {
+                console.log(`✅ Found ${Object.keys(presences).length} other user(s) immediately!`);
+                setBothUsersPresent(true);
+                setUserPresences(presences);
+                userPresencesRef.current = presences;
+              }
+            }, 1000);
+            
             // Set channel ready immediately - no delay
             isChannelReady.current = true;
             // toast.success("Whiteboard ready"); // Removed - too noisy
@@ -445,7 +480,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       const channel = await attemptSubscription();
       
       // Channel is set inside attemptSubscription on success
-
+      
       // Track drawing start and progress
       if (!isMonitorMode) {
         fabricCanvas.on("mouse:down", (e) => {
@@ -828,6 +863,19 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
 
       fabricCanvas.on("object:moving", (e) => {
         if (e?.target) {
+          const syncId = (e.target as any).syncId;
+          if (syncId) {
+            const editingUser = Object.values(userPresencesRef.current).find(
+              (presence) => presence.editingObjectId === syncId && presence.userId !== user.id
+            );
+            
+            if (editingUser) {
+              // Prevent movement if another user is editing
+              e.target.setCoords();
+              fabricCanvas.renderAll();
+              return;
+            }
+          }
           fabricCanvas.bringObjectToFront(e.target);
         }
         broadcastTransform(e);
@@ -835,6 +883,19 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       
       fabricCanvas.on("object:scaling", (e) => {
         if (e?.target) {
+          const syncId = (e.target as any).syncId;
+          if (syncId) {
+            const editingUser = Object.values(userPresencesRef.current).find(
+              (presence) => presence.editingObjectId === syncId && presence.userId !== user.id
+            );
+            
+            if (editingUser) {
+              // Prevent scaling if another user is editing
+              e.target.setCoords();
+              fabricCanvas.renderAll();
+              return;
+            }
+          }
           fabricCanvas.bringObjectToFront(e.target);
         }
         broadcastTransform(e);
@@ -842,6 +903,19 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       
       fabricCanvas.on("object:rotating", (e) => {
         if (e?.target) {
+          const syncId = (e.target as any).syncId;
+          if (syncId) {
+            const editingUser = Object.values(userPresencesRef.current).find(
+              (presence) => presence.editingObjectId === syncId && presence.userId !== user.id
+            );
+            
+            if (editingUser) {
+              // Prevent rotation if another user is editing
+              e.target.setCoords();
+              fabricCanvas.renderAll();
+              return;
+            }
+          }
           fabricCanvas.bringObjectToFront(e.target);
         }
         broadcastTransform(e);
@@ -886,9 +960,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   useEffect(() => {
     if (!canvas || isMonitorMode) return;
 
-    // Whiteboard is enabled when both users are present in the whiteboard channel
-    // Video peer connection is NOT required - whiteboard uses Supabase realtime independently
-    const isWhiteboardEnabled = bothUsersPresent;
+    // Whiteboard is enabled when both users are present AND peer connection is active
+    // Both conditions are required for proper synchronization
+    const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
 
     if (isWhiteboardEnabled) {
       // Enable interaction
@@ -905,7 +979,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         }
       });
       
-      console.log("✅ Both users present AND peer connected - whiteboard enabled");
+      console.log("✅ Whiteboard enabled - bothUsers:", bothUsersPresent, "peerConnected:", isPeerConnected);
     } else {
       // Completely disable interaction until both conditions are met
       canvas.selection = false;
@@ -924,7 +998,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       });
       
       canvas.renderAll();
-      console.log("⏳ Waiting for other user - whiteboard disabled (bothUsers:", bothUsersPresent, ")");
+      console.log("⏳ Whiteboard disabled - bothUsers:", bothUsersPresent, "peerConnected:", isPeerConnected);
     }
   }, [bothUsersPresent, isPeerConnected, canvas, isMonitorMode, activeTool]);
 
@@ -1271,7 +1345,6 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       canvas.isDrawingMode = false;
       canvas.selection = false;
       canvas.skipTargetFind = true;
-      canvas.interactive = false;
       canvas.defaultCursor = "default";
       canvas.hoverCursor = "default";
       canvas.moveCursor = "default";
@@ -1317,7 +1390,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       canvas.freeDrawingBrush = brush;
     } else if (activeTool === "eraser") {
       canvas.isDrawingMode = false;
-      canvas.selection = true;
+      canvas.selection = false; // Disable selection for eraser
       canvas.hoverCursor = "pointer";
     } else if (activeTool === "text") {
       canvas.isDrawingMode = false;
@@ -1329,11 +1402,13 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       canvas.defaultCursor = "default";
     }
     
-    // Enable object interactions when whiteboard is enabled
+    // Enable object interactions based on tool
     canvas.forEachObject((obj) => {
       if (!(obj as any).isIndicator && !(obj as any).isRemoteDrawing) {
-        obj.selectable = true;
-        obj.evented = true;
+        // Only make objects selectable in select mode
+        obj.selectable = activeTool === "select";
+        // Eraser needs evented true to detect clicks, text/draw don't need it
+        obj.evented = activeTool === "eraser" || activeTool === "select";
       }
     });
   }, [activeTool, canvas, drawColor, brushSize, isMonitorMode, bothUsersPresent, isPeerConnected]);
@@ -1548,8 +1623,164 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
     await saveWhiteboardState(canvas, userId);
   };
 
-  // Whiteboard is enabled when both users are present (peer connection not required)
-  const isWhiteboardEnabled = bothUsersPresent;
+  const refreshWhiteboard = async () => {
+    if (!canvas || !userId) return;
+    
+    toast.info("Refreshing whiteboard connection...");
+    
+    // Unsubscribe from current channel
+    if (channelRef.current) {
+      try {
+        await channelRef.current.unsubscribe();
+      } catch (error) {
+        console.error("Error unsubscribing:", error);
+      }
+      channelRef.current = null;
+      isChannelReady.current = false;
+    }
+    
+    // Reset presence state
+    setBothUsersPresent(false);
+    setUserPresences({});
+    userPresencesRef.current = {};
+    setRemoteCursors({});
+    
+    // Wait a moment before reconnecting
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Reconnect to channel
+    const channelName = `whiteboard-session-${sessionId}`;
+    console.log(`🔄 Reconnecting to whiteboard channel: ${channelName}`);
+    
+    const channelConfig = {
+      config: { 
+        broadcast: { self: false },
+        presence: { key: isMonitorMode ? '' : userId }
+      }
+    };
+    
+    const channel = supabase
+      .channel(channelName, channelConfig)
+      .on("broadcast", { event: "whiteboard-event" }, ({ payload }: { payload: WhiteboardEvent }) => {
+        if (payload.userId === userId) return;
+        
+        if (payload.type === "cursor:move") {
+          if (isMonitorMode) return;
+          setRemoteCursors(prev => ({
+            ...prev,
+            [payload.userId]: payload.data
+          }));
+        } else if (payload.type === "drawing:progress") {
+          handleDrawingProgress(canvas, payload);
+        } else {
+          isRemoteUpdate.current = true;
+          handleRemoteEvent(canvas, payload);
+          isRemoteUpdate.current = false;
+        }
+      })
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        console.log(`👥 ${displayName} presence sync after reconnect, total keys:`, Object.keys(state).length);
+        
+        const presences: Record<string, UserPresence> = {};
+        
+        Object.keys(state).forEach((key) => {
+          const presenceArray = state[key] as any[];
+          if (presenceArray.length > 0) {
+            const presence = presenceArray[0];
+            console.log(`👤 Found presence after reconnect:`, presence.userId?.substring(0, 8), presence.userName);
+            if (presence.userId && presence.userId !== userId) {
+              presences[presence.userId] = {
+                userId: presence.userId,
+                userName: presence.userName,
+                editingObjectId: presence.editingObjectId,
+                color: presence.color,
+              };
+            }
+          }
+        });
+        
+        console.log(`👥 ${displayName} other users present after reconnect:`, Object.keys(presences).length);
+        setUserPresences(presences);
+        userPresencesRef.current = presences;
+        const hasOtherUsers = Object.keys(presences).length > 0;
+        console.log(`🔄 ${displayName} hasOtherUsers after reconnect:`, hasOtherUsers);
+        setBothUsersPresent(hasOtherUsers);
+        
+        if (!isMonitorMode) {
+          updateObjectIndicators(canvas, presences);
+        }
+      });
+    
+    await channel.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        console.log("✅ Whiteboard reconnected successfully");
+        channelRef.current = channel;
+        isChannelReady.current = true;
+        
+        // Track presence
+        if (!isMonitorMode) {
+          await channel.track({
+            userId,
+            userName,
+            editingObjectId: null,
+            color: userColor,
+          });
+        }
+        
+        // Retry presence check multiple times to ensure we detect the other user
+        let retryCount = 0;
+        const maxRetries = 5;
+        const checkPresence = () => {
+          const state = channel.presenceState();
+          const presences: Record<string, UserPresence> = {};
+          
+          Object.keys(state).forEach((key) => {
+            const presenceArray = state[key] as any[];
+            if (presenceArray.length > 0) {
+              const presence = presenceArray[0];
+              if (presence.userId && presence.userId !== userId) {
+                presences[presence.userId] = {
+                  userId: presence.userId,
+                  userName: presence.userName,
+                  editingObjectId: presence.editingObjectId,
+                  color: presence.color,
+                };
+              }
+            }
+          });
+          
+          const hasOtherUsers = Object.keys(presences).length > 0;
+          console.log(`🔄 Presence check attempt ${retryCount + 1}/${maxRetries} - hasOtherUsers:`, hasOtherUsers);
+          
+          if (hasOtherUsers) {
+            setUserPresences(presences);
+            userPresencesRef.current = presences;
+            setBothUsersPresent(true);
+            if (!isMonitorMode) {
+              updateObjectIndicators(canvas, presences);
+            }
+            console.log("✅ Other user detected!");
+          } else if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(checkPresence, 500);
+          } else {
+            console.log("⚠️ No other user detected after all retries");
+          }
+        };
+        
+        setTimeout(checkPresence, 500);
+        
+        toast.success("Whiteboard reconnected!");
+      } else if (status === "CHANNEL_ERROR") {
+        console.error("❌ Failed to reconnect whiteboard");
+        toast.error("Failed to reconnect. Please try again.");
+      }
+    });
+  };
+
+  // Whiteboard is enabled when both users are present AND peer connection is active
+  const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20">
@@ -1654,6 +1885,18 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
 
           <div className="flex-1" />
 
+          {/* Refresh */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refreshWhiteboard} 
+            title="Refresh whiteboard connection"
+            className="h-8"
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </Button>
+
           {/* Clear */}
           <Button 
             variant="destructive" 
@@ -1674,12 +1917,12 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         <div className="absolute inset-0 flex items-center justify-center">
           <canvas ref={canvasRef} className="shadow-lg" />
           
-          {/* Waiting for connection overlay - shows when whiteboard presence is missing */}
-          {!isMonitorMode && !bothUsersPresent && (
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40 pointer-events-none">
-              <div className="bg-white/90 rounded-lg px-6 py-4 shadow-lg">
+          {/* Waiting for connection overlay - shows when whiteboard is not fully connected */}
+          {!isMonitorMode && !isWhiteboardEnabled && (
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40">
+              <div className="bg-white/90 rounded-lg px-6 py-4 shadow-lg text-center max-w-sm pointer-events-auto">
                 <p className="text-sm font-medium text-gray-700">
-                  Connecting whiteboard...
+                  {!bothUsersPresent ? "Waiting for other user..." : !isPeerConnected ? "Reconnecting..." : "Connecting whiteboard..."}
                 </p>
               </div>
             </div>

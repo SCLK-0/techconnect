@@ -40,17 +40,21 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sendSessionRequestEmail } from "@/utils/sendNotificationEmail";
 
 const bookSessionSchema = z.object({
   date: z.date({
     required_error: "Please select a date for the session",
   }),
   time: z.string().min(1, "Please select a time"),
-  duration: z.string().min(1, "Please select session duration"),
-  subject: z.string()
+  duration: z.coerce.number()
+    .min(10, "Minimum duration is 10 minutes")
+    .max(240, "Maximum duration is 4 hours (240 minutes)"),
+  subjectCategory: z.string().min(1, "Please select a subject category"),
+  specificTopic: z.string()
     .trim()
-    .min(1, "Subject is required")
-    .max(100, "Subject must be less than 100 characters"),
+    .min(1, "Please specify what you need help with")
+    .max(100, "Topic must be less than 100 characters"),
 });
 
 type BookSessionFormValues = z.infer<typeof bookSessionSchema>;
@@ -71,8 +75,10 @@ const timeSlots = [
   "20:00", "20:30"
 ];
 
-const durations = [
+const allDurations = [
+  { value: "15", label: "15 minutes" },
   { value: "30", label: "30 minutes" },
+  { value: "45", label: "45 minutes" },
   { value: "60", label: "1 hour" },
   { value: "90", label: "1.5 hours" },
   { value: "120", label: "2 hours" },
@@ -89,6 +95,14 @@ export function BookSessionDialog({
   const [tutorAvailability, setTutorAvailability] = useState<any[]>([]);
   const [dayOverrides, setDayOverrides] = useState<any[]>([]);
   const [bookedSessions, setBookedSessions] = useState<any[]>([]);
+
+  // Helper function to get date string in local timezone (avoids UTC conversion issues)
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   useEffect(() => {
     if (open && tutorId) {
@@ -125,7 +139,7 @@ export function BookSessionDialog({
   };
 
   const loadBookedSessions = async (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
@@ -145,12 +159,13 @@ export function BookSessionDialog({
   const form = useForm<BookSessionFormValues>({
     resolver: zodResolver(bookSessionSchema),
     defaultValues: {
-      subject: tutorSubjects[0] || "",
+      subjectCategory: tutorSubjects[0] || "",
+      specificTopic: "",
     },
   });
 
   const isDateAvailable = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
     
     // Check for day-specific override
     const dayOverride = dayOverrides.find(d => d.date === dateStr);
@@ -167,27 +182,32 @@ export function BookSessionDialog({
     return dayOverride?.is_available || hasWeeklySchedule;
   };
 
-  const isTimeAvailable = (time: string, selectedDate: Date) => {
-    if (!selectedDate) return true;
+  const hasBookingInTimeSlot = (time: string, selectedDate: Date) => {
+    if (!selectedDate) return false;
     
-    const dayOfWeek = selectedDate.getDay();
-    const dateStr = selectedDate.toISOString().split('T')[0];
     const [hours, minutes] = time.split(":").map(Number);
-    const timeInMinutes = hours * 60 + minutes;
-    
-    // Check if this time slot conflicts with any booked sessions
     const proposedStart = new Date(selectedDate);
     proposedStart.setHours(hours, minutes, 0, 0);
     
-    const hasBookingConflict = bookedSessions.some(session => {
+    return bookedSessions.some(session => {
       const sessionStart = new Date(session.scheduled_at);
       const sessionEnd = new Date(sessionStart.getTime() + session.duration_minutes * 60000);
       
       // Check if the proposed time falls within an existing session
       return proposedStart >= sessionStart && proposedStart < sessionEnd;
     });
+  };
+
+  const isTimeAvailable = (time: string, selectedDate: Date) => {
+    if (!selectedDate) return true;
     
-    if (hasBookingConflict) return false;
+    const dayOfWeek = selectedDate.getDay();
+    const dateStr = getLocalDateString(selectedDate);
+    const [hours, minutes] = time.split(":").map(Number);
+    const timeInMinutes = hours * 60 + minutes;
+    
+    // Check if this time slot conflicts with any booked sessions
+    if (hasBookingInTimeSlot(time, selectedDate)) return false;
     
     // Check for day-specific time slots first
     const dayOverride = dayOverrides.find(d => d.date === dateStr);
@@ -220,6 +240,103 @@ export function BookSessionDialog({
     selectedDateTime.setHours(hours, minutes, 0, 0);
     
     return selectedDateTime < now;
+  };
+
+  const getTimeSlotEndTime = (selectedDate: Date, startTime: string): string | null => {
+    const dayOfWeek = selectedDate.getDay();
+    const dateStr = getLocalDateString(selectedDate);
+    const [hours, minutes] = startTime.split(":").map(Number);
+    const startTimeInMinutes = hours * 60 + minutes;
+    
+    // Check for day-specific time slots first
+    const dayOverride = dayOverrides.find(d => d.date === dateStr);
+    if (dayOverride && dayOverride.start_time && dayOverride.end_time) {
+      const [startHours, startMinutes] = dayOverride.start_time.split(":").map(Number);
+      const [endHours, endMinutes] = dayOverride.end_time.split(":").map(Number);
+      const slotStartInMinutes = startHours * 60 + startMinutes;
+      const slotEndInMinutes = endHours * 60 + endMinutes;
+      
+      if (startTimeInMinutes >= slotStartInMinutes && startTimeInMinutes < slotEndInMinutes) {
+        return dayOverride.end_time.slice(0, 5);
+      }
+    }
+    
+    // Fall back to weekly schedule
+    const weeklySlot = tutorAvailability.find(slot => {
+      if (slot.day_of_week !== dayOfWeek) return false;
+      
+      const [slotStartHours, slotStartMinutes] = slot.start_time.split(":").map(Number);
+      const [slotEndHours, slotEndMinutes] = slot.end_time.split(":").map(Number);
+      const slotStartInMinutes = slotStartHours * 60 + slotStartMinutes;
+      const slotEndInMinutes = slotEndHours * 60 + slotEndMinutes;
+      
+      return startTimeInMinutes >= slotStartInMinutes && startTimeInMinutes < slotEndInMinutes;
+    });
+    
+    if (weeklySlot) {
+      return weeklySlot.end_time.slice(0, 5);
+    }
+    
+    return null;
+  };
+
+  const formatTimeSlot = (time: string, selectedDate: Date): string => {
+    // Helper to convert 24h to 12h format
+    const format12Hour = (time24: string): string => {
+      const [hours, minutes] = time24.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+    };
+    
+    return format12Hour(time);
+  };
+
+  const getAvailableDurations = (selectedDate: Date | undefined, selectedTime: string | undefined) => {
+    if (!selectedDate || !selectedTime) return allDurations;
+    
+    const dayOfWeek = selectedDate.getDay();
+    const dateStr = getLocalDateString(selectedDate);
+    const [hours, minutes] = selectedTime.split(":").map(Number);
+    const startTimeInMinutes = hours * 60 + minutes;
+    
+    // Find the end time of the availability window
+    let endTimeInMinutes: number | null = null;
+    
+    // Check for day-specific time slots first
+    const dayOverride = dayOverrides.find(d => d.date === dateStr);
+    if (dayOverride && dayOverride.start_time && dayOverride.end_time) {
+      const [endHours, endMinutes] = dayOverride.end_time.split(":").map(Number);
+      endTimeInMinutes = endHours * 60 + endMinutes;
+    } else {
+      // Fall back to weekly schedule
+      const weeklySlot = tutorAvailability.find(slot => {
+        if (slot.day_of_week !== dayOfWeek) return false;
+        
+        const [slotStartHours, slotStartMinutes] = slot.start_time.split(":").map(Number);
+        const [slotEndHours, slotEndMinutes] = slot.end_time.split(":").map(Number);
+        const slotStartTimeInMinutes = slotStartHours * 60 + slotStartMinutes;
+        const slotEndTimeInMinutes = slotEndHours * 60 + slotEndMinutes;
+        
+        return startTimeInMinutes >= slotStartTimeInMinutes && startTimeInMinutes < slotEndTimeInMinutes;
+      });
+      
+      if (weeklySlot) {
+        const [endHours, endMinutes] = weeklySlot.end_time.split(":").map(Number);
+        endTimeInMinutes = endHours * 60 + endMinutes;
+      }
+    }
+    
+    if (endTimeInMinutes === null) return allDurations;
+    
+    // Calculate maximum available duration in minutes
+    const maxDurationMinutes = endTimeInMinutes - startTimeInMinutes;
+    
+    // Filter durations to only show those that fit within the available window
+    return allDurations.filter(duration => {
+      const durationValue = parseInt(duration.value);
+      return durationValue <= maxDurationMinutes;
+    });
   };
 
   const onSubmit = async (values: BookSessionFormValues) => {
@@ -304,6 +421,9 @@ export function BookSessionDialog({
         return;
       }
 
+      // Combine subject category and specific topic
+      const subject = `${values.subjectCategory} - ${values.specificTopic.trim()}`;
+
       // Create session
       const { error } = await supabase
         .from("sessions")
@@ -312,12 +432,54 @@ export function BookSessionDialog({
           learner_id: user.id,
           scheduled_at: scheduledAt.toISOString(),
           duration_minutes: durationMinutes,
-          subject: values.subject.trim(),
+          subject: subject,
           status: "pending",
           session_type: "scheduled",
         });
 
       if (error) throw error;
+
+      // Send email notification to tutor
+      try {
+        const { data: tutorProfile, error: tutorError } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", tutorId)
+          .single();
+
+        const { data: learnerProfile, error: learnerError } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", user.id)
+          .single();
+
+        // Get tutor's email using RPC function
+        const { data: tutorEmail, error: emailError } = await supabase
+          .rpc('get_user_email', { user_id: tutorId });
+
+        if (tutorError) {
+          console.error("Error fetching tutor profile:", tutorError);
+        }
+        if (learnerError) {
+          console.error("Error fetching learner profile:", learnerError);
+        }
+        if (emailError) {
+          console.error("Error fetching tutor email:", emailError);
+        }
+
+        if (tutorEmail) {
+          await sendSessionRequestEmail(
+            tutorEmail,
+            tutorProfile?.full_name || "Tutor",
+            learnerProfile?.full_name || "A learner",
+            subject,
+            format(scheduledAt, "MMMM d, yyyy 'at' h:mm a")
+          );
+        }
+      } catch (emailError) {
+        console.error("Error sending session request email:", emailError);
+        // Don't fail the booking if email fails
+      }
 
       toast.success("Session booked successfully!", {
         description: `Your session with ${tutorName} has been scheduled for ${format(scheduledAt, "PPP 'at' p")}`,
@@ -383,7 +545,13 @@ export function BookSessionDialog({
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                          // Load booked sessions when date is selected
+                          if (date) {
+                            loadBookedSessions(date);
+                          }
+                        }}
                         disabled={(date) => {
                           const tomorrow = new Date();
                           tomorrow.setDate(tomorrow.getDate() + 1);
@@ -407,52 +575,125 @@ export function BookSessionDialog({
               name="time"
               render={({ field }) => {
                 const selectedDate = form.watch("date");
-                const availableTimeSlots = selectedDate 
-                  ? timeSlots.filter(time => 
-                      isTimeAvailable(time, selectedDate) &&
-                      !isPastDateTime(selectedDate, time)
-                    )
+                
+                // Get tutor's availability window for the selected date
+                const getAvailabilityWindow = () => {
+                  if (!selectedDate) return null;
+                  
+                  const dayOfWeek = selectedDate.getDay();
+                  const dateStr = getLocalDateString(selectedDate);
+                  
+                  // Check day-specific override first
+                  const dayOverride = dayOverrides.find(d => d.date === dateStr);
+                  if (dayOverride && dayOverride.start_time && dayOverride.end_time) {
+                    return { start: dayOverride.start_time, end: dayOverride.end_time };
+                  }
+                  
+                  // Check weekly schedule
+                  const weeklySlot = tutorAvailability.find(slot => slot.day_of_week === dayOfWeek);
+                  if (weeklySlot) {
+                    return { start: weeklySlot.start_time, end: weeklySlot.end_time };
+                  }
+                  
+                  return null;
+                };
+                
+                const format12Hour = (time24: string): string => {
+                  const [hours, minutes] = time24.split(':').map(Number);
+                  const period = hours >= 12 ? 'PM' : 'AM';
+                  const hours12 = hours % 12 || 12;
+                  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+                };
+                
+                const availabilityWindow = getAvailabilityWindow();
+                
+                // Get all time slots in tutor's availability window
+                const allTimeSlots = selectedDate 
+                  ? timeSlots.filter(time => {
+                      const dayOfWeek = selectedDate.getDay();
+                      const dateStr = getLocalDateString(selectedDate);
+                      const [hours, minutes] = time.split(":").map(Number);
+                      const timeInMinutes = hours * 60 + minutes;
+                      
+                      // Check day-specific override
+                      const dayOverride = dayOverrides.find(d => d.date === dateStr);
+                      if (dayOverride && dayOverride.start_time && dayOverride.end_time) {
+                        const [startHours, startMinutes] = dayOverride.start_time.split(':').map(Number);
+                        const [endHours, endMinutes] = dayOverride.end_time.split(':').map(Number);
+                        return timeInMinutes >= (startHours * 60 + startMinutes) && timeInMinutes < (endHours * 60 + endMinutes);
+                      }
+                      
+                      // Check weekly schedule
+                      return tutorAvailability.some(slot => {
+                        if (slot.day_of_week !== dayOfWeek) return false;
+                        const [startHours, startMinutes] = slot.start_time.split(":").map(Number);
+                        const [endHours, endMinutes] = slot.end_time.split(":").map(Number);
+                        return timeInMinutes >= (startHours * 60 + startMinutes) && timeInMinutes < (endHours * 60 + endMinutes);
+                      });
+                    })
                   : [];
+                
+                const availableTimeSlots = allTimeSlots.filter(time => 
+                  isTimeAvailable(time, selectedDate) && !isPastDateTime(selectedDate, time)
+                );
                 
                 return (
                   <FormItem>
                     <FormLabel className="text-sm font-medium">Time</FormLabel>
+                    {availabilityWindow && (
+                      <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                        Tutor available: {format12Hour(availabilityWindow.start)} - {format12Hour(availabilityWindow.end)}
+                      </div>
+                    )}
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value}
-                      disabled={!selectedDate || availableTimeSlots.length === 0}
+                      disabled={!selectedDate}
                     >
                       <FormControl>
                         <SelectTrigger className="h-10">
                           <SelectValue placeholder={
                             !selectedDate 
                               ? "Select a date first" 
-                              : availableTimeSlots.length === 0
-                                ? "No time slots available"
-                                : "Select a time slot"
+                              : "Select a time slot"
                           }>
-                            {field.value && (
+                            {field.value && selectedDate && (
                               <div className="flex items-center gap-2">
                                 <Clock className="h-4 w-4" />
-                                {field.value}
+                                {formatTimeSlot(field.value, selectedDate)}
                               </div>
                             )}
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="max-h-[200px]">
-                        {availableTimeSlots.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
+                        {allTimeSlots.map((time) => {
+                          const isOccupied = hasBookingInTimeSlot(time, selectedDate);
+                          const isPast = isPastDateTime(selectedDate, time);
+                          const canSelect = !isOccupied && !isPast;
+                          
+                          return (
+                            <SelectItem key={time} value={time} disabled={!canSelect}>
+                              <span className={!canSelect ? "text-muted-foreground" : ""}>
+                                {selectedDate ? formatTimeSlot(time, selectedDate) : time}
+                                {isOccupied && " (Occupied)"}
+                                {isPast && !isOccupied && " (Past)"}
+                              </span>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     {selectedDate && availableTimeSlots.length === 0 && (
                       <FormDescription className="text-xs text-amber-600">
                         {isPastDateTime(selectedDate, "23:59") 
                           ? "All available time slots for this date have passed. Please select another date."
-                          : "No time slots available for this date. You can set specific hours in your Availability page."}
+                          : "No time slots available for this date."}
+                      </FormDescription>
+                    )}
+                    {selectedDate && availableTimeSlots.length > 0 && (
+                      <FormDescription className="text-xs text-muted-foreground">
+                        ℹ️ Some time slots may be unavailable due to existing bookings. You'll be notified if your selected time conflicts.
                       </FormDescription>
                     )}
                     <div className="h-5">
@@ -466,19 +707,83 @@ export function BookSessionDialog({
             <FormField
               control={form.control}
               name="duration"
+              render={({ field }) => {
+                const selectedDate = form.watch("date");
+                const selectedTime = form.watch("time");
+                const availableDurations = getAvailableDurations(selectedDate, selectedTime);
+                const maxDuration = availableDurations.length > 0 
+                  ? Math.max(...availableDurations.map(d => parseInt(d.value)))
+                  : 240;
+                
+                const currentValue = field.value ? parseInt(String(field.value)) : 0;
+                const isInvalid = currentValue > 0 && (currentValue < 10 || currentValue > maxDuration);
+                
+                return (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={10}
+                        max={maxDuration}
+                        step={5}
+                        placeholder="Enter duration in minutes"
+                        disabled={!selectedDate || !selectedTime}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value);
+                          
+                          // Validate on change
+                          const numValue = parseInt(value);
+                          if (value && !isNaN(numValue)) {
+                            if (numValue < 10) {
+                              form.setError("duration", {
+                                type: "manual",
+                                message: "Minimum duration is 10 minutes"
+                              });
+                            } else if (numValue > maxDuration) {
+                              form.setError("duration", {
+                                type: "manual",
+                                message: `Maximum duration is ${maxDuration} minutes for this time slot`
+                              });
+                            } else {
+                              form.clearErrors("duration");
+                            }
+                          }
+                        }}
+                        className={cn("h-10", isInvalid && "border-red-500")}
+                      />
+                    </FormControl>
+                    {selectedDate && selectedTime && !isInvalid && (
+                      <FormDescription className="text-xs text-muted-foreground">
+                        Enter duration (10-{maxDuration} min) for tutor's {formatTimeSlot(selectedTime, selectedDate)} window
+                      </FormDescription>
+                    )}
+                    <div className="h-5">
+                      <FormMessage className="text-xs" />
+                    </div>
+                  </FormItem>
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="subjectCategory"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium">Duration</FormLabel>
+                  <FormLabel className="text-sm font-medium">Subject Category</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Select session duration" />
+                        <SelectValue placeholder="Select subject category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {durations.map((duration) => (
-                        <SelectItem key={duration.value} value={duration.value}>
-                          {duration.label}
+                      {tutorSubjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -492,18 +797,21 @@ export function BookSessionDialog({
 
             <FormField
               control={form.control}
-              name="subject"
+              name="specificTopic"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium">Subject</FormLabel>
+                  <FormLabel className="text-sm font-medium">Specific Topic</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Automotive Basics"
+                      placeholder="e.g., Python loops and functions, Arduino basics..."
                       className="h-10"
                       {...field}
                       maxLength={100}
                     />
                   </FormControl>
+                  <FormDescription className="text-xs text-muted-foreground">
+                    What specifically do you need help with?
+                  </FormDescription>
                   <div className="h-5">
                     <FormMessage className="text-xs" />
                   </div>

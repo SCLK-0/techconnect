@@ -28,12 +28,12 @@ export function SessionTimer({ sessionId, onTimeout }: SessionTimerProps) {
     const loadSession = async () => {
       const { data } = await supabase
         .from("sessions")
-        .select("scheduled_at, duration, session_status")
+        .select("scheduled_at, duration_minutes, session_status")
         .eq("id", sessionId)
         .single();
 
       if (data) {
-        const durationMinutes = parseInt(data.duration);
+        const durationMinutes = parseInt(data.duration_minutes);
         setDuration(durationMinutes * 60); // Convert to seconds
         
         // Calculate time remaining from scheduled time

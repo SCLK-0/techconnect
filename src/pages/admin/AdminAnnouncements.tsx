@@ -221,7 +221,7 @@ export default function AdminAnnouncements() {
                         maxLength={2000}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        {content.length}/2000 characters
+                        {content.length}/2000 characters • Use **text** for bold
                       </p>
                     </div>
                     <Button type="submit" disabled={createMutation.isPending}>
@@ -264,7 +264,12 @@ export default function AdminAnnouncements() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="whitespace-pre-wrap line-clamp-3 break-words overflow-wrap-anywhere">{announcement.content}</p>
+                      <p 
+                        className="whitespace-pre-wrap line-clamp-3 break-words overflow-wrap-anywhere"
+                        dangerouslySetInnerHTML={{ 
+                          __html: (announcement.content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                        }}
+                      />
                     </CardContent>
                   </Card>
                 ))}
@@ -286,7 +291,12 @@ export default function AdminAnnouncements() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <p className="whitespace-pre-wrap text-sm break-words overflow-wrap-anywhere">{selectedAnnouncement?.content}</p>
+            <p 
+              className="whitespace-pre-wrap text-sm break-words overflow-wrap-anywhere"
+              dangerouslySetInnerHTML={{ 
+                __html: (selectedAnnouncement?.content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>

@@ -19,6 +19,10 @@ import { useNavigate } from "react-router-dom";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { RejectSessionDialog } from "@/components/tutor/RejectSessionDialog";
+import { TutorCancelSessionDialog } from "@/components/tutor/TutorCancelSessionDialog";
+import { sendScheduledSessionAcceptedEmail, sendSessionMissedEmail } from "@/utils/sendNotificationEmail";
+import { format as formatDate } from "date-fns";
 
 export default function TutorSessions() {
   const { user } = useUserRole();
@@ -28,6 +32,9 @@ export default function TutorSessions() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [initialLoad, setInitialLoad] = useState(true);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
 
   // Enable session notifications
   useSessionNotifications(user?.id);
@@ -63,6 +70,53 @@ export default function TutorSessions() {
               .from("sessions")
               .update({ status: "missed", session_status: "missed" })
               .in("id", missedSessionIds);
+
+            // Send missed session notifications to learners
+            try {
+              for (const sessionId of missedSessionIds) {
+                const missedSession = sessionsToCheck.find(s => s.id === sessionId);
+                if (missedSession) {
+                  const { data: sessionData } = await supabase
+                    .from("sessions")
+                    .select("learner_id, subject, scheduled_at")
+                    .eq("id", sessionId)
+                    .single();
+
+                  if (sessionData?.learner_id) {
+                    const { data: learnerProfile } = await supabase
+                      .from("profiles")
+                      .select("full_name")
+                      .eq("user_id", sessionData.learner_id)
+                      .single();
+
+                    const { data: tutorProfile } = await supabase
+                      .from("profiles")
+                      .select("full_name")
+                      .eq("user_id", user?.id)
+                      .single();
+
+                    const { data: learnerEmail, error: emailError } = await supabase
+                      .rpc('get_user_email', { user_id: sessionData.learner_id });
+
+                    if (emailError) {
+                      console.error("Error fetching learner email:", emailError);
+                    }
+
+                    if (learnerEmail) {
+                      await sendSessionMissedEmail(
+                        learnerEmail,
+                        learnerProfile?.full_name || "User",
+                        tutorProfile?.full_name || "Your tutor",
+                        sessionData.subject,
+                        formatDate(new Date(sessionData.scheduled_at), "MMMM d, yyyy 'at' h:mm a")
+                      );
+                    }
+                  }
+                }
+              }
+            } catch (emailError) {
+              console.error("Error sending missed session emails:", emailError);
+            }
           }
         }
       }
@@ -100,8 +154,51 @@ export default function TutorSessions() {
         .update({ status })
         .eq("id", sessionId);
       if (error) throw error;
+      return { sessionId, status };
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const { sessionId, status } = data;
+      
+      // Send acceptance email for scheduled sessions
+      if (status === "accepted") {
+        try {
+          const session = sessions.find(s => s.id === sessionId);
+          if (session && session.session_type === "scheduled") {
+            const { data: learnerProfile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("user_id", session.learner_id)
+              .single();
+
+            const { data: tutorProfile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("user_id", user?.id)
+              .single();
+
+            // Get learner's email using RPC function
+            const { data: learnerEmail, error: emailError } = await supabase
+              .rpc('get_user_email', { user_id: session.learner_id });
+
+            if (emailError) {
+              console.error("Error fetching learner email:", emailError);
+            }
+
+            if (learnerEmail) {
+              await sendScheduledSessionAcceptedEmail(
+                learnerEmail,
+                learnerProfile?.full_name || "User",
+                tutorProfile?.full_name || "Your tutor",
+                session.subject,
+                formatDate(new Date(session.scheduled_at), "MMMM d, yyyy 'at' h:mm a")
+              );
+            }
+          }
+        } catch (emailError) {
+          console.error("Error sending acceptance email:", emailError);
+        }
+      }
+      
       toast.success("Session updated successfully");
       queryClient.invalidateQueries({ queryKey: ["tutor-sessions"] });
     },
@@ -184,7 +281,14 @@ export default function TutorSessions() {
                                     {session.profiles?.full_name}
                                   </div>
                                 </div>
-                                <Badge>{session.session_type}</Badge>
+                                <div className="flex flex-col gap-2 items-end">
+                                  <Badge>{session.session_type}</Badge>
+                                  {session.disconnect_reason && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Ended due to disconnect
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -212,7 +316,10 @@ export default function TutorSessions() {
                                   </Button>
                                   <Button
                                     variant="outline"
-                                    onClick={() => updateStatusMutation.mutate({ sessionId: session.id, status: "cancelled" })}
+                                    onClick={() => {
+                                      setSelectedSession(session);
+                                      setRejectDialogOpen(true);
+                                    }}
                                   >
                                     <X className="mr-2 h-4 w-4" />
                                     Decline
@@ -245,15 +352,30 @@ export default function TutorSessions() {
                                 }
                                 
                                 return (
-                                  <Button
-                                    onClick={() => navigate(`/video-session/${session.id}`)}
-                                    disabled={!canJoin}
-                                    variant={minutesUntilStart < 0 && canJoin ? "outline" : "default"}
-                                    title={hasExpired ? 'Session has expired (duration + 20 min grace period passed)' : !canJoin ? `Available ${Math.abs(minutesUntilStart)} minutes before session` : ''}
-                                  >
-                                    <Video className="mr-2 h-4 w-4" />
-                                    {buttonText}
-                                  </Button>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() => navigate(`/video-session/${session.id}`)}
+                                      disabled={!canJoin}
+                                      variant={minutesUntilStart < 0 && canJoin ? "outline" : "default"}
+                                      title={hasExpired ? 'Session has expired (duration + 20 min grace period passed)' : !canJoin ? `Available ${Math.abs(minutesUntilStart)} minutes before session` : ''}
+                                      className="flex-1"
+                                    >
+                                      <Video className="mr-2 h-4 w-4" />
+                                      {buttonText}
+                                    </Button>
+                                    {!hasExpired && (
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedSession(session);
+                                          setCancelDialogOpen(true);
+                                        }}
+                                      >
+                                        <X className="mr-2 h-4 w-4" />
+                                        Cancel
+                                      </Button>
+                                    )}
+                                  </div>
                                 );
                               })()}
                             </CardContent>
@@ -310,6 +432,33 @@ export default function TutorSessions() {
           </main>
         </div>
       </div>
+
+      {selectedSession && (
+        <>
+          <RejectSessionDialog
+            open={rejectDialogOpen}
+            onOpenChange={setRejectDialogOpen}
+            sessionId={selectedSession.id}
+            tutorId={user?.id || ""}
+            learnerName={selectedSession.profiles?.full_name || "Learner"}
+            subject={selectedSession.subject}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["tutor-sessions"] });
+            }}
+          />
+          <TutorCancelSessionDialog
+            open={cancelDialogOpen}
+            onOpenChange={setCancelDialogOpen}
+            sessionId={selectedSession.id}
+            tutorId={user?.id || ""}
+            learnerName={selectedSession.profiles?.full_name || "Learner"}
+            subject={selectedSession.subject}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["tutor-sessions"] });
+            }}
+          />
+        </>
+      )}
     </SidebarProvider>
   );
 }

@@ -69,6 +69,8 @@ const FindTutors = () => {
   const [ratingFilter, setRatingFilter] = useState<string>("all");
   const [subjectFilters, setSubjectFilters] = useState<string[]>([]);
   const [yearLevelFilter, setYearLevelFilter] = useState<string>("all");
+  const [showOnlyBooked, setShowOnlyBooked] = useState<boolean>(false);
+  const [bookedTutorIds, setBookedTutorIds] = useState<Set<string>>(new Set());
   
   const allSubjects = [
     "Programming",
@@ -182,11 +184,27 @@ const FindTutors = () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    // Check next 14 days for better accuracy
-    for (let i = 0; i < 14; i++) {
+    // Helper to get local date string (avoids UTC conversion issues)
+    const getLocalDateString = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Helper to format time to 12-hour format
+    const format12Hour = (time24: string): string => {
+      const [hours, minutes] = time24.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+    };
+    
+    // Check next 14 days starting from tomorrow (since booking requires at least tomorrow)
+    for (let i = 1; i <= 14; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
-      const dateStr = checkDate.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(checkDate);
       const dayOfWeek = checkDate.getDay();
       
       // Check day-specific override first (higher priority)
@@ -207,16 +225,18 @@ const FindTutors = () => {
           const slotTime = new Date(checkDate);
           slotTime.setHours(startHours, startMinutes, 0, 0);
           
-          if (slotTime > now) {
-            const timeStr = dayOverride.start_time.slice(0, 5);
-            if (i === 0) {
-              return `Today at ${timeStr}`;
-            } else if (i === 1) {
-              return `Tomorrow at ${timeStr}`;
-            } else {
-              const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-              return `${days[dayOfWeek]} at ${timeStr}`;
-            }
+          const startTimeStr = format12Hour(dayOverride.start_time);
+          const endTimeStr = format12Hour(dayOverride.end_time);
+          const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          if (i === 1) {
+            return `Tomorrow ${startTimeStr} - ${endTimeStr}`;
+          } else if (i <= 7) {
+            return `${days[dayOfWeek]} ${startTimeStr} - ${endTimeStr}`;
+          } else {
+            // For dates more than a week away, show the actual date
+            const month = checkDate.getMonth() + 1;
+            const day = checkDate.getDate();
+            return `${month}/${day} ${startTimeStr} - ${endTimeStr}`;
           }
         }
         continue; // Skip weekly slots if day override exists
@@ -240,16 +260,18 @@ const FindTutors = () => {
         const slotTime = new Date(checkDate);
         slotTime.setHours(startHours, startMinutes, 0, 0);
         
-        if (slotTime > now) {
-          const timeStr = slot.start_time.slice(0, 5);
-          if (i === 0) {
-            return `Today at ${timeStr}`;
-          } else if (i === 1) {
-            return `Tomorrow at ${timeStr}`;
-          } else {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            return `${days[dayOfWeek]} at ${timeStr}`;
-          }
+        const startTimeStr = format12Hour(slot.start_time);
+        const endTimeStr = format12Hour(slot.end_time);
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        if (i === 1) {
+          return `Tomorrow ${startTimeStr} - ${endTimeStr}`;
+        } else if (i <= 7) {
+          return `${days[dayOfWeek]} ${startTimeStr} - ${endTimeStr}`;
+        } else {
+          // For dates more than a week away, show the actual date
+          const month = checkDate.getMonth() + 1;
+          const day = checkDate.getDate();
+          return `${month}/${day} ${startTimeStr} - ${endTimeStr}`;
         }
       }
     }
@@ -260,8 +282,22 @@ const FindTutors = () => {
   useEffect(() => {
     const fetchTutors = async () => {
       try {
+        // Fetch tutors that the learner has had sessions with
+        if (user) {
+          const { data: sessionsData } = await supabase
+            .from("sessions")
+            .select("tutor_id")
+            .eq("learner_id", user.id)
+            .in("status", ["accepted", "in_progress", "completed", "missed"]);
+          
+          if (sessionsData) {
+            const uniqueTutorIds = new Set(sessionsData.map(s => s.tutor_id));
+            setBookedTutorIds(uniqueTutorIds);
+          }
+        }
+
         // First get tutor profiles - filter by truly online tutors (active within 30 seconds)
-        const { data: tutorData, error: tutorError } = await supabase
+        const { data: tutorData, error: tutorError} = await supabase
           .from("tutor_profiles")
           .select("id, user_id, subject_expertise, bio, is_online, last_seen, registered_year")
           .eq("status", "approved");
@@ -299,9 +335,9 @@ const FindTutors = () => {
         const now = new Date();
         const { data: activeSessions } = await supabase
           .from("sessions")
-          .select("tutor_id, scheduled_at, duration_minutes, session_status")
+          .select("tutor_id, scheduled_at, duration_minutes, status")
           .in("tutor_id", userIds)
-          .eq("session_status", "in_progress");
+          .eq("status", "in_progress");
 
         // Create a set of tutor IDs that are currently in session
         const tutorsInSession = new Set(
@@ -491,6 +527,11 @@ const FindTutors = () => {
       filtered = filtered.filter((tutor) => tutor.registered_year === yearLevelFilter);
     }
 
+    // Booked sessions filter
+    if (showOnlyBooked) {
+      filtered = filtered.filter((tutor) => bookedTutorIds.has(tutor.user_id));
+    }
+
     // Fuzzy search with matchmaking
     if (searchQuery.trim()) {
       // Calculate match scores for each tutor
@@ -508,7 +549,7 @@ const FindTutors = () => {
 
     setFilteredTutors(filtered);
     setCurrentPage(1);
-  }, [searchQuery, tutors, onlineFilter, ratingFilter, subjectFilters, yearLevelFilter]);
+  }, [searchQuery, tutors, onlineFilter, ratingFilter, subjectFilters, yearLevelFilter, showOnlyBooked, bookedTutorIds]);
 
   const totalPages = Math.ceil(filteredTutors.length / itemsPerPage);
   const paginatedTutors = filteredTutors.slice(
@@ -718,6 +759,22 @@ const FindTutors = () => {
                     </div>
                   </PopoverContent>
                 </Popover>
+              </div>
+
+              <div className="flex items-center space-x-2 px-1">
+                <Checkbox
+                  id="booked-filter"
+                  checked={showOnlyBooked}
+                  onCheckedChange={(checked) => setShowOnlyBooked(checked as boolean)}
+                />
+                <Label htmlFor="booked-filter" className="text-sm cursor-pointer">
+                  Show only tutors I've booked before
+                  {bookedTutorIds.size > 0 && (
+                    <span className="text-muted-foreground ml-1">
+                      ({bookedTutorIds.size})
+                    </span>
+                  )}
+                </Label>
               </div>
             </div>
 

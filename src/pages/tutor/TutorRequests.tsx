@@ -158,6 +158,7 @@ export default function TutorRequests() {
                           variant="outline"
                           className="flex-1"
                           onClick={() => {
+                            console.log("Decline clicked, opening dialog for session:", request.id);
                             setSelectedSession(request);
                             setRejectDialogOpen(true);
                           }}

@@ -9,9 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RatingTags, type RatingTag } from "@/components/feedback/RatingTags";
+import { DonationQRDialog } from "@/components/learner/DonationQRDialog";
 
 interface SessionFeedbackModalProps {
   open: boolean;
@@ -28,7 +31,19 @@ export function SessionFeedbackModal({
 }: SessionFeedbackModalProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<RatingTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [showDonation, setShowDonation] = useState(false);
+  const [tutorQRCode, setTutorQRCode] = useState<string | null>(null);
+  const [tutorName, setTutorName] = useState("");
+
+  const handleTagToggle = (tag: RatingTag) => {
+    setSelectedTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -46,16 +61,66 @@ export function SessionFeedbackModal({
         return;
       }
 
-      const { error } = await supabase.from("feedback").insert({
-        session_id: sessionId,
-        user_id: user.id,
-        rating,
-        comment: comment.trim() || null,
-      });
+      const { data: feedbackData, error } = await supabase
+        .from("feedback")
+        .insert({
+          session_id: sessionId,
+          user_id: user.id,
+          rating,
+          comment: comment.trim() || null,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Insert rating tags if any selected
+      if (selectedTags.length > 0 && feedbackData) {
+        const tagInserts = selectedTags.map(tag => ({
+          feedback_id: feedbackData.id,
+          tag: tag,
+        }));
+        
+        const { error: tagsError } = await supabase
+          .from("feedback_tags")
+          .insert(tagInserts);
+        
+        if (tagsError) throw tagsError;
+      }
+
       toast.success("Feedback submitted successfully");
+      
+      // Check if tutor has donation QR code
+      const { data: sessionData } = await supabase
+        .from("sessions")
+        .select("tutor_id")
+        .eq("id", sessionId)
+        .single();
+      
+      if (sessionData?.tutor_id) {
+        // Get tutor profile with donation QR code
+        const { data: tutorProfile } = await supabase
+          .from("tutor_profiles")
+          .select("donation_qr_code")
+          .eq("user_id", sessionData.tutor_id)
+          .single();
+        
+        // Get tutor name from profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", sessionData.tutor_id)
+          .single();
+        
+        if (tutorProfile?.donation_qr_code) {
+          setTutorQRCode(tutorProfile.donation_qr_code);
+          setTutorName(profile?.full_name || "your tutor");
+          onOpenChange(false); // Close feedback modal first
+          setShowDonation(true); // Then show donation dialog
+          return; // Don't call onComplete yet
+        }
+      }
+      
       onComplete();
     } catch (error) {
       console.error("Error submitting feedback:", error);
@@ -66,8 +131,9 @@ export function SessionFeedbackModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open ? null : onOpenChange(open)}>
-      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] rounded-2xl" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+    <>
+      <Dialog open={open} onOpenChange={(open) => !open ? null : onOpenChange(open)}>
+        <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] rounded-2xl" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader className="text-center space-y-2">
           <DialogTitle className="break-words">Session Feedback</DialogTitle>
           <DialogDescription className="break-words">
@@ -98,6 +164,16 @@ export function SessionFeedbackModal({
             </div>
           </div>
 
+          {/* Rating Tags */}
+          <div className="space-y-2">
+            <Label>What did you like? (Optional)</Label>
+            <p className="text-xs text-muted-foreground mb-2">Select all that apply</p>
+            <RatingTags 
+              selectedTags={selectedTags}
+              onTagToggle={handleTagToggle}
+            />
+          </div>
+
           {/* Comment */}
           <div className="space-y-2">
             <label htmlFor="feedback-comment" className="text-sm font-medium">
@@ -120,5 +196,20 @@ export function SessionFeedbackModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {tutorQRCode && (
+      <DonationQRDialog
+        open={showDonation}
+        onOpenChange={(open) => {
+          setShowDonation(open);
+          if (!open) {
+            onComplete(); // Call onComplete when donation dialog is closed
+          }
+        }}
+        tutorName={tutorName}
+        qrCodeData={tutorQRCode}
+      />
+    )}
+    </>
   );
 }

@@ -64,7 +64,11 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
   useEffect(() => {
     // Scroll to bottom when new messages arrive
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      // Find the ScrollArea viewport and scroll it
+      const scrollViewport = scrollRef.current.closest('[data-radix-scroll-area-viewport]');
+      if (scrollViewport) {
+        scrollViewport.scrollTop = scrollViewport.scrollHeight;
+      }
     }
   }, [messages]);
 

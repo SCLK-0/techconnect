@@ -28,7 +28,6 @@ const menuItems = [
   { title: "Learner Feedback", url: "/tutor/feedback", icon: Star },
   { title: "Resources", url: "/tutor/resources", icon: FileText },
   { title: "Announcements", url: "/announcements", icon: Megaphone },
-  { title: "Donate", url: "/tutor/donate", icon: Heart },
 ];
 
 export function TutorSidebar() {

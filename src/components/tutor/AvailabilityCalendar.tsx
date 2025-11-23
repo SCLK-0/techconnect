@@ -33,27 +33,44 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
   const [selectedDateForTime, setSelectedDateForTime] = useState<Date | null>(null);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
+  const [currentAvailabilityStatus, setCurrentAvailabilityStatus] = useState<'available' | 'unavailable' | null>(null);
+
+  // Helper function to get date string in local timezone (avoids UTC conversion issues)
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const isDateMarkedAvailable = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
     const dayData = dayAvailability.find(d => d.date === dateStr);
     return dayData?.is_available === true;
   };
 
   const isDateMarkedUnavailable = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
     const dayData = dayAvailability.find(d => d.date === dateStr);
     return dayData?.is_available === false;
   };
 
   const hasTimeSlots = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Don't show time slots indicator for past dates (including today)
+    const tomorrow = new Date();
+    tomorrow.setHours(0, 0, 0, 0);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (date < tomorrow) {
+      return false;
+    }
+    
+    const dateStr = getLocalDateString(date);
     const dayData = dayAvailability.find(d => d.date === dateStr);
     return !!(dayData?.start_time && dayData?.end_time);
   };
 
   const getTimeSlots = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
     const dayData = dayAvailability.find(d => d.date === dateStr);
     if (dayData?.start_time && dayData?.end_time) {
       return `${dayData.start_time.slice(0, 5)}-${dayData.end_time.slice(0, 5)}`;
@@ -77,20 +94,158 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
 
   const handleDateClick = (date: Date | Date[] | undefined) => {
     if (mode === "time-slots" && date && !Array.isArray(date)) {
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(date);
       const existing = dayAvailability.find(d => d.date === dateStr);
       
       setSelectedDateForTime(date);
-      if (existing?.start_time && existing?.end_time) {
-        setStartTime(existing.start_time);
-        setEndTime(existing.end_time);
+      
+      // Set current status based on existing data
+      if (existing) {
+        setCurrentAvailabilityStatus(existing.is_available ? 'available' : 'unavailable');
+        if (existing.start_time && existing.end_time) {
+          setStartTime(existing.start_time);
+          setEndTime(existing.end_time);
+        } else {
+          setStartTime("09:00");
+          setEndTime("17:00");
+        }
       } else {
+        setCurrentAvailabilityStatus(null);
         setStartTime("09:00");
         setEndTime("17:00");
       }
+      
       setTimeDialogOpen(true);
     } else if (mode === "bulk-actions" && Array.isArray(date)) {
       setSelectedDates(date);
+    }
+  };
+
+  const handleMarkDayAvailable = async () => {
+    if (!selectedDateForTime) return;
+
+    setIsSubmitting(true);
+    try {
+      const dateStr = getLocalDateString(selectedDateForTime);
+      
+      // Delete existing entries first
+      await supabase
+        .from("tutor_day_availability")
+        .delete()
+        .eq('tutor_id', tutorId)
+        .eq('date', dateStr);
+      
+      // Insert new entry
+      const { error } = await supabase
+        .from("tutor_day_availability")
+        .insert({
+          tutor_id: tutorId,
+          date: dateStr,
+          is_available: true,
+          start_time: null,
+          end_time: null,
+        });
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setCurrentAvailabilityStatus('available');
+      
+      // Refresh data from database
+      await onUpdate();
+      
+      toast.success("Day marked as available");
+    } catch (error: any) {
+      console.error("Error marking day:", error);
+      toast.error("Failed to mark day as available");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMarkDayUnavailable = async () => {
+    if (!selectedDateForTime) return;
+
+    setIsSubmitting(true);
+    try {
+      const dateStr = getLocalDateString(selectedDateForTime);
+      
+      // Check for existing sessions on this date
+      const startOfDay = new Date(selectedDateForTime);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDateForTime);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: existingSessions, error: sessionError } = await supabase
+        .from("sessions")
+        .select("id, scheduled_at, learner_id")
+        .eq("tutor_id", tutorId)
+        .in("status", ["pending", "accepted"])
+        .gte("scheduled_at", startOfDay.toISOString())
+        .lte("scheduled_at", endOfDay.toISOString());
+
+      if (sessionError) throw sessionError;
+
+      // Block if there are existing sessions
+      if (existingSessions && existingSessions.length > 0) {
+        // Fetch learner names
+        const learnerIds = existingSessions.map(s => s.learner_id);
+        const { data: learnerProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", learnerIds);
+
+        const learnerMap = new Map(learnerProfiles?.map(p => [p.user_id, p.full_name]) || []);
+
+        const sessionList = existingSessions.map(s => {
+          const time = new Date(s.scheduled_at).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+          const learnerName = learnerMap.get(s.learner_id) || 'Unknown';
+          return `• ${time} with ${learnerName}`;
+        }).join('\n');
+        
+        toast.error(`Cannot mark as unavailable: ${existingSessions.length} existing session(s)`, {
+          description: `Please cancel or reschedule these sessions first:\n${sessionList}`,
+          duration: 8000,
+        });
+        setIsSubmitting(false);
+        return; // Block the action
+      }
+      
+      // Delete existing entries first
+      await supabase
+        .from("tutor_day_availability")
+        .delete()
+        .eq('tutor_id', tutorId)
+        .eq('date', dateStr);
+      
+      // Insert new entry
+      const { error } = await supabase
+        .from("tutor_day_availability")
+        .insert({
+          tutor_id: tutorId,
+          date: dateStr,
+          is_available: false,
+          start_time: null,
+          end_time: null,
+        });
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setCurrentAvailabilityStatus('unavailable');
+      
+      // Refresh data from database
+      await onUpdate();
+      
+      toast.success("Day marked as unavailable");
+    } catch (error: any) {
+      console.error("Error marking day:", error);
+      toast.error("Failed to mark day as unavailable");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -104,7 +259,7 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
     try {
       const inserts = selectedDates.map(date => ({
         tutor_id: tutorId,
-        date: date.toISOString().split('T')[0],
+        date: getLocalDateString(date),
         is_available: true,
       }));
 
@@ -133,9 +288,40 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
 
     setIsSubmitting(true);
     try {
+      // Check for existing sessions on selected dates
+      let totalConflicts = 0;
+      for (const date of selectedDates) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const { data: existingSessions } = await supabase
+          .from("sessions")
+          .select("id")
+          .eq("tutor_id", tutorId)
+          .in("status", ["pending", "accepted"])
+          .gte("scheduled_at", startOfDay.toISOString())
+          .lte("scheduled_at", endOfDay.toISOString());
+
+        if (existingSessions && existingSessions.length > 0) {
+          totalConflicts += existingSessions.length;
+        }
+      }
+
+      // Block if there are conflicts
+      if (totalConflicts > 0) {
+        toast.error(`Cannot mark as unavailable: ${totalConflicts} existing session(s)`, {
+          description: "Please cancel or reschedule these sessions first before marking dates as unavailable.",
+          duration: 6000,
+        });
+        setIsSubmitting(false);
+        return; // Block the action
+      }
+
       const inserts = selectedDates.map(date => ({
         tutor_id: tutorId,
-        date: date.toISOString().split('T')[0],
+        date: getLocalDateString(date),
         is_available: false,
       }));
 
@@ -166,8 +352,84 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
 
     setIsSubmitting(true);
     try {
-      const dateStr = selectedDateForTime.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(selectedDateForTime);
       
+      // Check for existing sessions on this date
+      const startOfDay = new Date(selectedDateForTime);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDateForTime);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: existingSessions, error: sessionError } = await supabase
+        .from("sessions")
+        .select("id, scheduled_at, duration_minutes, learner_id")
+        .eq("tutor_id", tutorId)
+        .in("status", ["pending", "accepted"])
+        .gte("scheduled_at", startOfDay.toISOString())
+        .lte("scheduled_at", endOfDay.toISOString());
+
+      if (sessionError) throw sessionError;
+
+      // Check if any sessions fall outside the new time range
+      if (existingSessions && existingSessions.length > 0) {
+        const [newStartHours, newStartMinutes] = startTime.split(':').map(Number);
+        const [newEndHours, newEndMinutes] = endTime.split(':').map(Number);
+        const newStartInMinutes = newStartHours * 60 + newStartMinutes;
+        const newEndInMinutes = newEndHours * 60 + newEndMinutes;
+
+        const conflictingSessions = existingSessions.filter(session => {
+          const sessionDate = new Date(session.scheduled_at);
+          const sessionStartHours = sessionDate.getHours();
+          const sessionStartMinutes = sessionDate.getMinutes();
+          const sessionStartInMinutes = sessionStartHours * 60 + sessionStartMinutes;
+          const sessionEndInMinutes = sessionStartInMinutes + (session.duration_minutes || 0);
+
+          // Session conflicts if it starts before new range OR ends after new range
+          return sessionStartInMinutes < newStartInMinutes || sessionEndInMinutes > newEndInMinutes;
+        });
+
+        if (conflictingSessions.length > 0) {
+          // Fetch learner names for the conflicting sessions
+          const learnerIds = conflictingSessions.map(s => s.learner_id);
+          const { data: learnerProfiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name")
+            .in("user_id", learnerIds);
+
+          const learnerMap = new Map(learnerProfiles?.map(p => [p.user_id, p.full_name]) || []);
+
+          const sessionList = conflictingSessions.map(s => {
+            const sessionTime = new Date(s.scheduled_at);
+            const time = sessionTime.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+            const endTime = new Date(sessionTime.getTime() + (s.duration_minutes || 0) * 60000);
+            const endTimeStr = endTime.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+            const learnerName = learnerMap.get(s.learner_id) || 'Unknown';
+            return `• ${time}-${endTimeStr} with ${learnerName}`;
+          }).join('\n');
+          
+          toast.error(`Cannot save: ${conflictingSessions.length} session(s) outside new time range`, {
+            description: `These sessions would be excluded:\n${sessionList}\nPlease cancel/reschedule them first or extend your time range.`,
+            duration: 10000,
+          });
+          setIsSubmitting(false);
+          return; // Block the action
+        }
+      }
+      
+      // First, delete any existing entries for this date to avoid duplicates
+      await supabase
+        .from("tutor_day_availability")
+        .delete()
+        .eq('tutor_id', tutorId)
+        .eq('date', dateStr);
+      
+      // Then insert the new time slot
       const payload = {
         tutor_id: tutorId,
         date: dateStr,
@@ -177,10 +439,12 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
       };
       
       console.log("Saving time slot with payload:", payload);
+      console.log("Start time value:", startTime, "Type:", typeof startTime);
+      console.log("End time value:", endTime, "Type:", typeof endTime);
       
       const { data, error } = await supabase
         .from("tutor_day_availability")
-        .upsert(payload)
+        .insert(payload)
         .select();
 
       if (error) {
@@ -189,9 +453,12 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
       }
 
       console.log("Time slot saved successfully:", data);
+      
+      // Refresh data first
+      await onUpdate();
+      
       toast.success("Time slot saved");
       setTimeDialogOpen(false);
-      onUpdate();
     } catch (error: any) {
       console.error("Error saving time slot:", error);
       toast.error(`Failed to save time slot: ${error.message || 'Unknown error'}`);
@@ -205,24 +472,67 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
 
     setIsSubmitting(true);
     try {
-      const dateStr = selectedDateForTime.toISOString().split('T')[0];
-      const existing = dayAvailability.find(d => d.date === dateStr);
+      const dateStr = getLocalDateString(selectedDateForTime);
       
-      if (existing?.id) {
-        const { error } = await supabase
-          .from("tutor_day_availability")
-          .delete()
-          .eq('id', existing.id);
+      // Check for existing sessions on this date
+      const startOfDay = new Date(selectedDateForTime);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDateForTime);
+      endOfDay.setHours(23, 59, 59, 999);
 
-        if (error) throw error;
-        toast.success("Time slot removed");
+      const { data: existingSessions, error: sessionError } = await supabase
+        .from("sessions")
+        .select("id, scheduled_at, learner_id")
+        .eq("tutor_id", tutorId)
+        .in("status", ["pending", "accepted"])
+        .gte("scheduled_at", startOfDay.toISOString())
+        .lte("scheduled_at", endOfDay.toISOString());
+
+      if (sessionError) throw sessionError;
+
+      // Block if there are existing sessions
+      if (existingSessions && existingSessions.length > 0) {
+        // Fetch learner names
+        const learnerIds = existingSessions.map(s => s.learner_id);
+        const { data: learnerProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", learnerIds);
+
+        const learnerMap = new Map(learnerProfiles?.map(p => [p.user_id, p.full_name]) || []);
+
+        const sessionList = existingSessions.map(s => {
+          const time = new Date(s.scheduled_at).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+          const learnerName = learnerMap.get(s.learner_id) || 'Unknown';
+          return `• ${time} with ${learnerName}`;
+        }).join('\n');
+        
+        toast.error(`Cannot remove settings: ${existingSessions.length} existing session(s)`, {
+          description: `Please cancel or reschedule these sessions first:\n${sessionList}`,
+          duration: 8000,
+        });
+        setIsSubmitting(false);
+        return; // Block the action
       }
       
+      // Try to delete by date and tutor_id (more reliable than relying on id)
+      const { error } = await supabase
+        .from("tutor_day_availability")
+        .delete()
+        .eq('tutor_id', tutorId)
+        .eq('date', dateStr);
+
+      if (error) throw error;
+      
+      toast.success("Day settings removed");
       setTimeDialogOpen(false);
       onUpdate();
     } catch (error: any) {
-      console.error("Error deleting time slot:", error);
-      toast.error("Failed to remove time slot");
+      console.error("Error deleting day settings:", error);
+      toast.error("Failed to remove day settings");
     } finally {
       setIsSubmitting(false);
     }
@@ -292,18 +602,6 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
           >
             <Clock className="h-4 w-4" />
             Set Time Slots
-          </Button>
-          <Button
-            variant={mode === "bulk-actions" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setMode("bulk-actions");
-              setSelectedDates([]);
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Bulk Actions
           </Button>
         </div>
 
@@ -385,60 +683,176 @@ export function AvailabilityCalendar({ tutorId, dayAvailability, onUpdate }: Ava
         <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] rounded-lg">
           <DialogHeader className="text-left">
             <DialogTitle className="text-base">
-              <Clock className="inline-block mr-2 h-4 w-4" />
-              Set Time Slot
+              Manage Day Availability
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {selectedDateForTime && `Set specific hours for ${format(selectedDateForTime, "MMMM d, yyyy")}`}
+              {selectedDateForTime && `Configure availability for ${format(selectedDateForTime, "MMMM d, yyyy")}`}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start-time" className="text-xs">Start Time</Label>
-                <Input
-                  id="start-time"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="text-sm"
-                  style={{ fontSize: '14px' }}
-                />
+            {/* Step 1: Choose Availability Status (if not set) */}
+            {currentAvailabilityStatus === null && (
+              <div className="space-y-3">
+                <div className="text-center space-y-2">
+                  <Label className="text-sm font-medium">Step 1: Choose Availability</Label>
+                  <p className="text-xs text-muted-foreground">
+                    First, mark this day as available or unavailable
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleMarkDayAvailable}
+                    disabled={isSubmitting}
+                    className="w-full h-20 flex-col gap-2"
+                  >
+                    <Check className="h-6 w-6 text-green-600" />
+                    <span>Available</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleMarkDayUnavailable}
+                    disabled={isSubmitting}
+                    className="w-full h-20 flex-col gap-2"
+                  >
+                    <X className="h-6 w-6 text-red-600" />
+                    <span>Unavailable</span>
+                  </Button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="end-time" className="text-xs">End Time</Label>
-                <Input
-                  id="end-time"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="text-sm"
-                  style={{ fontSize: '14px' }}
-                />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Learners will be able to book sessions during this time range.
-            </p>
-          </div>
-
-          <DialogFooter className="flex gap-2">
-            {selectedDateForTime && hasTimeSlots(selectedDateForTime) && (
-              <Button
-                variant="outline"
-                onClick={handleDeleteTimeSlot}
-                disabled={isSubmitting}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Remove
-              </Button>
             )}
-            <Button onClick={handleSaveTimeSlot} disabled={isSubmitting}>
-              <Clock className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Saving..." : "Save Time Slot"}
-            </Button>
-          </DialogFooter>
+
+            {/* Step 2: Set Time Slot (only if marked available) */}
+            {currentAvailabilityStatus === 'available' && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <Label className="text-sm font-medium">Day is Available</Label>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleMarkDayUnavailable}
+                      disabled={isSubmitting}
+                    >
+                      Switch to Unavailable
+                    </Button>
+                  </div>
+                  
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Optional: Set specific hours</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="start-time" className="text-xs">Start Time</Label>
+                        <Input
+                          id="start-time"
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => {
+                            console.log("Start time changed to:", e.target.value);
+                            setStartTime(e.target.value);
+                          }}
+                          className="text-sm"
+                          style={{ fontSize: '14px' }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="end-time" className="text-xs">End Time</Label>
+                        <Input
+                          id="end-time"
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => {
+                            console.log("End time changed to:", e.target.value);
+                            setEndTime(e.target.value);
+                          }}
+                          className="text-sm"
+                          style={{ fontSize: '14px' }}
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={handleSaveTimeSlot} disabled={isSubmitting} className="w-full">
+                      <Clock className="mr-2 h-4 w-4" />
+                      {isSubmitting ? "Saving..." : "Save Time Slot"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Leave blank to use your weekly schedule times
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                </div>
+
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteTimeSlot}
+                  disabled={isSubmitting}
+                  className="w-full"
+                  size="sm"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remove Day Settings
+                </Button>
+              </>
+            )}
+
+            {/* Step 2: Show Unavailable Status */}
+            {currentAvailabilityStatus === 'unavailable' && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <X className="h-4 w-4 text-red-600" />
+                      <Label className="text-sm font-medium">Day is Unavailable</Label>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleMarkDayAvailable}
+                      disabled={isSubmitting}
+                    >
+                      Switch to Available
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    This day is blocked. Learners cannot book sessions.
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                </div>
+
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteTimeSlot}
+                  disabled={isSubmitting}
+                  className="w-full"
+                  size="sm"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remove Day Settings
+                </Button>
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

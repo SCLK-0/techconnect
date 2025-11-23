@@ -31,11 +31,11 @@ export default function AdminSessions() {
     queryFn: async () => {
       console.log("Fetching admin sessions...");
       
-      // Fetch sessions
+      // Fetch sessions (exclude demo sessions)
       const { data: sessionsData, error: sessionsError } = await supabase
         .from("sessions")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false});
 
       if (sessionsError) {
         console.error("Error fetching sessions:", sessionsError);
@@ -270,10 +270,17 @@ export default function AdminSessions() {
                               <TableCell>{session.learner?.full_name || "N/A"}</TableCell>
                               <TableCell>{session.duration_minutes || session.duration} min</TableCell>
                               <TableCell>
-                                <Badge variant={getStatusVariant(session.status)} className="flex items-center gap-1 w-fit">
-                                  {getStatusIcon(session.status)}
-                                  {session.status}
-                                </Badge>
+                                <div className="flex flex-col gap-1">
+                                  <Badge variant={getStatusVariant(session.status)} className="flex items-center gap-1 w-fit">
+                                    {getStatusIcon(session.status)}
+                                    {session.status}
+                                  </Badge>
+                                  {session.disconnect_reason && (
+                                    <Badge variant="destructive" className="text-xs w-fit">
+                                      Disconnected
+                                    </Badge>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 {session.scheduled_at
@@ -321,10 +328,17 @@ export default function AdminSessions() {
                                   {session.duration_minutes || session.duration} minutes
                                 </p>
                               </div>
-                              <Badge variant={getStatusVariant(session.status)} className="flex items-center gap-1">
-                                {getStatusIcon(session.status)}
-                                {session.status}
-                              </Badge>
+                              <div className="flex flex-col gap-1 items-end">
+                                <Badge variant={getStatusVariant(session.status)} className="flex items-center gap-1">
+                                  {getStatusIcon(session.status)}
+                                  {session.status}
+                                </Badge>
+                                {session.disconnect_reason && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    Disconnected
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             
                             <div className="space-y-1 text-sm">

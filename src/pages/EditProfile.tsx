@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { DonationQRManager } from "@/components/tutor/DonationQRManager";
 
 const subjects = [
   "Programming",
@@ -53,6 +54,7 @@ export default function EditProfile() {
   const [subjectsOfInterest, setSubjectsOfInterest] = useState<string[]>([]);
   const [tutorStatus, setTutorStatus] = useState<string>("");
   const [loadingRoleData, setLoadingRoleData] = useState(true);
+  const [donationQRCode, setDonationQRCode] = useState<string>("");
   
   // Store original values for cancel functionality
   const [originalValues, setOriginalValues] = useState<any>({});
@@ -91,7 +93,7 @@ export default function EditProfile() {
       if (role === "tutor") {
         const { data, error } = await supabase
           .from("tutor_profiles")
-          .select("subject_expertise, status")
+          .select("subject_expertise, status, donation_qr_code")
           .eq("user_id", user.id)
           .single();
         
@@ -104,6 +106,7 @@ export default function EditProfile() {
         tutorData = data;
         setTutorInfo(tutorData || {});
         setTutorStatus(tutorData?.status || "");
+        setDonationQRCode(tutorData?.donation_qr_code || "");
         const expertise = Array.isArray(tutorData?.subject_expertise) ? tutorData.subject_expertise : [];
         setSubjectExpertise(expertise);
         console.log("Set subject expertise:", expertise);
@@ -516,7 +519,20 @@ export default function EditProfile() {
                       )}
                     </div>
                   )}
+                </CardContent>
+              </Card>
 
+              {/* Donation QR Code Section - Tutors Only */}
+              {role === "tutor" && user && (
+                <DonationQRManager
+                  userId={user.id}
+                  currentQRCode={donationQRCode}
+                  onUpdate={setDonationQRCode}
+                />
+              )}
+
+              <Card className="border-2 w-full max-w-full overflow-hidden">
+                <CardContent className="pt-6 px-4 md:px-6">
                   {role === "learner" && (
                     <div className="space-y-4 pt-4 border-t">
                       {loadingRoleData ? (

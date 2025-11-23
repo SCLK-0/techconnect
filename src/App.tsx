@@ -23,7 +23,7 @@ import TutorSessions from "./pages/tutor/TutorSessions";
 import TutorTutees from "./pages/tutor/TutorTutees";
 import TutorAvailability from "./pages/tutor/TutorAvailability";
 import TutorFeedback from "./pages/tutor/TutorFeedback";
-import TutorDonate from "./pages/tutor/TutorDonate";
+
 import TutorResources from "./pages/tutor/TutorResources";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -32,15 +32,16 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminApprovals from "./pages/admin/AdminApprovals";
 import AdminSessions from "./pages/admin/AdminSessions";
 import AdminResources from "./pages/admin/AdminResources";
-import AdminDonations from "./pages/admin/AdminDonations";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminLiveMonitoring from "./pages/admin/AdminLiveMonitoring";
 import AdminSessionLogs from "./pages/admin/AdminSessionLogs";
 import Announcements from "./pages/Announcements";
-import Donate from "./pages/Donate";
 import EditProfile from "./pages/EditProfile";
 import Settings from "./pages/Settings";
 import VideoSession from "./pages/VideoSession";
+import DemoSession from "./pages/DemoSession";
+import DemoPreview from "./pages/DemoPreview";
+import DemoAdmit from "./pages/DemoAdmit";
 import QuickStartGuide from "./pages/QuickStartGuide";
 import NotFound from "./pages/NotFound";
 
@@ -116,14 +117,7 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/donate" 
-            element={
-              <ProtectedRoute allowedRoles={["learner", "tutor"]}>
-                <Donate />
-              </ProtectedRoute>
-            } 
-          />
+
           <Route 
             path="/edit-profile" 
             element={
@@ -190,14 +184,7 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/tutor/donate" 
-            element={
-              <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorDonate />
-              </ProtectedRoute>
-            } 
-          />
+
           
           {/* Admin Routes */}
           <Route 
@@ -248,14 +235,7 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/admin/donations" 
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDonations />
-              </ProtectedRoute>
-            } 
-          />
+
           <Route 
             path="/admin/analytics" 
             element={
@@ -287,6 +267,36 @@ const App = () => {
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor", "admin"]}>
                 <VideoSession />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Demo Preview Route */}
+          <Route 
+            path="/demo-preview" 
+            element={
+              <ProtectedRoute allowedRoles={["learner", "tutor"]}>
+                <DemoPreview />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Demo Admit Route */}
+          <Route 
+            path="/demo-admit" 
+            element={
+              <ProtectedRoute allowedRoles={["learner", "tutor"]}>
+                <DemoAdmit />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Demo Session Route */}
+          <Route 
+            path="/demo-session" 
+            element={
+              <ProtectedRoute allowedRoles={["learner", "tutor"]}>
+                <DemoSession />
               </ProtectedRoute>
             } 
           />

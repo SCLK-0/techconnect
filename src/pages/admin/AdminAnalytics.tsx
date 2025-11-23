@@ -13,23 +13,20 @@ export default function AdminAnalytics() {
   const { data: stats, isLoading, isFetching } = useQuery({
     queryKey: ["admin-analytics"],
     queryFn: async () => {
-      const [profiles, sessions, donations, resources, tutorProfiles] = await Promise.all([
+      const [profiles, sessions, resources, tutorProfiles] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("sessions").select("*"),
-        supabase.from("donations").select("*").eq("verification_status", "verified"),
         supabase.from("resources").select("*", { count: "exact", head: true }),
         supabase.from("tutor_profiles").select("*"),
       ]);
 
       const completedSessions = sessions.data?.filter((s) => s.status === "completed").length || 0;
-      const totalDonations = donations.data?.reduce((sum, d) => sum + (Number(d.amount) || 0), 0) || 0;
       const approvedTutors = tutorProfiles.data?.filter((t) => t.status === "approved").length || 0;
 
       return {
         totalUsers: profiles.count || 0,
         totalSessions: sessions.data?.length || 0,
         completedSessions,
-        totalDonations,
         totalResources: resources.count || 0,
         approvedTutors,
         pendingTutors: tutorProfiles.data?.filter((t) => t.status === "pending").length || 0,
@@ -102,17 +99,6 @@ export default function AdminAnalytics() {
                     <p className="text-xs text-muted-foreground">
                       {stats?.completedSessions || 0} completed
                     </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">₱{stats?.totalDonations?.toFixed(2) || "0.00"}</div>
-                    <p className="text-xs text-muted-foreground">Platform support</p>
                   </CardContent>
                 </Card>
 

@@ -1,6 +1,6 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import { useSidebar, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, LineChart, Users, CheckCircle, Calendar, FileText, Heart, Megaphone, User, Settings, LogOut, Activity, FileTextIcon } from "lucide-react";
+import { LayoutDashboard, LineChart, Users, CheckCircle, Calendar, FileText, Megaphone, User, Settings, LogOut, Activity, FileTextIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -13,7 +13,6 @@ const menuItems = [
   { title: "Session Logs", url: "/admin/session-logs", icon: FileTextIcon },
   { title: "Resource Approval", url: "/admin/resources", icon: FileText },
   { title: "Announcements", url: "/admin/announcements", icon: Megaphone },
-  { title: "Donation Management", url: "/admin/donations", icon: Heart },
   { title: "Live Monitoring", url: "/admin/live-monitoring", icon: Activity },
 ];
 

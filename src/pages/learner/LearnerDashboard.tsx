@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
-import { Calendar, FileText, MessageSquare, Search } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Calendar, FileText, MessageSquare, Search, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,10 @@ import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { WhatsNewCard } from "@/components/WhatsNewCard";
 
 export default function LearnerDashboard() {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState<string | null>(null);
   const [upcomingSessions, setUpcomingSessions] = useState<number | null>(null);
   const [completedSessions, setCompletedSessions] = useState<number | null>(null);
@@ -162,6 +164,9 @@ export default function LearnerDashboard() {
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <MaintenanceBanner />
+              
+              <WhatsNewCard />
+              
               <div>
                 <h2 className="text-3xl font-bold tracking-tight mb-2">
                   {firstName === null ? (
@@ -239,6 +244,14 @@ export default function LearnerDashboard() {
                     <CardDescription>Get started with your learning</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    <Button 
+                      className="w-full justify-start" 
+                      variant="default"
+                      onClick={() => navigate("/demo-preview?role=learner")}
+                    >
+                      <Video className="mr-2 h-4 w-4" />
+                      Start Demo Session
+                    </Button>
                     <Button variant="outline" className="w-full justify-start" asChild>
                       <NavLink to="/learner/find-tutors">
                         <Search className="mr-2 h-4 w-4" />

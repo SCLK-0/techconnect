@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MessageSquare, Star } from "lucide-react";
+import { MessageSquare, Star, Heart } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RatingTags, type RatingTag } from "@/components/feedback/RatingTags";
+import { DonationQRDialog } from "./DonationQRDialog";
 
 interface FeedbackDialogProps {
   sessionId: string;
@@ -27,6 +28,9 @@ export function FeedbackDialog({ sessionId }: FeedbackDialogProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [selectedTags, setSelectedTags] = useState<RatingTag[]>([]);
+  const [showDonation, setShowDonation] = useState(false);
+  const [tutorQRCode, setTutorQRCode] = useState<string | null>(null);
+  const [tutorName, setTutorName] = useState("");
   const queryClient = useQueryClient();
 
   const handleTagToggle = (tag: RatingTag) => {
@@ -69,13 +73,42 @@ export function FeedbackDialog({ sessionId }: FeedbackDialogProps) {
         if (tagsError) throw tagsError;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Feedback submitted!");
       setOpen(false);
       setRating(0);
       setComment("");
       setSelectedTags([]);
       queryClient.invalidateQueries({ queryKey: ["learner-sessions"] });
+      
+      // Check if tutor has donation QR code
+      const { data: sessionData } = await supabase
+        .from("sessions")
+        .select("tutor_id")
+        .eq("id", sessionId)
+        .single();
+      
+      if (sessionData?.tutor_id) {
+        // Get tutor profile with donation QR code
+        const { data: tutorProfile } = await supabase
+          .from("tutor_profiles")
+          .select("donation_qr_code")
+          .eq("user_id", sessionData.tutor_id)
+          .single();
+        
+        // Get tutor name from profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", sessionData.tutor_id)
+          .single();
+        
+        if (tutorProfile?.donation_qr_code) {
+          setTutorQRCode(tutorProfile.donation_qr_code);
+          setTutorName(profile?.full_name || "your tutor");
+          setShowDonation(true);
+        }
+      }
     },
     onError: (error) => {
       toast.error("Failed to submit: " + error.message);
@@ -152,6 +185,15 @@ export function FeedbackDialog({ sessionId }: FeedbackDialogProps) {
           </div>
         </form>
       </DialogContent>
+
+      {tutorQRCode && (
+        <DonationQRDialog
+          open={showDonation}
+          onOpenChange={setShowDonation}
+          tutorName={tutorName}
+          qrCodeData={tutorQRCode}
+        />
+      )}
     </Dialog>
   );
 }

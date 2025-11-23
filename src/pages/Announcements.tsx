@@ -211,7 +211,12 @@ export default function Announcements() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <p className="whitespace-pre-wrap line-clamp-3 break-words overflow-wrap-anywhere">{announcement.content}</p>
+                        <p 
+                          className="whitespace-pre-wrap line-clamp-3 break-words overflow-wrap-anywhere"
+                          dangerouslySetInnerHTML={{ 
+                            __html: (announcement.content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                          }}
+                        />
                       </CardContent>
                     </Card>
                   ))}
@@ -239,7 +244,12 @@ export default function Announcements() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-3">
-            <p className="whitespace-pre-wrap text-sm break-words overflow-wrap-anywhere">{selectedAnnouncement?.content}</p>
+            <p 
+              className="whitespace-pre-wrap text-sm break-words overflow-wrap-anywhere"
+              dangerouslySetInnerHTML={{ 
+                __html: (selectedAnnouncement?.content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>

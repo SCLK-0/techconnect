@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { differenceInMinutes } from "date-fns";
+import { differenceInMinutes, format } from "date-fns";
+import { sendSessionReminderEmail } from "@/utils/sendNotificationEmail";
 
 export function useSessionNotifications(userId: string | undefined) {
   useEffect(() => {
@@ -22,7 +23,7 @@ export function useSessionNotifications(userId: string | undefined) {
         return;
       }
 
-      sessions?.forEach((session) => {
+      sessions?.forEach(async (session) => {
         const scheduledTime = new Date(session.scheduled_at);
         const minutesUntil = differenceInMinutes(scheduledTime, now);
 
@@ -36,6 +37,34 @@ export function useSessionNotifications(userId: string | undefined) {
               duration: 10000,
             });
             localStorage.setItem(notificationKey, "true");
+
+            // Send email reminder
+            try {
+              const { data: userProfile } = await supabase
+                .from("profiles")
+                .select("full_name")
+                .eq("user_id", userId)
+                .single();
+
+              // Get user's email using RPC function
+              const { data: userEmail, error: emailError } = await supabase
+                .rpc('get_user_email', { user_id: userId });
+
+              if (emailError) {
+                console.error("Error fetching user email:", emailError);
+              }
+
+              if (userEmail) {
+                await sendSessionReminderEmail(
+                  userEmail,
+                  userProfile?.full_name || "User",
+                  session.subject,
+                  format(scheduledTime, "MMMM d, yyyy 'at' h:mm a")
+                );
+              }
+            } catch (error) {
+              console.error("Error sending reminder email:", error);
+            }
           }
         }
 

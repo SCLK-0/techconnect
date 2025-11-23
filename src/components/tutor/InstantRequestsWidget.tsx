@@ -9,6 +9,7 @@ import { Zap, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { sendSessionAcceptedEmail, sendInstantSessionStartingEmail } from "@/utils/sendNotificationEmail";
 
 interface InstantRequestsWidgetProps {
   userId: string;
@@ -62,13 +63,76 @@ export function InstantRequestsWidget({ userId }: InstantRequestsWidgetProps) {
         })
         .eq("id", sessionId);
       if (error) throw error;
-      return sessionId;
+      return { sessionId, status };
     },
-    onSuccess: (sessionId, variables) => {
+    onSuccess: async (data) => {
+      const { sessionId, status } = data;
       queryClient.invalidateQueries({ queryKey: ["instant-requests"] });
       queryClient.invalidateQueries({ queryKey: ["tutor-stats"] });
       
-      if (variables.status === "accepted") {
+      if (status === "accepted") {
+        // Send acceptance email
+        try {
+          const session = instantRequests.find(r => r.id === sessionId);
+          if (session) {
+            const { data: learnerProfile, error: learnerError } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("user_id", session.learner_id)
+              .single();
+
+            const { data: tutorProfile, error: tutorError } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("user_id", userId)
+              .single();
+
+            // Get learner's email using RPC function
+            const { data: learnerEmail, error: emailError } = await supabase
+              .rpc('get_user_email', { user_id: session.learner_id });
+
+            if (learnerError) {
+              console.error("Error fetching learner profile:", learnerError);
+            }
+            if (tutorError) {
+              console.error("Error fetching tutor profile:", tutorError);
+            }
+            if (emailError) {
+              console.error("Error fetching learner email:", emailError);
+            }
+
+            if (learnerEmail) {
+              await sendSessionAcceptedEmail(
+                learnerEmail,
+                learnerProfile?.full_name || "User",
+                tutorProfile?.full_name || "Your tutor",
+                session.subject,
+                "Instant session"
+              );
+
+              // Also send instant session starting notification to tutor
+              const { data: tutorEmail, error: tutorEmailError } = await supabase
+                .rpc('get_user_email', { user_id: userId });
+
+              if (tutorEmailError) {
+                console.error("Error fetching tutor email:", tutorEmailError);
+              }
+
+              if (tutorEmail) {
+                await sendInstantSessionStartingEmail(
+                  tutorEmail,
+                  tutorProfile?.full_name || "Tutor",
+                  learnerProfile?.full_name || "A learner",
+                  session.subject,
+                  sessionId
+                );
+              }
+            }
+          }
+        } catch (emailError) {
+          console.error("Error sending acceptance email:", emailError);
+        }
+
         toast.success("Session accepted! Redirecting...");
         // Navigate immediately
         navigate(`/video-session/${sessionId}`);

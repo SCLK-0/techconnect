@@ -11,9 +11,10 @@ import logo from "@/assets/logo.png";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Star, Clock, CheckCircle, FileText } from "lucide-react";
+import { Calendar, Star, Clock, CheckCircle, FileText, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { WhatsNewCard } from "@/components/WhatsNewCard";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -183,6 +184,9 @@ export default function TutorDashboard() {
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <MaintenanceBanner />
+              
+              <WhatsNewCard />
+              
               {tutorStatus === "pending" && (
                 <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
                   <CardContent className="pt-6">
@@ -345,6 +349,14 @@ export default function TutorDashboard() {
                     <CardDescription>Manage your tutoring activities</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    <Button 
+                      className="w-full justify-start" 
+                      variant="default"
+                      onClick={() => navigate("/demo-preview?role=tutor")}
+                    >
+                      <Video className="mr-2 h-4 w-4" />
+                      Start Demo Session
+                    </Button>
                     <Button 
                       className="w-full justify-start" 
                       variant="outline"

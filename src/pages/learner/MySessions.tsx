@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, User, CalendarDays, X, Video, RefreshCw } from "lucide-react";
+import { Calendar, Clock, User, CalendarDays, X, Video, RefreshCw, MessageSquare } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { sendSessionMissedEmail } from "@/utils/sendNotificationEmail";
 
 interface Session {
   id: string;
@@ -32,7 +33,9 @@ interface Session {
   session_type: string;
   rejection_reason?: string;
   cancelled_reason?: string;
+  disconnect_reason?: string;
   tutor_id: string;
+  has_feedback?: boolean;
   tutor: {
     full_name: string;
     subject_expertise?: string[];
@@ -94,6 +97,53 @@ export default function MySessions() {
               .from("sessions")
               .update({ status: "missed", session_status: "missed" })
               .in("id", missedSessionIds);
+
+            // Send missed session notifications to tutors
+            try {
+              for (const sessionId of missedSessionIds) {
+                const missedSession = sessionsToCheck.find(s => s.id === sessionId);
+                if (missedSession) {
+                  const { data: sessionData } = await supabase
+                    .from("sessions")
+                    .select("tutor_id, subject, scheduled_at")
+                    .eq("id", sessionId)
+                    .single();
+
+                  if (sessionData?.tutor_id) {
+                    const { data: tutorProfile } = await supabase
+                      .from("profiles")
+                      .select("full_name")
+                      .eq("user_id", sessionData.tutor_id)
+                      .single();
+
+                    const { data: learnerProfile } = await supabase
+                      .from("profiles")
+                      .select("full_name")
+                      .eq("user_id", user.id)
+                      .single();
+
+                    const { data: tutorEmail, error: emailError } = await supabase
+                      .rpc('get_user_email', { user_id: sessionData.tutor_id });
+
+                    if (emailError) {
+                      console.error("Error fetching tutor email:", emailError);
+                    }
+
+                    if (tutorEmail) {
+                      await sendSessionMissedEmail(
+                        tutorEmail,
+                        tutorProfile?.full_name || "Tutor",
+                        learnerProfile?.full_name || "A learner",
+                        sessionData.subject,
+                        format(new Date(sessionData.scheduled_at), "MMMM d, yyyy 'at' h:mm a")
+                      );
+                    }
+                  }
+                }
+              }
+            } catch (emailError) {
+              console.error("Error sending missed session emails:", emailError);
+            }
           }
         }
       }
@@ -107,6 +157,7 @@ export default function MySessions() {
       if (error) throw error;
       
       const tutorIds = data?.map(s => s.tutor_id) || [];
+      const sessionIds = data?.map(s => s.id) || [];
       
       // Get profiles
       const { data: profiles } = await supabase
@@ -119,12 +170,22 @@ export default function MySessions() {
         .from("tutor_profiles")
         .select("user_id, subject_expertise")
         .in("user_id", tutorIds);
+
+      // Check which sessions have feedback
+      const { data: feedbackData } = await supabase
+        .from("feedback")
+        .select("session_id")
+        .in("session_id", sessionIds)
+        .eq("user_id", user.id);
+      
+      const feedbackSessionIds = new Set(feedbackData?.map(f => f.session_id) || []);
       
       const profileMap = new Map(profiles?.map(p => [p.user_id, { full_name: p.full_name }]) || []);
       const tutorProfileMap = new Map(tutorProfiles?.map(tp => [tp.user_id, tp.subject_expertise]) || []);
       
       return data?.map(s => ({ 
-        ...s, 
+        ...s,
+        has_feedback: feedbackSessionIds.has(s.id),
         profiles: {
           ...profileMap.get(s.tutor_id),
           subject_expertise: tutorProfileMap.get(s.tutor_id) || []
@@ -209,7 +270,14 @@ export default function MySessions() {
                                   {session.profiles?.full_name}
                                 </div>
                               </div>
-                              <Badge>{session.session_type}</Badge>
+                              <div className="flex flex-col gap-2 items-end">
+                                <Badge>{session.session_type}</Badge>
+                                {session.disconnect_reason && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    Ended due to disconnect
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent className="space-y-4">
@@ -227,6 +295,23 @@ export default function MySessions() {
                                 </>
                               )}
                             </div>
+                            
+                            {/* Show rejection reason if session was rejected */}
+                            {session.status === 'rejected' && session.rejection_reason && (
+                              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                                <p className="text-sm font-medium text-destructive mb-1">Reason for declining:</p>
+                                <p className="text-sm text-muted-foreground">{session.rejection_reason}</p>
+                              </div>
+                            )}
+                            
+                            {/* Show cancellation reason if session was cancelled */}
+                            {session.status === 'cancelled' && session.cancelled_reason && (
+                              <div className="bg-muted border rounded-md p-3">
+                                <p className="text-sm font-medium mb-1">Cancellation reason:</p>
+                                <p className="text-sm text-muted-foreground">{session.cancelled_reason}</p>
+                              </div>
+                            )}
+                            
                             <div className="flex gap-2">
                               {filter === "pending" && (
                                 <Button
@@ -277,8 +362,14 @@ export default function MySessions() {
                                   </Button>
                                 );
                               })()}
-                              {filter === "completed" && (
+                              {filter === "completed" && !session.has_feedback && (
                                 <FeedbackDialog sessionId={session.id} />
+                              )}
+                              {filter === "completed" && session.has_feedback && (
+                                <Button variant="outline" size="sm" disabled>
+                                  <MessageSquare className="w-4 h-4 mr-2" />
+                                  Feedback Submitted
+                                </Button>
                               )}
                             </div>
                             

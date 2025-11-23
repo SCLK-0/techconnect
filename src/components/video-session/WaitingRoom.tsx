@@ -72,7 +72,7 @@ export function WaitingRoom({ sessionData, role }: WaitingRoomProps) {
             <div className="flex-1 text-left">
               <h3 className="font-semibold">{sessionData?.subject || "Session"}</h3>
               <p className="text-sm text-muted-foreground">
-                Duration: {sessionData?.duration || "60"} minutes
+                Duration: {sessionData?.duration_minutes || "60"} minutes
               </p>
             </div>
           </div>
