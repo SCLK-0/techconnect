@@ -397,4 +397,83 @@ export const ScheduledSessionAcceptedEmail = (props: EmailTemplateProps) => (
   </Html>
 );
 
+export const TutorApprovedEmail = (props: EmailTemplateProps) => (
+  <Html>
+    <Head />
+    <Preview>Your Tutor Application Has Been Approved!</Preview>
+    <Body style={{ backgroundColor: "#f5f5f5", padding: "20px" }}>
+      <Container style={baseStyles.container}>
+        <Section style={{ backgroundColor: "white", padding: "40px", borderRadius: "8px" }}>
+          <Text style={baseStyles.heading}>🎉 Congratulations!</Text>
+          <Text style={baseStyles.text}>Hello {props.recipientName},</Text>
+          <Text style={baseStyles.text}>
+            Great news! Your application to become a tutor on TechConnect has been approved.
+          </Text>
+          <Section style={baseStyles.infoBox}>
+            <Text style={{ margin: "0 0 10px 0" }}>
+              You can now start accepting tutoring sessions and helping learners succeed!
+            </Text>
+          </Section>
+          <Text style={baseStyles.text}>
+            Here's what you can do next:
+          </Text>
+          <ul style={{ color: "#333", lineHeight: "1.8" }}>
+            <li>Set your availability schedule</li>
+            <li>Complete your profile with subjects you can teach</li>
+            <li>Start accepting session requests from learners</li>
+            <li>Share educational resources with the community</li>
+          </ul>
+          <Link href="https://cit-techconnect.org/tutor/dashboard" style={baseStyles.button}>
+            Go to Tutor Dashboard
+          </Link>
+          <Section style={baseStyles.footer}>
+            <Text>This is an automated email from TechConnect. Please do not reply to this email.</Text>
+            <Text>© 2024 TechConnect. All rights reserved.</Text>
+          </Section>
+        </Section>
+      </Container>
+    </Body>
+  </Html>
+);
+
+export const TutorRejectedEmail = (props: EmailTemplateProps) => (
+  <Html>
+    <Head />
+    <Preview>Update on Your Tutor Application</Preview>
+    <Body style={{ backgroundColor: "#f5f5f5", padding: "20px" }}>
+      <Container style={baseStyles.container}>
+        <Section style={{ backgroundColor: "white", padding: "40px", borderRadius: "8px" }}>
+          <Text style={baseStyles.heading}>Application Update</Text>
+          <Text style={baseStyles.text}>Hello {props.recipientName},</Text>
+          <Text style={baseStyles.text}>
+            Thank you for your interest in becoming a tutor on TechConnect.
+          </Text>
+          <Text style={baseStyles.text}>
+            After careful review, we regret to inform you that we are unable to approve your tutor application at this time.
+          </Text>
+          {props.reason && (
+            <Section style={baseStyles.infoBox}>
+              <Text style={{ margin: "0" }}>
+                <strong>Reason:</strong> {props.reason}
+              </Text>
+            </Section>
+          )}
+          <Text style={baseStyles.text}>
+            This decision doesn't reflect on your abilities or potential. You're welcome to reapply in the future or continue using TechConnect as a learner.
+          </Text>
+          <Text style={baseStyles.text}>
+            If you have any questions, please feel free to contact our support team.
+          </Text>
+          <Link href="https://cit-techconnect.org" style={baseStyles.button}>
+            Back to TechConnect
+          </Link>
+          <Section style={baseStyles.footer}>
+            <Text>This is an automated email from TechConnect. Please do not reply to this email.</Text>
+            <Text>© 2024 TechConnect. All rights reserved.</Text>
+          </Section>
+        </Section>
+      </Container>
+    </Body>
+  </Html>
+);
 

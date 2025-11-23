@@ -10,7 +10,7 @@ const corsHeaders = {
 
 interface NotificationPayload {
   to: string;
-  type: "session_request" | "session_accepted" | "session_rejected" | "session_reminder" | "session_started" | "session_ended" | "session_cancelled" | "instant_session_starting" | "session_missed" | "tutor_cancelled" | "scheduled_session_accepted";
+  type: "session_request" | "session_accepted" | "session_rejected" | "session_reminder" | "session_started" | "session_ended" | "session_cancelled" | "instant_session_starting" | "session_missed" | "tutor_cancelled" | "scheduled_session_accepted" | "tutor_approved" | "tutor_rejected";
   data: {
     recipientName?: string;
     senderName?: string;
@@ -526,6 +526,98 @@ const emailTemplates = {
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
                   If the link doesn't work, log in to TechConnect and check your sessions.
                 </p>
+              </div>
+              
+              <div class="footer">
+                <p>This is an automated email from TechConnect. Please do not reply to this email.</p>
+                <p style="margin-top: 10px;">© 2024 TechConnect. All rights reserved.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  }),
+
+  tutor_approved: (data: any) => ({
+    subject: "🎉 Your Tutor Application Has Been Approved! - TechConnect",
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            ${baseStyles}
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="content">
+              <h1 style="color: #10b981;">🎉 Congratulations!</h1>
+              
+              <p>Hello ${safe(data.recipientName)},</p>
+              
+              <p>Great news! Your application to become a tutor on TechConnect has been approved.</p>
+              
+              <div class="info-box">
+                <p style="margin: 0;">You can now start accepting tutoring sessions and helping learners succeed!</p>
+              </div>
+              
+              <p>Here's what you can do next:</p>
+              <ul style="color: #333; line-height: 1.8;">
+                <li>Set your availability schedule</li>
+                <li>Complete your profile with subjects you can teach</li>
+                <li>Start accepting session requests from learners</li>
+                <li>Share educational resources with the community</li>
+              </ul>
+              
+              <div style="text-align: center;">
+                <a href="https://cit-techconnect.org/tutor/dashboard" class="button">Go to Tutor Dashboard</a>
+              </div>
+              
+              <div class="footer">
+                <p>This is an automated email from TechConnect. Please do not reply to this email.</p>
+                <p style="margin-top: 10px;">© 2024 TechConnect. All rights reserved.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  }),
+
+  tutor_rejected: (data: any) => ({
+    subject: "Update on Your Tutor Application - TechConnect",
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            ${baseStyles}
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="content">
+              <h1>Application Update</h1>
+              
+              <p>Hello ${safe(data.recipientName)},</p>
+              
+              <p>Thank you for your interest in becoming a tutor on TechConnect.</p>
+              
+              <p>After careful review, we regret to inform you that we are unable to approve your tutor application at this time.</p>
+              
+              ${data.reason ? `
+                <div class="info-box">
+                  <p style="margin: 0;"><strong>Reason:</strong> ${safe(data.reason)}</p>
+                </div>
+              ` : ''}
+              
+              <p>This decision doesn't reflect on your abilities or potential. You're welcome to reapply in the future or continue using TechConnect as a learner.</p>
+              
+              <p>If you have any questions, please feel free to contact our support team.</p>
+              
+              <div style="text-align: center;">
+                <a href="https://cit-techconnect.org" class="button">Back to TechConnect</a>
               </div>
               
               <div class="footer">

@@ -65,11 +65,42 @@ export default function AdminApprovals() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      // Update tutor status
       const { error } = await supabase
         .from("tutor_profiles")
         .update({ status })
         .eq("id", id);
       if (error) throw error;
+
+      // Get tutor details for email
+      const { data: tutorProfile } = await supabase
+        .from("tutor_profiles")
+        .select("user_id, profiles(full_name, email)")
+        .eq("id", id)
+        .single();
+
+      if (tutorProfile?.profiles) {
+        // Send email notification
+        const emailType = status === "approved" ? "tutor_approved" : "tutor_rejected";
+        
+        try {
+          const { error: emailError } = await supabase.functions.invoke("send-notification-email", {
+            body: {
+              to: tutorProfile.profiles.email,
+              type: emailType,
+              data: {
+                recipientName: tutorProfile.profiles.full_name,
+              },
+            },
+          });
+
+          if (emailError) {
+            console.error("Failed to send email:", emailError);
+          }
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
+        }
+      }
     },
     onSuccess: (_, variables) => {
       toast.success(`Tutor ${variables.status === "approved" ? "approved" : "rejected"}`);
