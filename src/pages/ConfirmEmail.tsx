@@ -91,6 +91,8 @@ const ConfirmEmail = () => {
       const error = searchParams.get('error') || hashParams.get('error');
       const errorDescription = searchParams.get('error_description') || hashParams.get('error_description');
       
+      console.log("🔍 Checking access - hasTokenParams:", !!hasTokenParams, "searchParams:", Object.fromEntries(searchParams.entries()));
+      
       // Check if user came from registration (has state)
       const cameFromRegistration = location.state?.fromRegistration;
       
@@ -100,16 +102,20 @@ const ConfirmEmail = () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
       // Block direct access unless:
-      // 1. Has token params (email confirmation link)
+      // 1. Has token params (email confirmation link) - MOST IMPORTANT
       // 2. Came from registration page
-      // 3. Has a session AND email is already confirmed (for tab sync)
+      // 3. Has a session (even without confirmed email, to allow waiting state)
       const hasConfirmedEmail = currentUser?.email_confirmed_at || currentUser?.confirmed_at;
       
-      if (!hasTokenParams && !cameFromRegistration && !(currentSession && hasConfirmedEmail)) {
+      // RELAXED: Allow if has token params OR came from registration OR has ANY session
+      // This ensures email confirmation links always work
+      if (!hasTokenParams && !cameFromRegistration && !currentSession) {
         console.log("⛔ Direct access blocked - no valid context. Redirecting to home");
         navigate('/', { replace: true });
         return;
       }
+      
+      console.log("✅ Access allowed - hasTokenParams:", !!hasTokenParams, "cameFromRegistration:", cameFromRegistration, "hasSession:", !!currentSession);
       
       // Handle errors from email confirmation
       if (error) {
