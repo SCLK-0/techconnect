@@ -79,24 +79,27 @@ export default function AdminApprovals() {
         .single();
 
       if (tutorProfile?.user_id) {
-        // Get user profile with email
+        // Get user's full name from profiles
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name, email")
+          .select("full_name")
           .eq("user_id", tutorProfile.user_id)
           .single();
 
-        if (profile?.email) {
+        // Get email from auth.users via admin API
+        const { data: { user: authUser }, error: userError } = await supabase.auth.admin.getUserById(tutorProfile.user_id);
+
+        if (authUser?.email) {
           // Send email notification
           const emailType = status === "approved" ? "tutor_approved" : "tutor_rejected";
           
           try {
             const { error: emailError } = await supabase.functions.invoke("send-notification-email", {
               body: {
-                to: profile.email,
+                to: authUser.email,
                 type: emailType,
                 data: {
-                  recipientName: profile.full_name,
+                  recipientName: profile?.full_name || "Tutor",
                 },
               },
             });
@@ -104,13 +107,13 @@ export default function AdminApprovals() {
             if (emailError) {
               console.error("Failed to send email:", emailError);
             } else {
-              console.log(`✅ Email sent to ${profile.email}`);
+              console.log(`✅ Email sent to ${authUser.email}`);
             }
           } catch (emailError) {
             console.error("Error sending email:", emailError);
           }
         } else {
-          console.error("No email found for tutor");
+          console.error("No email found for tutor:", userError);
         }
       }
     },
