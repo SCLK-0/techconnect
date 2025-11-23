@@ -17,6 +17,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { ResourcePreviewDialog } from "@/components/learner/ResourcePreviewDialog";
 
 export default function AdminResources() {
+  useAdminSession();
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedResource, setSelectedResource] = useState<any>(null);

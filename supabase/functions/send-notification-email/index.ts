@@ -65,7 +65,7 @@ const emailTemplates = {
                 <p>Please log in to TechConnect to review and respond to this request.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph/tutor/requests" class="button">View Request</a>
+                  <a href="https://cit-techconnect.org/tutor/requests" class="button">View Request</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -121,7 +121,7 @@ const emailTemplates = {
                 <p>Get ready for your tutoring session. Make sure you have a stable internet connection and your camera/microphone are working.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph/learner/sessions" class="button">View Session Details</a>
+                  <a href="https://cit-techconnect.org/learner/sessions" class="button">View Session Details</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -178,7 +178,7 @@ const emailTemplates = {
                 <p>You can try requesting another session or browse other available tutors.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph/learner/tutors" class="button">Browse Tutors</a>
+                  <a href="https://cit-techconnect.org/learner/tutors" class="button">Browse Tutors</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -240,7 +240,7 @@ const emailTemplates = {
                 </ul>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph" class="button">Join Session</a>
+                  <a href="https://cit-techconnect.org" class="button">Join Session</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -296,7 +296,7 @@ const emailTemplates = {
                 <p>If you'd like to reschedule or book another session, please visit TechConnect.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph" class="button">Back to TechConnect</a>
+                  <a href="https://cit-techconnect.org" class="button">Back to TechConnect</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -352,7 +352,7 @@ const emailTemplates = {
                 <p>Click the button below to join the session immediately.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph/video-session/${safe(data.sessionId)}" class="button">Join Session Now</a>
+                  <a href="https://cit-techconnect.org/video-session/${safe(data.sessionId)}" class="button">Join Session Now</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -408,7 +408,7 @@ const emailTemplates = {
                 <p>If this was unintentional, you can reschedule or book another session with this tutor.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph" class="button">Back to TechConnect</a>
+                  <a href="https://cit-techconnect.org" class="button">Back to TechConnect</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -464,7 +464,7 @@ const emailTemplates = {
                 <p>You can reschedule with this tutor or browse other available tutors on TechConnect.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph/learner/tutors" class="button">Browse Tutors</a>
+                  <a href="https://cit-techconnect.org/learner/tutors" class="button">Browse Tutors</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -520,7 +520,7 @@ const emailTemplates = {
                 <p>Get ready for your tutoring session. Make sure you have a stable internet connection and your camera/microphone are working.</p>
                 
                 <div style="text-align: center;">
-                  <a href="https://techconnect.cit.edu.ph/learner/sessions" class="button">View Session Details</a>
+                  <a href="https://cit-techconnect.org/learner/sessions" class="button">View Session Details</a>
                 </div>
                 
                 <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
@@ -611,5 +611,6 @@ serve(async (req) => {
     );
   }
 });
+
 
 

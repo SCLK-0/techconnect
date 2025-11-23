@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Calendar, FileText, MessageSquare, Search, Video } from "lucide-react";
+import { Calendar, FileText, MessageSquare, Search, Video, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import logo from "@/assets/logo.png";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { WhatsNewCard } from "@/components/WhatsNewCard";
+import { format } from "date-fns";
 
 export default function LearnerDashboard() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function LearnerDashboard() {
   const [upcomingSessions, setUpcomingSessions] = useState<number | null>(null);
   const [completedSessions, setCompletedSessions] = useState<number | null>(null);
   const [resourcesCount, setResourcesCount] = useState<number | null>(null);
+  const [recentAnnouncements, setRecentAnnouncements] = useState<any[]>([]);
   const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
@@ -83,7 +85,24 @@ export default function LearnerDashboard() {
       }
     };
 
+    const fetchAnnouncements = async () => {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("*")
+        .or(`expires_at.is.null,expires_at.gte.${now}`)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      
+      if (error) {
+        console.error("Error fetching announcements:", error);
+      } else {
+        setRecentAnnouncements(data || []);
+      }
+    };
+
     fetchUserProfile();
+    fetchAnnouncements();
     fetchSessionStats().then(() => setInitialLoad(false));
 
     // Set up real-time subscription for sessions
@@ -273,14 +292,41 @@ export default function LearnerDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="flex flex-col">
                   <CardHeader>
                     <CardTitle>Recent Announcements</CardTitle>
                     <CardDescription>Stay updated with the latest news</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">No announcements yet</p>
+                  <CardContent className="space-y-3 flex-1">
+                    {recentAnnouncements.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No announcements yet</p>
+                    ) : (
+                      recentAnnouncements.map((announcement) => (
+                        <div key={announcement.id} className="space-y-1">
+                          <div className="flex items-start gap-2">
+                            <Megaphone className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium line-clamp-1">{announcement.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(announcement.created_at), "MMM d, yyyy")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </CardContent>
+                  {recentAnnouncements.length > 0 && (
+                    <div className="px-6 pb-6 pt-0">
+                      <Button 
+                        variant="link" 
+                        className="w-full p-0 h-auto text-sm" 
+                        onClick={() => navigate("/announcements")}
+                      >
+                        View all announcements →
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               </div>
             </div>

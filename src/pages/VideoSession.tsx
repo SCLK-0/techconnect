@@ -301,17 +301,39 @@ export default function VideoSession() {
         const status = session.session_status as "waiting" | "in_progress" | "completed";
         setSessionStatus(status || "waiting");
         
-        // If session is already completed, show session log for learner (not in realtime subscription)
-        if (status === "completed" && role === "learner") {
-          console.log("📝 Session already completed on load - showing log");
-          toast.info("This session has ended");
-          setIsLoadingMedia(false);
-          setHasTestedDevices(true);
-          if (!logModalShown && !isMonitorMode) {
-            setShowLogModal(true);
-            setLogModalShown(true);
+        // If session is already completed, show session log or redirect
+        if (status === "completed") {
+          console.log("📝 Session already completed on load");
+          
+          if (role === "tutor" && !isMonitorMode) {
+            // Show session log modal for tutors if not shown yet
+            setIsLoadingMedia(false);
+            setHasTestedDevices(true);
+            if (!logModalShown) {
+              console.log("📝 Showing log modal for tutor");
+              toast.info("This session has ended");
+              setShowLogModal(true);
+              setLogModalShown(true);
+            } else {
+              // If log was already shown, redirect away
+              console.log("🔄 Log already shown, redirecting tutor");
+              window.location.replace("/tutor/sessions");
+            }
+            return; // Don't initialize media devices
           }
-          return; // Don't initialize media devices
+          
+          if (role === "learner") {
+            // Show session log for learners
+            console.log("📝 Showing log for learner");
+            toast.info("This session has ended");
+            setIsLoadingMedia(false);
+            setHasTestedDevices(true);
+            if (!logModalShown && !isMonitorMode) {
+              setShowLogModal(true);
+              setLogModalShown(true);
+            }
+            return; // Don't initialize media devices
+          }
         }
         
         // Show admit control immediately ONLY if learner is waiting (not if already in progress)
@@ -936,19 +958,7 @@ export default function VideoSession() {
 
       setPeer(newPeer);
 
-      // Set connection timeout
-      const connectionTimeout = setTimeout(() => {
-        if (!newPeer.open) {
-          console.error("⏰ Peer connection timeout");
-          toast.error("Connection timeout", {
-            description: "Unable to establish peer connection. Please check your internet and try again."
-          });
-          newPeer.destroy();
-        }
-      }, 15000); // 15 second timeout
-
       newPeer.on("open", async (id) => {
-        clearTimeout(connectionTimeout); // Clear timeout on successful connection
         console.log("My peer ID is: " + id);
         setPeer(newPeer);
         
@@ -1081,8 +1091,17 @@ export default function VideoSession() {
         console.log("⚠️ Peer disconnected from server");
         setIsConnected(false);
         
-        // Don't immediately reconnect - let the error handler manage it
-        // This prevents reconnection loops
+        // Attempt automatic reconnection after a short delay
+        setTimeout(() => {
+          if (!newPeer.destroyed && newPeer.disconnected) {
+            console.log("🔄 Attempting automatic peer reconnection...");
+            try {
+              newPeer.reconnect();
+            } catch (e) {
+              console.error("Error during auto-reconnect:", e);
+            }
+          }
+        }, 1000);
       });
       
       // Handle peer errors with proper backoff
@@ -1102,16 +1121,19 @@ export default function VideoSession() {
             clearTimeout(reconnectTimeout);
           }
           
-          // Only show toast on first error, not on every reconnect attempt
-          if (reconnectAttempt === 0) {
+          reconnectAttempt++;
+          
+          // Only show toast after second attempt to avoid false alarms
+          if (reconnectAttempt === 2) {
             toast.warning("Connection interrupted - reconnecting...", { duration: 3000 });
           }
           
-          reconnectAttempt++;
-          
           if (reconnectAttempt > maxReconnectAttempts) {
             console.log("❌ Max PeerJS reconnect attempts reached");
-            toast.error("Unable to connect to video server. Please refresh the page.");
+            toast.error("Connection lost", {
+              description: "Unable to reconnect to video server. Please check your internet connection.",
+              duration: 5000
+            });
             reconnectAttempt = 0;
             return;
           }
@@ -1130,6 +1152,9 @@ export default function VideoSession() {
                   if (!newPeer.disconnected) {
                     reconnectAttempt = 0;
                     console.log("✅ PeerJS reconnected successfully");
+                    if (reconnectAttempt >= 2) {
+                      toast.success("Connection restored", { duration: 2000 });
+                    }
                   }
                 }, 2000);
               } catch (e) {
@@ -1951,10 +1976,10 @@ export default function VideoSession() {
     console.log("✅ Session ended successfully");
     toast.success("Session ended");
     
-    // Reload page after a short delay to stop camera and clean up
-    setTimeout(() => {
-      window.location.reload();
-    }, 1500);
+    // Update local state and show session log modal
+    setSessionStatus("completed");
+    setShowLogModal(true);
+    setLogModalShown(true);
   };
 
   const forceEndSession = async () => {
@@ -2005,15 +2030,16 @@ export default function VideoSession() {
     if (role === "learner") {
       setShowFeedbackModal(true);
     } else {
-      // Reload page to stop camera and clean up
-      window.location.href = "/tutor/sessions";
+      // For tutors, completely replace the page to stop camera and prevent reopening
+      window.location.replace("/tutor/sessions");
     }
   };
 
   const handleFeedbackComplete = () => {
     setShowFeedbackModal(false);
-    // Reload page to stop camera and clean up
-    window.location.href = role === "tutor" ? "/tutor/sessions" : "/learner/sessions";
+    // Completely replace the page to stop camera and prevent reopening
+    const targetPath = role === "tutor" ? "/tutor/sessions" : "/learner/sessions";
+    window.location.replace(targetPath);
   };
 
   const handleAdmitLearner = async () => {

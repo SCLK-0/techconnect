@@ -22,9 +22,21 @@ const AdminLogin = () => {
       if (isCallback) {
         console.log("✅ OAuth callback detected, processing...");
         setLoading(true); // Show loading while processing
+        // Mark this as a fresh admin login
+        sessionStorage.setItem('admin_session_active', 'true');
       }
       
+      // Check if admin session was active in this browser session
+      const wasAdminSessionActive = sessionStorage.getItem('admin_session_active') === 'true';
+      
       const { data: { session } } = await supabase.auth.getSession();
+      
+      // If there's a session but no active admin session marker, sign out
+      if (session?.user && !wasAdminSessionActive && !isCallback) {
+        console.log("⚠️ Admin session expired (browser was closed), signing out...");
+        await supabase.auth.signOut();
+        return;
+      }
       
       // Check if user is already authenticated (callback or existing session)
       if (session?.user) {
@@ -40,6 +52,8 @@ const AdminLogin = () => {
 
         if (roleData?.role === "admin") {
           console.log("✅ Admin verified! Redirecting to dashboard...");
+          // Mark admin session as active
+          sessionStorage.setItem('admin_session_active', 'true');
           // Clean up the admin OAuth flag
           sessionStorage.removeItem('admin_oauth_attempt');
           // Show toast first

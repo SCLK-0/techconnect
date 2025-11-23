@@ -26,6 +26,7 @@ const announcementSchema = z.object({
 });
 
 export default function AdminAnnouncements() {
+  useAdminSession();
   const { user } = useUserRole();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");

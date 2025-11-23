@@ -156,6 +156,11 @@ export function UserMenu() {
         }
       }
       
+      // Clear admin session marker if admin is logging out
+      if (role === "admin") {
+        sessionStorage.removeItem('admin_session_active');
+      }
+      
       const { error: signOutError } = await supabase.auth.signOut();
       if (signOutError) {
         throw signOutError;

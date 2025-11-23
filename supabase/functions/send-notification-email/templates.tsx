@@ -89,7 +89,7 @@ export const SessionRequestEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             Please log in to TechConnect to review and respond to this request.
           </Text>
-          <Link href="https://techconnect.cit.edu.ph/tutor/requests" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org/tutor/requests" style={baseStyles.button}>
             View Request
           </Link>
           <Section style={baseStyles.footer}>
@@ -125,7 +125,7 @@ export const SessionAcceptedEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             Get ready for your tutoring session. Make sure you have a stable internet connection and your camera/microphone are working.
           </Text>
-          <Link href="https://techconnect.cit.edu.ph/learner/sessions" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org/learner/sessions" style={baseStyles.button}>
             View Session Details
           </Link>
           <Section style={baseStyles.footer}>
@@ -160,7 +160,7 @@ export const SessionRejectedEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             You can try requesting another session or browse other available tutors.
           </Text>
-          <Link href="https://techconnect.cit.edu.ph/learner/tutors" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org/learner/tutors" style={baseStyles.button}>
             Browse Tutors
           </Link>
           <Section style={baseStyles.footer}>
@@ -200,7 +200,7 @@ export const SessionReminderEmail = (props: EmailTemplateProps) => (
             <li>Are in a quiet environment</li>
             <li>Join a few minutes early</li>
           </ul>
-          <Link href="https://techconnect.cit.edu.ph" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org" style={baseStyles.button}>
             Join Session
           </Link>
           <Section style={baseStyles.footer}>
@@ -238,7 +238,7 @@ export const SessionCancelledEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             If you'd like to reschedule or book another session, please visit TechConnect.
           </Text>
-          <Link href="https://techconnect.cit.edu.ph" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org" style={baseStyles.button}>
             Back to TechConnect
           </Link>
           <Section style={baseStyles.footer}>
@@ -274,7 +274,7 @@ export const InstantSessionStartingEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             Click the button below to join the session immediately.
           </Text>
-          <Link href={`https://techconnect.cit.edu.ph/video-session/${props.sessionId}`} style={baseStyles.button}>
+          <Link href={`https://cit-techconnect.org/video-session/${props.sessionId}`} style={baseStyles.button}>
             Join Session Now
           </Link>
           <Section style={baseStyles.footer}>
@@ -310,7 +310,7 @@ export const SessionMissedEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             If this was unintentional, you can reschedule or book another session with this tutor.
           </Text>
-          <Link href="https://techconnect.cit.edu.ph" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org" style={baseStyles.button}>
             Back to TechConnect
           </Link>
           <Section style={baseStyles.footer}>
@@ -348,7 +348,7 @@ export const TutorCancelledEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             You can reschedule with this tutor or browse other available tutors on TechConnect.
           </Text>
-          <Link href="https://techconnect.cit.edu.ph/learner/tutors" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org/learner/tutors" style={baseStyles.button}>
             Browse Tutors
           </Link>
           <Section style={baseStyles.footer}>
@@ -384,7 +384,7 @@ export const ScheduledSessionAcceptedEmail = (props: EmailTemplateProps) => (
           <Text style={baseStyles.text}>
             Get ready for your tutoring session. Make sure you have a stable internet connection and your camera/microphone are working.
           </Text>
-          <Link href="https://techconnect.cit.edu.ph/learner/sessions" style={baseStyles.button}>
+          <Link href="https://cit-techconnect.org/learner/sessions" style={baseStyles.button}>
             View Session Details
           </Link>
           <Section style={baseStyles.footer}>
@@ -396,4 +396,5 @@ export const ScheduledSessionAcceptedEmail = (props: EmailTemplateProps) => (
     </Body>
   </Html>
 );
+
 

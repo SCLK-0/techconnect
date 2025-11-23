@@ -16,6 +16,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 export default function AdminApprovals() {
+  useAdminSession();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"pending" | "rejected">("pending");
   const [currentPage, setCurrentPage] = useState(1);
