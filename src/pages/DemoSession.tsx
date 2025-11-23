@@ -40,6 +40,8 @@ export default function DemoSession() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>("");
   const [selectedMic, setSelectedMic] = useState<string>("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   
   // Video stream refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -545,10 +547,10 @@ export default function DemoSession() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col md:flex-row gap-3 p-3 overflow-hidden min-h-0">
-        {/* Left - Whiteboard/Assets (Hidden on mobile) */}
-        <div className="hidden md:flex flex-[0_0_68%] bg-card rounded-lg border shadow-sm overflow-hidden flex-col min-h-0">
+      {/* Main Content - Desktop: Split layout | Mobile: Stacked layout */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-3 p-3 overflow-hidden min-h-0">
+        {/* Left Panel - Whiteboard/Assets - Desktop: 68% | Mobile: Hidden */}
+        <div className="hidden lg:flex lg:flex-[0_0_68%] bg-card rounded-lg border shadow-sm overflow-hidden flex-col min-h-0">
           {/* Tab Switcher */}
           <div className="flex border-b shrink-0">
             <div className="flex-1">
@@ -763,11 +765,11 @@ export default function DemoSession() {
           </div>
         </div>
 
-        {/* Right - Video & Chat (Full width on mobile) */}
-        <div className="flex-1 md:flex-[0_0_32%] flex flex-col gap-3 min-h-0">
-          {/* Videos */}
+        {/* Right Panel - Video & Chat - Desktop: 32% | Mobile: Full width */}
+        <div className="flex-1 lg:flex-[0_0_32%] flex flex-col gap-3 min-h-0">
+          {/* Video Feeds Section - Desktop: Horizontal | Mobile: Vertical Stack */}
           <div className="bg-card rounded-lg border shadow-sm overflow-hidden shrink-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 p-2">
               {/* Mock Remote Video */}
               <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 aspect-video rounded-lg overflow-hidden group transition-all duration-200">
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -870,8 +872,8 @@ export default function DemoSession() {
             </div>
           </div>
 
-          {/* Chat (Hidden on mobile, shown as modal) */}
-          <div className="hidden md:flex flex-1 bg-card rounded-lg border shadow-sm overflow-hidden min-h-0 flex-col">
+          {/* Chat Section - Desktop: visible | Mobile: hidden (compact icon only) */}
+          <div className="hidden lg:flex flex-1 bg-card rounded-lg border shadow-sm overflow-hidden min-h-0 flex-col">
             {/* Chat Header */}
             <div className="px-4 py-3 border-b bg-gradient-to-r from-background to-muted/30 flex items-center justify-between shrink-0">
               <h3 className="font-semibold text-sm">Session Chat</h3>
@@ -971,8 +973,133 @@ export default function DemoSession() {
               </div>
             </form>
           </div>
+
+          {/* Mobile Chat & Assets Buttons */}
+          <div className="lg:hidden flex gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setIsChatOpen(true);
+                setUnreadMessages(0);
+              }}
+              className="relative flex-1 bg-card rounded-lg border shadow-sm py-3 px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Chat
+              {unreadMessages > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadMessages}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => toast.info("Assets panel is available on desktop")}
+              className="flex-1 bg-card rounded-lg border shadow-sm py-3 px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Assets
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Chat Modal */}
+      {isChatOpen && (
+        <div className="lg:hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-end justify-center p-0">
+          <div className="bg-background w-full h-[90vh] rounded-t-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
+            <div className="p-4 border-b flex items-center justify-between shrink-0 bg-gradient-to-r from-background to-muted/30">
+              <h2 className="text-lg font-semibold">Session Chat</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsChatOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden min-h-0">
+              <ScrollArea className="h-full p-4">
+                <div className="space-y-3" ref={chatScrollRef}>
+                  {messages.map((message) => (
+                    <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
+                        message.isUser
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-muted rounded-bl-sm"
+                      }`}>
+                        <p className="text-sm break-words leading-relaxed">
+                          {message.text}
+                        </p>
+                        <p className={`text-xs mt-1 ${message.isUser ? "opacity-80" : "opacity-60"}`}>
+                          {message.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (messageInput.trim()) {
+                  const userMessage = messageInput.trim();
+                  const newUserMsg = {
+                    id: Date.now().toString(),
+                    text: userMessage,
+                    isUser: true,
+                    time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                  };
+                  setMessages(prev => [...prev, newUserMsg]);
+                  setMessageInput("");
+                  
+                  // Bot replies after a short delay
+                  setTimeout(() => {
+                    const randomReply = botReplies[Math.floor(Math.random() * botReplies.length)];
+                    const botMsg = {
+                      id: (Date.now() + 1).toString(),
+                      text: randomReply,
+                      isUser: false,
+                      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                    };
+                    setMessages(prev => [...prev, botMsg]);
+                  }, 1000 + Math.random() * 1000);
+                }
+              }}
+              className="p-3 border-t bg-background/95 backdrop-blur-sm shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
+                      <Smile className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent 
+                    side="top" 
+                    align="start" 
+                    sideOffset={5}
+                    className="w-auto p-0 border-0 bg-transparent shadow-none"
+                  >
+                    <EmojiPicker onEmojiClick={(emojiData) => {
+                      setMessageInput(prev => prev + emojiData.emoji);
+                      setShowEmojiPicker(false);
+                    }} />
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1"
+                />
+                <Button type="submit" size="icon" className="shrink-0" disabled={!messageInput.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Video Modal */}
       {isFullscreen && (
@@ -1088,31 +1215,7 @@ export default function DemoSession() {
         </div>
       )}
 
-      {/* Mobile Floating Buttons */}
-      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-50">
-        <Button
-          onClick={() => setIsChatFullscreen(true)}
-          className="shadow-lg"
-          size="lg"
-        >
-          <MessageSquare className="h-5 w-5 mr-2" />
-          Chat
-          {messages.length > 0 && (
-            <span className="ml-2 bg-primary-foreground text-primary rounded-full px-2 py-0.5 text-xs font-bold">
-              {messages.length}
-            </span>
-          )}
-        </Button>
-        <Button
-          onClick={() => setIsAssetsFullscreen(true)}
-          variant="outline"
-          className="shadow-lg bg-background"
-          size="lg"
-        >
-          <Upload className="h-5 w-5 mr-2" />
-          Assets
-        </Button>
-      </div>
+
 
       {/* Fullscreen Chat Dialog */}
       <Dialog open={isChatFullscreen} onOpenChange={setIsChatFullscreen}>
