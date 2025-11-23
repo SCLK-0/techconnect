@@ -74,30 +74,43 @@ export default function AdminApprovals() {
       // Get tutor details for email
       const { data: tutorProfile } = await supabase
         .from("tutor_profiles")
-        .select("user_id, profiles(full_name, email)")
+        .select("user_id")
         .eq("id", id)
         .single();
 
-      if (tutorProfile?.profiles) {
-        // Send email notification
-        const emailType = status === "approved" ? "tutor_approved" : "tutor_rejected";
-        
-        try {
-          const { error: emailError } = await supabase.functions.invoke("send-notification-email", {
-            body: {
-              to: tutorProfile.profiles.email,
-              type: emailType,
-              data: {
-                recipientName: tutorProfile.profiles.full_name,
-              },
-            },
-          });
+      if (tutorProfile?.user_id) {
+        // Get user profile with email
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("user_id", tutorProfile.user_id)
+          .single();
 
-          if (emailError) {
-            console.error("Failed to send email:", emailError);
+        if (profile?.email) {
+          // Send email notification
+          const emailType = status === "approved" ? "tutor_approved" : "tutor_rejected";
+          
+          try {
+            const { error: emailError } = await supabase.functions.invoke("send-notification-email", {
+              body: {
+                to: profile.email,
+                type: emailType,
+                data: {
+                  recipientName: profile.full_name,
+                },
+              },
+            });
+
+            if (emailError) {
+              console.error("Failed to send email:", emailError);
+            } else {
+              console.log(`✅ Email sent to ${profile.email}`);
+            }
+          } catch (emailError) {
+            console.error("Error sending email:", emailError);
           }
-        } catch (emailError) {
-          console.error("Error sending email:", emailError);
+        } else {
+          console.error("No email found for tutor");
         }
       }
     },
