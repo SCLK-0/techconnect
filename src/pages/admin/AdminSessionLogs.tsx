@@ -25,7 +25,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useSearchParams } from "react-router-dom";
 
 export default function AdminSessionLogs() {
-  useAdminSession();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLog, setSelectedLog] = useState<any>(null);

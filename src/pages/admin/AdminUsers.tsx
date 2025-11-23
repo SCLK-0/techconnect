@@ -21,7 +21,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useUserRole } from "@/hooks/useUserRole";
 
 export default function AdminUsers() {
-  useAdminSession();
   const { user: currentUser } = useUserRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");

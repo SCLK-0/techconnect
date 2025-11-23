@@ -14,7 +14,6 @@ import { seedAdminData } from "@/utils/seedAdminData";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 export default function AdminLiveMonitoring() {
-  useAdminSession();
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
