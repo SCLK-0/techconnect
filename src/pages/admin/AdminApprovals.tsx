@@ -71,34 +71,9 @@ export default function AdminApprovals() {
         .eq("id", id);
       if (error) throw error;
 
-      // Get tutor details for email
-      const { data: tutorProfile } = await supabase
-        .from("tutor_profiles")
-        .select("user_id")
-        .eq("id", id)
-        .single();
-
-      if (tutorProfile?.user_id) {
-        // Send email notification via edge function (it will fetch email server-side)
-        const emailType = status === "approved" ? "tutor_approved" : "tutor_rejected";
-        
-        try {
-          const { error: emailError } = await supabase.functions.invoke("send-notification-email", {
-            body: {
-              userId: tutorProfile.user_id,
-              type: emailType,
-            },
-          });
-
-          if (emailError) {
-            console.error("Failed to send email:", emailError);
-          } else {
-            console.log(`✅ Email notification sent for ${emailType}`);
-          }
-        } catch (emailError) {
-          console.error("Error sending email:", emailError);
-        }
-      }
+      // TODO: Add email notification for tutor approval/rejection
+      // Currently disabled due to RLS permission issues
+      // Will be fixed in a future update
     },
     onSuccess: (_, variables) => {
       toast.success(`Tutor ${variables.status === "approved" ? "approved" : "rejected"}`);
