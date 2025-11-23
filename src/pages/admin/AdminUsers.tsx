@@ -364,8 +364,6 @@ export default function AdminUsers() {
                       </TableBody>
                     </Table>
                   </div>
-                  
-                  {renderPagination()}
 
                   {/* Mobile Card View */}
                   <div className="md:hidden space-y-4">
