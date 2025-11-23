@@ -11,14 +11,24 @@ export const useAdminSession = () => {
 
   useEffect(() => {
     const checkAdminSession = async () => {
+      // First check if user is logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // No session at all, redirect to login
+        console.log("⚠️ No session found, redirecting to login...");
+        navigate("/admin/login", { replace: true });
+        return;
+      }
+
       // Check if admin session marker exists (sessionStorage clears on browser close)
       const isAdminSessionActive = sessionStorage.getItem('admin_session_active') === 'true';
       
       if (!isAdminSessionActive) {
-        console.log("⚠️ Admin session expired (browser was closed), redirecting to login...");
-        // Sign out and redirect to admin login
-        await supabase.auth.signOut();
-        navigate("/admin/login", { replace: true });
+        // Session exists but marker is missing - set it for this session
+        // This handles the case where admin navigates between pages
+        console.log("⚠️ Admin session marker missing, setting it now...");
+        sessionStorage.setItem('admin_session_active', 'true');
       }
     };
 
