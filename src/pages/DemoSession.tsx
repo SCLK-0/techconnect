@@ -546,7 +546,7 @@ export default function DemoSession() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex gap-3 p-3 overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col md:flex-row gap-3 p-3 overflow-hidden min-h-0">
         {/* Left - Whiteboard/Assets (Hidden on mobile) */}
         <div className="hidden md:flex flex-[0_0_68%] bg-card rounded-lg border shadow-sm overflow-hidden flex-col min-h-0">
           {/* Tab Switcher */}
@@ -767,7 +767,7 @@ export default function DemoSession() {
         <div className="flex-1 md:flex-[0_0_32%] flex flex-col gap-3 min-h-0">
           {/* Videos */}
           <div className="bg-card rounded-lg border shadow-sm overflow-hidden shrink-0">
-            <div className="grid grid-cols-2 gap-2 p-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
               {/* Mock Remote Video */}
               <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 aspect-video rounded-lg overflow-hidden group transition-all duration-200">
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -870,8 +870,8 @@ export default function DemoSession() {
             </div>
           </div>
 
-          {/* Chat */}
-          <div className="flex-1 bg-card rounded-lg border shadow-sm overflow-hidden min-h-0 flex flex-col">
+          {/* Chat (Hidden on mobile, shown as modal) */}
+          <div className="hidden md:flex flex-1 bg-card rounded-lg border shadow-sm overflow-hidden min-h-0 flex-col">
             {/* Chat Header */}
             <div className="px-4 py-3 border-b bg-gradient-to-r from-background to-muted/30 flex items-center justify-between shrink-0">
               <h3 className="font-semibold text-sm">Session Chat</h3>
@@ -1087,6 +1087,32 @@ export default function DemoSession() {
           </div>
         </div>
       )}
+
+      {/* Mobile Floating Buttons */}
+      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-50">
+        <Button
+          onClick={() => setIsChatFullscreen(true)}
+          className="shadow-lg"
+          size="lg"
+        >
+          <MessageSquare className="h-5 w-5 mr-2" />
+          Chat
+          {messages.length > 0 && (
+            <span className="ml-2 bg-primary-foreground text-primary rounded-full px-2 py-0.5 text-xs font-bold">
+              {messages.length}
+            </span>
+          )}
+        </Button>
+        <Button
+          onClick={() => setIsAssetsFullscreen(true)}
+          variant="outline"
+          className="shadow-lg bg-background"
+          size="lg"
+        >
+          <Upload className="h-5 w-5 mr-2" />
+          Assets
+        </Button>
+      </div>
 
       {/* Fullscreen Chat Dialog */}
       <Dialog open={isChatFullscreen} onOpenChange={setIsChatFullscreen}>
