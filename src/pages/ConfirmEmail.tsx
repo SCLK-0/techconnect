@@ -94,12 +94,19 @@ const ConfirmEmail = () => {
       // Check if user came from registration (has state)
       const cameFromRegistration = location.state?.fromRegistration;
       
-      // Allow access if: has token params OR came from registration OR already has a session
+      // Allow access if: has token params OR came from registration OR already has a confirmed session
       // (The session check allows Tab B to work when opened from email link)
       const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      if (!hasTokenParams && !cameFromRegistration && !currentSession) {
-        console.log("Direct access blocked - redirecting to home");
+      // Block direct access unless:
+      // 1. Has token params (email confirmation link)
+      // 2. Came from registration page
+      // 3. Has a session AND email is already confirmed (for tab sync)
+      const hasConfirmedEmail = currentUser?.email_confirmed_at || currentUser?.confirmed_at;
+      
+      if (!hasTokenParams && !cameFromRegistration && !(currentSession && hasConfirmedEmail)) {
+        console.log("⛔ Direct access blocked - no valid context. Redirecting to home");
         navigate('/', { replace: true });
         return;
       }
@@ -162,11 +169,18 @@ const ConfirmEmail = () => {
               } else if (role === "tutor") {
                 navigate("/tutor/dashboard", { replace: true });
               } else {
+                // Unknown role, redirect to login
+                console.log("Unknown role, redirecting to login");
                 navigate("/login", { replace: true });
               }
             } else {
-              // No role yet, redirect to role selection
-              console.log("No role found, redirecting to role selection");
+              // No role assigned - likely OAuth user without metadata
+              console.log("⚠️ No role found - OAuth user needs to complete registration");
+              toast({
+                title: "Complete Your Profile",
+                description: "Please select your role and complete your profile",
+                variant: "default",
+              });
               navigate("/role-selection", { replace: true });
             }
           }, 5000);
@@ -223,10 +237,18 @@ const ConfirmEmail = () => {
             } else if (role === "tutor") {
               navigate("/tutor/dashboard", { replace: true });
             } else {
+              // Unknown role, redirect to login
+              console.log("Unknown role, redirecting to login");
               navigate("/login", { replace: true });
             }
           } else {
-            console.log("No role found, redirecting to role selection");
+            // No role assigned - likely OAuth user without metadata
+            console.log("⚠️ No role found - OAuth user needs to complete registration");
+            toast({
+              title: "Complete Your Profile",
+              description: "Please select your role and complete your profile",
+              variant: "default",
+            });
             navigate("/role-selection", { replace: true });
           }
         }, 5000);
