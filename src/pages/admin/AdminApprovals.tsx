@@ -79,41 +79,24 @@ export default function AdminApprovals() {
         .single();
 
       if (tutorProfile?.user_id) {
-        // Get user's full name from profiles
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("user_id", tutorProfile.user_id)
-          .single();
+        // Send email notification via edge function (it will fetch email server-side)
+        const emailType = status === "approved" ? "tutor_approved" : "tutor_rejected";
+        
+        try {
+          const { error: emailError } = await supabase.functions.invoke("send-notification-email", {
+            body: {
+              userId: tutorProfile.user_id,
+              type: emailType,
+            },
+          });
 
-        // Get email from auth.users via admin API
-        const { data: { user: authUser }, error: userError } = await supabase.auth.admin.getUserById(tutorProfile.user_id);
-
-        if (authUser?.email) {
-          // Send email notification
-          const emailType = status === "approved" ? "tutor_approved" : "tutor_rejected";
-          
-          try {
-            const { error: emailError } = await supabase.functions.invoke("send-notification-email", {
-              body: {
-                to: authUser.email,
-                type: emailType,
-                data: {
-                  recipientName: profile?.full_name || "Tutor",
-                },
-              },
-            });
-
-            if (emailError) {
-              console.error("Failed to send email:", emailError);
-            } else {
-              console.log(`✅ Email sent to ${authUser.email}`);
-            }
-          } catch (emailError) {
-            console.error("Error sending email:", emailError);
+          if (emailError) {
+            console.error("Failed to send email:", emailError);
+          } else {
+            console.log(`✅ Email notification sent for ${emailType}`);
           }
-        } else {
-          console.error("No email found for tutor:", userError);
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
         }
       }
     },

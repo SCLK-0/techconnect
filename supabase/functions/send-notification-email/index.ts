@@ -9,9 +9,10 @@ const corsHeaders = {
 };
 
 interface NotificationPayload {
-  to: string;
+  to?: string;
+  userId?: string;
   type: "session_request" | "session_accepted" | "session_rejected" | "session_reminder" | "session_started" | "session_ended" | "session_cancelled" | "instant_session_starting" | "session_missed" | "tutor_cancelled" | "scheduled_session_accepted" | "tutor_approved" | "tutor_rejected";
-  data: {
+  data?: {
     recipientName?: string;
     senderName?: string;
     subject?: string;
@@ -648,7 +649,34 @@ serve(async (req) => {
     const payload: NotificationPayload = await req.json();
     console.log("Received notification payload:", JSON.stringify(payload, null, 2));
 
-    const { to, type, data } = payload;
+    let { to, type, data, userId } = payload;
+
+    // If userId is provided instead of email, fetch email from Supabase
+    if (userId && !to) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error("Supabase configuration missing");
+      }
+
+      // Fetch user email and name from profiles
+      const profileResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?user_id=eq.${userId}&select=email,full_name`, {
+        headers: {
+          "apikey": supabaseServiceKey,
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+        },
+      });
+
+      const profiles = await profileResponse.json();
+      if (profiles && profiles.length > 0) {
+        to = profiles[0].email;
+        if (!data) data = {};
+        if (!data.recipientName) data.recipientName = profiles[0].full_name;
+      } else {
+        throw new Error(`No profile found for userId: ${userId}`);
+      }
+    }
 
     if (!to || !type) {
       throw new Error("Missing 'to' or 'type' in payload");
