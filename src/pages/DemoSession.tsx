@@ -524,7 +524,8 @@ export default function DemoSession() {
       <div className="bg-primary/20 border-b border-primary/30 px-6 py-2">
         <p className="text-sm font-medium text-primary flex items-center gap-2">
           <span className="inline-block w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-          This is a dummy session - No data will be saved
+          <span className="hidden sm:inline">This is a dummy session - No data will be saved. Whiteboard is for desktop mode only.</span>
+          <span className="sm:hidden">Dummy session - Whiteboard available on desktop only</span>
         </p>
       </div>
 
@@ -546,8 +547,8 @@ export default function DemoSession() {
 
       {/* Main Content */}
       <div className="flex-1 flex gap-3 p-3 overflow-hidden min-h-0">
-        {/* Left - Whiteboard/Assets */}
-        <div className="flex-[0_0_68%] bg-card rounded-lg border shadow-sm overflow-hidden flex flex-col min-h-0">
+        {/* Left - Whiteboard/Assets (Hidden on mobile) */}
+        <div className="hidden md:flex flex-[0_0_68%] bg-card rounded-lg border shadow-sm overflow-hidden flex-col min-h-0">
           {/* Tab Switcher */}
           <div className="flex border-b shrink-0">
             <div className="flex-1">
@@ -762,8 +763,8 @@ export default function DemoSession() {
           </div>
         </div>
 
-        {/* Right - Video & Chat */}
-        <div className="flex-[0_0_32%] flex flex-col gap-3 min-h-0">
+        {/* Right - Video & Chat (Full width on mobile) */}
+        <div className="flex-1 md:flex-[0_0_32%] flex flex-col gap-3 min-h-0">
           {/* Videos */}
           <div className="bg-card rounded-lg border shadow-sm overflow-hidden shrink-0">
             <div className="grid grid-cols-2 gap-2 p-2">
