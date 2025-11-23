@@ -8,10 +8,8 @@ import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TrendingUp, Users, Calendar, DollarSign, FileText, UserCheck } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { useAdminSession } from "@/hooks/useAdminSession";
 
 export default function AdminAnalytics() {
-  useAdminSession();
   const { data: stats, isLoading, isFetching } = useQuery({
     queryKey: ["admin-analytics"],
     queryFn: async () => {

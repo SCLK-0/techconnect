@@ -10,10 +10,8 @@ import { Users, UserCheck, Activity, Calendar, Megaphone } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
-import { useAdminSession } from "@/hooks/useAdminSession";
 
 export default function AdminDashboard() {
-  useAdminSession();
   const { data: stats, isLoading, isFetching } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
