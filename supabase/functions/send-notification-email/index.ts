@@ -649,7 +649,7 @@ serve(async (req) => {
     const payload: NotificationPayload = await req.json();
     console.log("Received notification payload:", JSON.stringify(payload, null, 2));
 
-    let { to, type, data, userId } = payload;
+    let { to, type, data = {}, userId } = payload;
 
     // If userId is provided instead of email, fetch email from Supabase
     if (userId && !to) {
@@ -668,11 +668,14 @@ serve(async (req) => {
         },
       });
 
+      if (!profileResponse.ok) {
+        throw new Error(`Failed to fetch profile: ${profileResponse.statusText}`);
+      }
+
       const profiles = await profileResponse.json();
       if (profiles && profiles.length > 0) {
         to = profiles[0].email;
-        if (!data) data = {};
-        if (!data.recipientName) data.recipientName = profiles[0].full_name;
+        data.recipientName = profiles[0].full_name || "User";
       } else {
         throw new Error(`No profile found for userId: ${userId}`);
       }
