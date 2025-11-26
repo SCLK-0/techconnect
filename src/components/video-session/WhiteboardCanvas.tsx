@@ -79,6 +79,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   const [remoteCursors, setRemoteCursors] = useState<Record<string, CursorPosition>>({});
   const [bothUsersPresent, setBothUsersPresent] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'failed' | 'disconnected'>('connecting');
+  const presenceCheckInterval = useRef<NodeJS.Timeout | null>(null);
   const isRemoteUpdate = useRef(false);
   const channelRef = useRef<any>(null);
   const isChannelReady = useRef(false);
@@ -339,22 +340,22 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             
             console.log(`👥 ${displayName} other users present:`, Object.keys(presences).length);
             setUserPresences(presences);
+            userPresencesRef.current = presences;
             
             // Update bothUsersPresent based on actual presence count
             const hasOtherUsers = Object.keys(presences).length > 0;
-            console.log(`🔄 ${displayName} hasOtherUsers:`, hasOtherUsers, "bothUsersPresent:", bothUsersPresent);
+            console.log(`🔄 ${displayName} hasOtherUsers:`, hasOtherUsers, "current bothUsersPresent:", bothUsersPresent);
             
-            if (hasOtherUsers !== bothUsersPresent) {
-              setBothUsersPresent(hasOtherUsers);
+            // Always update bothUsersPresent to match current state
+            if (hasOtherUsers) {
+              console.log("✅ Other user connected - whiteboard enabled");
+              setBothUsersPresent(true);
+            } else {
+              console.log("⏳ No other users - whiteboard disabled");
+              setBothUsersPresent(false);
               const isMobile = window.innerWidth < 768;
-              if (hasOtherUsers) {
-                console.log("✅ Other user connected - whiteboard enabled");
-                // Toast removed - whiteboard connection is automatic
-              } else {
-                console.log("⏳ Other user disconnected - whiteboard disabled");
-                if (!isMobile) {
-                  toast.info("Waiting for other user...");
-                }
+              if (!isMobile) {
+                toast.info("Waiting for other user...");
               }
             }
             
@@ -458,6 +459,27 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             // Set channel ready immediately - no delay
             isChannelReady.current = true;
             console.log(`🎨 ${displayName} channel is now ready for broadcasts`);
+            
+            // Start periodic presence check to ensure sync stays accurate
+            presenceCheckInterval.current = setInterval(() => {
+              const state = channel.presenceState();
+              const otherUsers = Object.keys(state).filter(key => {
+                const presenceArray = state[key] as any[];
+                return presenceArray.length > 0 && presenceArray[0].userId !== user.id;
+              });
+              
+              const hasOtherUsers = otherUsers.length > 0;
+              console.log(`🔄 Periodic presence check: ${otherUsers.length} other users`);
+              
+              // Update bothUsersPresent if it doesn't match reality
+              setBothUsersPresent(prev => {
+                if (prev !== hasOtherUsers) {
+                  console.log(`🔄 Correcting bothUsersPresent: ${prev} -> ${hasOtherUsers}`);
+                  return hasOtherUsers;
+                }
+                return prev;
+              });
+            }, 3000); // Check every 3 seconds
           } else {
             console.log(`👀 ${displayName} in monitor mode - not tracking presence`);
             isChannelReady.current = true;
@@ -934,6 +956,13 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
 
       return () => {
         window.removeEventListener('resize', updateCanvasSize);
+        
+        // Clear presence check interval
+        if (presenceCheckInterval.current) {
+          clearInterval(presenceCheckInterval.current);
+          presenceCheckInterval.current = null;
+        }
+        
         // Final save on unmount with custom properties
         const objects = fabricCanvas.getObjects().map(obj => {
           const objData = obj.toObject();
@@ -966,12 +995,13 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
     initCanvas();
   }, [sessionId]);
 
-  // Enable/disable canvas interaction based on both users being present
-  // Simplified: Only require presence, not peer connection (more reliable)
+  // Enable/disable canvas interaction based on both users being present AND peer connected
+  // This ensures whiteboard only works when video call is active
   useEffect(() => {
     if (!canvas || isMonitorMode) return;
 
-    const isWhiteboardEnabled = bothUsersPresent && connectionStatus === 'connected';
+    // Whiteboard requires: presence sync + channel connected + peer video connected
+    const isWhiteboardEnabled = bothUsersPresent && connectionStatus === 'connected' && debouncedPeerConnected;
 
     if (isWhiteboardEnabled) {
       // Enable interaction
@@ -988,9 +1018,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         }
       });
       
-      console.log("✅ Whiteboard enabled - bothUsers:", bothUsersPresent, "connected:", connectionStatus);
+      console.log("✅ Whiteboard ENABLED - presence:", bothUsersPresent, "channel:", connectionStatus, "peer:", debouncedPeerConnected);
     } else {
-      // Disable interaction until conditions are met
+      // Disable interaction until ALL conditions are met
       canvas.selection = false;
       canvas.isDrawingMode = false;
       canvas.defaultCursor = "not-allowed";
@@ -1007,9 +1037,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       });
       
       canvas.renderAll();
-      console.log("⏳ Whiteboard disabled - bothUsers:", bothUsersPresent, "connected:", connectionStatus);
+      console.log("⏳ Whiteboard DISABLED - presence:", bothUsersPresent, "channel:", connectionStatus, "peer:", debouncedPeerConnected);
     }
-  }, [bothUsersPresent, connectionStatus, canvas, isMonitorMode, activeTool]);
+  }, [bothUsersPresent, connectionStatus, debouncedPeerConnected, canvas, isMonitorMode, activeTool]);
 
   const updateObjectIndicators = (fabricCanvas: Canvas, presences: Record<string, UserPresence>) => {
     const existingIndicators = fabricCanvas.getObjects().filter((obj) => (obj as any).isIndicator);
