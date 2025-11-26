@@ -530,6 +530,7 @@ const FindTutors = () => {
     };
   }, [createdSessionId, navigate]);
 
+  // Apply filters whenever tutors or filter criteria change
   useEffect(() => {
     let filtered = [...tutors];
 
@@ -580,10 +581,22 @@ const FindTutors = () => {
     }
 
     setFilteredTutors(filtered);
-    setCurrentPage(1);
   }, [searchQuery, tutors, onlineFilter, ratingFilter, subjectFilters, yearLevelFilter, showOnlyBooked, bookedTutorIds]);
 
+  // Reset to page 1 only when user changes filters (not when tutors update)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, onlineFilter, ratingFilter, subjectFilters, yearLevelFilter, showOnlyBooked]);
+
   const totalPages = Math.ceil(filteredTutors.length / itemsPerPage);
+  
+  // Safety check: if current page exceeds total pages, reset to last valid page
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+  
   const paginatedTutors = filteredTutors.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
