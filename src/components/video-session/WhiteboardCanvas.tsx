@@ -379,17 +379,15 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
                   };
                 }
               });
-              return updated;
-            });
-            
-            // Update bothUsersPresent immediately
-            setUserPresences(prev => {
-              const hasOtherUsers = Object.keys(prev).length > 0;
-              if (hasOtherUsers !== bothUsersPresent) {
-                setBothUsersPresent(hasOtherUsers);
+              
+              // Update bothUsersPresent based on the NEW state
+              const hasOtherUsers = Object.keys(updated).length > 0;
+              if (hasOtherUsers) {
                 console.log("✅ User joined - whiteboard enabled");
+                setBothUsersPresent(true);
               }
-              return prev;
+              
+              return updated;
             });
           })
           .on("presence", { event: "leave" }, ({ leftPresences }) => {
@@ -1756,38 +1754,40 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20 relative">
-      {/* Connection Status Badge */}
-      <div className="absolute top-2 right-2 z-50">
-        {connectionStatus === 'connecting' && (
-          <Badge variant="secondary" className="animate-pulse">
-            Connecting...
-          </Badge>
-        )}
-        {connectionStatus === 'connected' && !bothUsersPresent && (
-          <Badge variant="secondary">
-            Waiting for other user...
-          </Badge>
-        )}
-        {connectionStatus === 'connected' && bothUsersPresent && (
-          <Badge variant="default" className="bg-green-600">
-            ✓ Connected
-          </Badge>
-        )}
-        {connectionStatus === 'failed' && (
-          <Badge variant="destructive">
-            Connection failed
-          </Badge>
-        )}
-        {connectionStatus === 'disconnected' && (
-          <Badge variant="destructive">
-            Disconnected
-          </Badge>
-        )}
-      </div>
-      
       {/* Toolbar - Hidden in monitor mode */}
       {!isMonitorMode && (
         <div className="bg-background/95 backdrop-blur-sm border-b p-3 flex items-center gap-2 flex-wrap shadow-sm">
+          {/* Connection Status Badge - Moved to toolbar */}
+          <div className="mr-2">
+            {connectionStatus === 'connecting' && (
+              <Badge variant="secondary" className="animate-pulse">
+                Connecting...
+              </Badge>
+            )}
+            {connectionStatus === 'connected' && !bothUsersPresent && (
+              <Badge variant="secondary">
+                Waiting for other user...
+              </Badge>
+            )}
+            {connectionStatus === 'connected' && bothUsersPresent && (
+              <Badge variant="default" className="bg-green-600">
+                ✓ Connected
+              </Badge>
+            )}
+            {connectionStatus === 'failed' && (
+              <Badge variant="destructive">
+                Connection failed
+              </Badge>
+            )}
+            {connectionStatus === 'disconnected' && (
+              <Badge variant="destructive">
+                Disconnected
+              </Badge>
+            )}
+          </div>
+          
+          <Separator orientation="vertical" className="h-8" />
+          
           {/* Tool Selection */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
             <Button

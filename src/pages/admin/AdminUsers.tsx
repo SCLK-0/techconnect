@@ -14,11 +14,21 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { toast } from "sonner";
-import { Search, UserX, Calendar, UserCheck, Loader2 } from "lucide-react";
+import { Search, UserX, Calendar, UserCheck, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { useUserRole } from "@/hooks/useUserRole";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminUsers() {
   const { user: currentUser } = useUserRole();
@@ -26,6 +36,8 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [yearLevelFilter, setYearLevelFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
   const itemsPerPage = 7;
   const queryClient = useQueryClient();
 
@@ -121,6 +133,36 @@ export default function AdminUsers() {
     onError: (error: any) => {
       console.error("Mutation error:", error);
       toast.error(error.message || "Failed to update user status");
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      console.log("Deleting user:", userId);
+      
+      // Delete user's profile (cascading will handle related records)
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId);
+      
+      if (error) {
+        console.error("Error deleting user:", error);
+        throw error;
+      }
+      
+      return userId;
+    },
+    onSuccess: async () => {
+      toast.success("🗑️ User account deleted successfully!");
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      await queryClient.refetchQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (error: any) => {
+      console.error("Delete error:", error);
+      toast.error(error.message || "Failed to delete user account");
     },
   });
 
@@ -327,25 +369,26 @@ export default function AdminUsers() {
                               </TableCell>
                               <TableCell className="text-right">
                                 {!isUserAdmin(user) && (
-                                  <Button
-                                    variant={user.is_active ? "destructive" : "default"}
-                                    size="sm"
-                                    onClick={() => {
-                                      toggleUserStatusMutation.mutate({
-                                        userId: user.user_id,
-                                        isActive: !user.is_active,
-                                      });
-                                    }}
-                                    disabled={toggleUserStatusMutation.isPending}
-                                    className="transition-all duration-300 hover:scale-105"
-                                  >
-                                    {toggleUserStatusMutation.isPending ? (
-                                      <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        Processing...
-                                      </>
-                                    ) : user.is_active ? (
-                                      <>
+                                  <div className="flex gap-2 justify-end">
+                                    <Button
+                                      variant={user.is_active ? "destructive" : "default"}
+                                      size="sm"
+                                      onClick={() => {
+                                        toggleUserStatusMutation.mutate({
+                                          userId: user.user_id,
+                                          isActive: !user.is_active,
+                                        });
+                                      }}
+                                      disabled={toggleUserStatusMutation.isPending}
+                                      className="transition-all duration-300 hover:scale-105"
+                                    >
+                                      {toggleUserStatusMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                          Processing...
+                                        </>
+                                      ) : user.is_active ? (
+                                        <>
                                         <UserX className="h-4 w-4 mr-2" />
                                         Deactivate
                                       </>
@@ -355,7 +398,21 @@ export default function AdminUsers() {
                                         Activate
                                       </>
                                     )}
-                                  </Button>
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setUserToDelete(user);
+                                        setDeleteDialogOpen(true);
+                                      }}
+                                      disabled={deleteUserMutation.isPending}
+                                      className="transition-all duration-300 hover:scale-105 hover:bg-destructive hover:text-destructive-foreground"
+                                      title="Delete account permanently"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 )}
                               </TableCell>
                             </TableRow>
@@ -443,6 +500,43 @@ export default function AdminUsers() {
           </main>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete <strong>{userToDelete?.full_name || "this user"}</strong>'s account?
+              <br /><br />
+              This action cannot be undone. All user data, sessions, and related records will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (userToDelete) {
+                  deleteUserMutation.mutate(userToDelete.user_id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteUserMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 }
