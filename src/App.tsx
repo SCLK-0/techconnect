@@ -64,6 +64,66 @@ function AnnouncementsWithGuard() {
   return <Announcements />;
 }
 
+// Wrapper for VideoSession that applies TutorRouteGuard only for tutors
+function VideoSessionWithGuard() {
+  const { role } = useUserRole();
+  
+  if (role === "tutor") {
+    return (
+      <TutorRouteGuard>
+        <VideoSession />
+      </TutorRouteGuard>
+    );
+  }
+  
+  return <VideoSession />;
+}
+
+// Wrapper for DemoPreview that applies TutorRouteGuard only for tutors
+function DemoPreviewWithGuard() {
+  const { role } = useUserRole();
+  
+  if (role === "tutor") {
+    return (
+      <TutorRouteGuard>
+        <DemoPreview />
+      </TutorRouteGuard>
+    );
+  }
+  
+  return <DemoPreview />;
+}
+
+// Wrapper for DemoAdmit that applies TutorRouteGuard only for tutors
+function DemoAdmitWithGuard() {
+  const { role } = useUserRole();
+  
+  if (role === "tutor") {
+    return (
+      <TutorRouteGuard>
+        <DemoAdmit />
+      </TutorRouteGuard>
+    );
+  }
+  
+  return <DemoAdmit />;
+}
+
+// Wrapper for DemoSession that applies TutorRouteGuard only for tutors
+function DemoSessionWithGuard() {
+  const { role } = useUserRole();
+  
+  if (role === "tutor") {
+    return (
+      <TutorRouteGuard>
+        <DemoSession />
+      </TutorRouteGuard>
+    );
+  }
+  
+  return <DemoSession />;
+}
+
 const App = () => {
   // Automatically check and mark missed sessions every 2 minutes
   useMissedSessionsChecker();
@@ -295,7 +355,7 @@ const App = () => {
             path="/video-session/:sessionId" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor", "admin"]}>
-                <VideoSession />
+                <VideoSessionWithGuard />
               </ProtectedRoute>
             } 
           />
@@ -305,7 +365,7 @@ const App = () => {
             path="/demo-preview" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor"]}>
-                <DemoPreview />
+                <DemoPreviewWithGuard />
               </ProtectedRoute>
             } 
           />
@@ -315,7 +375,7 @@ const App = () => {
             path="/demo-admit" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor"]}>
-                <DemoAdmit />
+                <DemoAdmitWithGuard />
               </ProtectedRoute>
             } 
           />
@@ -325,7 +385,7 @@ const App = () => {
             path="/demo-session" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor"]}>
-                <DemoSession />
+                <DemoSessionWithGuard />
               </ProtectedRoute>
             } 
           />
