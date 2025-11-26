@@ -284,20 +284,25 @@ const FindTutors = () => {
       try {
         // Fetch tutors that the learner has had sessions with
         if (user) {
+          console.log("🔍 Fetching booked tutors for learner:", user.id);
           const { data: sessionsData, error: sessionsError } = await supabase
             .from("sessions")
-            .select("tutor_id")
+            .select("tutor_id, session_status, session_type")
             .eq("learner_id", user.id)
             .in("session_status", ["in_progress", "completed"]);
           
           if (sessionsError) {
-            console.error("Error fetching booked tutors:", sessionsError);
+            console.error("❌ Error fetching booked tutors:", sessionsError);
           }
           
           if (sessionsData) {
+            console.log("📊 Found sessions:", sessionsData);
             const uniqueTutorIds = new Set(sessionsData.map(s => s.tutor_id));
-            console.log("Booked tutor IDs:", uniqueTutorIds);
+            console.log("✅ Booked tutor IDs:", Array.from(uniqueTutorIds));
+            console.log("📈 Total unique tutors booked:", uniqueTutorIds.size);
             setBookedTutorIds(uniqueTutorIds);
+          } else {
+            console.log("⚠️ No sessions found");
           }
         }
 
