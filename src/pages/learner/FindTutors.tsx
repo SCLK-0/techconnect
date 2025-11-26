@@ -142,7 +142,7 @@ const FindTutors = () => {
     
     // Subject matching
     const maxSubjectScore = Math.max(
-      ...tutor.subject_expertise.map(subject => fuzzyMatch(subject, query)),
+      ...(tutor.subject_expertise || []).map(subject => fuzzyMatch(subject, query)),
       0
     );
     score += maxSubjectScore * 1.5;
@@ -194,7 +194,11 @@ const FindTutors = () => {
 
     // Helper to format time to 12-hour format
     const format12Hour = (time24: string): string => {
-      const [hours, minutes] = time24.split(':').map(Number);
+      if (!time24 || !time24.includes(':')) return 'Invalid time';
+      const parts = time24.split(':');
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      if (isNaN(hours) || isNaN(minutes)) return 'Invalid time';
       const period = hours >= 12 ? 'PM' : 'AM';
       const hours12 = hours % 12 || 12;
       return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
@@ -215,8 +219,16 @@ const FindTutors = () => {
       
       // If day override has specific time slots, use those
       if (dayOverride?.start_time && dayOverride?.end_time) {
-        const [startHours, startMinutes] = dayOverride.start_time.split(':').map(Number);
-        const [endHours, endMinutes] = dayOverride.end_time.split(':').map(Number);
+        const startParts = dayOverride.start_time.split(':');
+        const endParts = dayOverride.end_time.split(':');
+        const startHours = parseInt(startParts[0], 10);
+        const startMinutes = parseInt(startParts[1], 10);
+        const endHours = parseInt(endParts[0], 10);
+        const endMinutes = parseInt(endParts[1], 10);
+        
+        if (isNaN(startHours) || isNaN(startMinutes) || isNaN(endHours) || isNaN(endMinutes)) {
+          continue; // Skip invalid time format
+        }
         const startTimeInMinutes = startHours * 60 + startMinutes;
         const endTimeInMinutes = endHours * 60 + endMinutes;
         
@@ -249,8 +261,18 @@ const FindTutors = () => {
       // Find earliest valid time slot
       for (const slot of daySlots) {
         // Validate time range
-        const [startHours, startMinutes] = slot.start_time.split(':').map(Number);
-        const [endHours, endMinutes] = slot.end_time.split(':').map(Number);
+        if (!slot.start_time || !slot.end_time) continue;
+        
+        const startParts = slot.start_time.split(':');
+        const endParts = slot.end_time.split(':');
+        const startHours = parseInt(startParts[0], 10);
+        const startMinutes = parseInt(startParts[1], 10);
+        const endHours = parseInt(endParts[0], 10);
+        const endMinutes = parseInt(endParts[1], 10);
+        
+        if (isNaN(startHours) || isNaN(startMinutes) || isNaN(endHours) || isNaN(endMinutes)) {
+          continue; // Skip invalid time format
+        }
         const startTimeInMinutes = startHours * 60 + startMinutes;
         const endTimeInMinutes = endHours * 60 + endMinutes;
         
@@ -528,7 +550,7 @@ const FindTutors = () => {
     // Subject filter
     if (subjectFilters.length > 0) {
       filtered = filtered.filter((tutor) =>
-        subjectFilters.some((subject) => tutor.subject_expertise.includes(subject))
+        subjectFilters.some((subject) => (tutor.subject_expertise || []).includes(subject))
       );
     }
 

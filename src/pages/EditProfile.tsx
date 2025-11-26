@@ -22,6 +22,11 @@ import { Badge } from "@/components/ui/badge";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { DonationQRManager } from "@/components/tutor/DonationQRManager";
 
+// Helper function to count words
+const countWords = (text: string): number => {
+  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+};
+
 const subjects = [
   "Programming",
   "Software Development",
@@ -232,9 +237,15 @@ export default function EditProfile() {
   const handleSave = async () => {
     if (!user) return;
 
-    // Validate bio length
-    if (bio.length > 500) {
-      toast.error("Bio must be 500 characters or less");
+    // Validate bio word count
+    const wordCount = countWords(bio);
+    if (wordCount > 500) {
+      toast.error(`Bio must be 500 words or less (currently ${wordCount} words)`);
+      return;
+    }
+    
+    if (wordCount < 10 && bio.trim().length > 0) {
+      toast.error("Bio must be at least 10 words");
       return;
     }
 
@@ -457,20 +468,14 @@ export default function EditProfile() {
                     <Textarea
                       id="bio"
                       value={bio}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        if (newValue.length <= 500) {
-                          setBio(newValue);
-                        }
-                      }}
+                      onChange={(e) => setBio(e.target.value)}
                       placeholder="Tell us about yourself, your interests, and what you're passionate about..."
                       rows={4}
                       className="resize-none min-h-[100px] max-h-[200px] overflow-y-auto custom-scrollbar break-words overflow-wrap-anywhere"
                       disabled={!isEditing}
-                      maxLength={500}
                     />
-                    <p className={`text-xs ${bio.length > 450 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                      {bio.length}/500 characters
+                    <p className={`text-xs ${countWords(bio) >= 500 ? 'text-destructive' : countWords(bio) > 450 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+                      {countWords(bio)}/500 words
                     </p>
                   </div>
 
