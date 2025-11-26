@@ -4,7 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { TutorRouteGuard } from "./components/guards/TutorRouteGuard";
 import { useMissedSessionsChecker } from "./hooks/useMissedSessionsChecker";
+import { useUserRole } from "./hooks/useUserRole";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -46,6 +48,21 @@ import QuickStartGuide from "./pages/QuickStartGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Wrapper for Announcements that applies TutorRouteGuard only for tutors
+function AnnouncementsWithGuard() {
+  const { role } = useUserRole();
+  
+  if (role === "tutor") {
+    return (
+      <TutorRouteGuard>
+        <Announcements />
+      </TutorRouteGuard>
+    );
+  }
+  
+  return <Announcements />;
+}
 
 const App = () => {
   // Automatically check and mark missed sessions every 2 minutes
@@ -113,7 +130,7 @@ const App = () => {
             path="/announcements" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor", "admin"]}>
-                <Announcements />
+                <AnnouncementsWithGuard />
               </ProtectedRoute>
             } 
           />
@@ -140,7 +157,9 @@ const App = () => {
             path="/tutor/dashboard" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorDashboard />
+                <TutorRouteGuard>
+                  <TutorDashboard />
+                </TutorRouteGuard>
               </ProtectedRoute>
             } 
           />
@@ -148,7 +167,9 @@ const App = () => {
             path="/tutor/sessions" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorSessions />
+                <TutorRouteGuard>
+                  <TutorSessions />
+                </TutorRouteGuard>
               </ProtectedRoute>
             } 
           />
@@ -156,7 +177,9 @@ const App = () => {
             path="/tutor/tutees" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorTutees />
+                <TutorRouteGuard>
+                  <TutorTutees />
+                </TutorRouteGuard>
               </ProtectedRoute>
             } 
           />
@@ -164,7 +187,9 @@ const App = () => {
             path="/tutor/availability" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorAvailability />
+                <TutorRouteGuard>
+                  <TutorAvailability />
+                </TutorRouteGuard>
               </ProtectedRoute>
             } 
           />
@@ -172,7 +197,9 @@ const App = () => {
             path="/tutor/feedback" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorFeedback />
+                <TutorRouteGuard>
+                  <TutorFeedback />
+                </TutorRouteGuard>
               </ProtectedRoute>
             } 
           />
@@ -180,7 +207,9 @@ const App = () => {
             path="/tutor/resources"
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorResources />
+                <TutorRouteGuard>
+                  <TutorResources />
+                </TutorRouteGuard>
               </ProtectedRoute>
             } 
           />
