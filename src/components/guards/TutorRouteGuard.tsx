@@ -40,10 +40,11 @@ export function TutorRouteGuard({ children }: TutorRouteGuardProps) {
         toast.error("Your tutor account has been disabled");
         navigate("/", { replace: true });
       } else if (tutorStatus === null) {
-        // Tutor profile doesn't exist yet - this is normal for new tutors
-        console.log("Tutor profile not found - may be newly registered");
-        toast.info("Please complete your tutor registration");
-        navigate("/", { replace: true });
+        // Tutor profile doesn't exist - this is a data issue
+        // Allow access but log the issue for debugging
+        console.warn("Tutor role exists but no tutor_profile found for user:", role);
+        // Don't block access - this might be a database sync issue
+        // The tutor can still use the system, admin should fix the profile
       } else {
         // This shouldn't happen, but handle it gracefully
         console.error("Unexpected tutor status:", tutorStatus);
@@ -58,8 +59,8 @@ export function TutorRouteGuard({ children }: TutorRouteGuardProps) {
     return <LoadingOverlay isLoading={true} message="Verifying access..." />;
   }
 
-  // Only render children if user is an approved tutor
-  if (role === "tutor" && isApproved) {
+  // Only render children if user is an approved tutor OR if status is null (database issue)
+  if (role === "tutor" && (isApproved || tutorStatus === null)) {
     return <>{children}</>;
   }
 
