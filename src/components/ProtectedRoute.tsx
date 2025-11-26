@@ -17,6 +17,8 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
   const [checkingProfile, setCheckingProfile] = useState(true);
 
   // Check if user profile is active
+  // Note: is_active is for ACCOUNT-level deactivation (complete ban)
+  // For tutors, use tutor_profiles.status (pending/approved/rejected/disabled) instead
   useEffect(() => {
     const checkUserStatus = async () => {
       if (user) {
@@ -34,30 +36,29 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
 
         setIsActive(data?.is_active ?? true);
         setCheckingProfile(false);
-
-        // If user is not active, sign them out and redirect
-        if (data && !data.is_active) {
-          await supabase.auth.signOut();
-          toast.error("Your account has been deactivated. Please contact an administrator.");
-          navigate("/login");
-        }
       } else {
         setCheckingProfile(false);
       }
     };
 
     checkUserStatus();
-  }, [user, navigate]);
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !checkingProfile) {
       if (!user) {
         navigate("/login");
+      } else if (isActive === false) {
+        // User account is deactivated - sign them out
+        supabase.auth.signOut();
+        toast.error("Your account has been deactivated. Please contact an administrator.");
+        navigate("/login");
       } else if (role && !allowedRoles.includes(role)) {
+        // User has wrong role, redirect to home but keep them logged in
         navigate("/");
       }
     }
-  }, [user, role, loading, checkingProfile, navigate, allowedRoles]);
+  }, [user, role, loading, checkingProfile, isActive, navigate, allowedRoles]);
 
   if (loading || checkingProfile) {
     return (
