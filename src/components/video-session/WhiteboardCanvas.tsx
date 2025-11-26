@@ -300,6 +300,10 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             
             console.log(`✅ ${displayName} processing remote event:`, payload.type);
             
+            // CRITICAL FIX: If we receive ANY event from another user, they're present!
+            // Enable whiteboard immediately without waiting for presence sync
+            setBothUsersPresent(true);
+            
             if (payload.type === "cursor:move") {
               // Don't show cursors in monitor mode
               if (isMonitorMode) return;
@@ -460,6 +464,26 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             isChannelReady.current = true;
             console.log(`🎨 ${displayName} channel is now ready for broadcasts`);
             
+            // IMMEDIATE presence check after tracking (don't wait for sync event)
+            setTimeout(() => {
+              const state = channel.presenceState();
+              const otherUsers = Object.keys(state).filter(key => {
+                const presenceArray = state[key] as any[];
+                return presenceArray.length > 0 && presenceArray[0].userId !== user.id;
+              });
+              
+              if (otherUsers.length > 0) {
+                console.log(`🚀 IMMEDIATE CHECK: Found ${otherUsers.length} other users - enabling whiteboard!`);
+                setBothUsersPresent(true);
+              }
+              
+              // Verify channel is actually working by checking state
+              console.log(`📡 Channel state after join: ${channel.state}`);
+              if (channel.state !== 'joined') {
+                console.error(`⚠️ Channel not in joined state: ${channel.state}`);
+              }
+            }, 500); // Check after 500ms
+            
             // Start periodic presence check to ensure sync stays accurate
             presenceCheckInterval.current = setInterval(() => {
               const state = channel.presenceState();
@@ -479,7 +503,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
                 }
                 return prev;
               });
-            }, 3000); // Check every 3 seconds
+            }, 1000); // Check every 1 second (faster!)
           } else {
             console.log(`👀 ${displayName} in monitor mode - not tracking presence`);
             isChannelReady.current = true;
@@ -1132,11 +1156,13 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       return;
     }
     
-    if (!isChannelReady.current) {
-      console.error(`⏳ ${userName} BROADCAST BLOCKED: Channel not ready for event:`, event.type);
+    // Check if channel is ready AND subscribed
+    const channelState = channelRef.current?.state;
+    if (!isChannelReady.current || channelState !== 'joined') {
+      console.error(`⏳ ${userName} BROADCAST BLOCKED: Channel not ready (ready: ${isChannelReady.current}, state: ${channelState}) for event:`, event.type);
       // Show toast for important events to let user know to wait
       if (event.type === "path:created" || event.type === "object:added" || event.type === "canvas:cleared") {
-        toast.warning("Whiteboard syncing... please wait a moment");
+        toast.warning("Whiteboard syncing... please wait");
       }
       return;
     }

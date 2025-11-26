@@ -12,7 +12,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
-import { WhatsNewCard } from "@/components/WhatsNewCard";
+
 import { format } from "date-fns";
 
 export default function LearnerDashboard() {
@@ -183,8 +183,6 @@ export default function LearnerDashboard() {
           <main className="flex-1 px-4 pt-8 pb-12 overflow-auto flex justify-center">
             <div className="space-y-6 w-full max-w-[95%] sm:max-w-[90%] md:max-w-5xl">
               <MaintenanceBanner />
-              
-              <WhatsNewCard />
               
               <div>
                 <h2 className="text-3xl font-bold tracking-tight mb-2">

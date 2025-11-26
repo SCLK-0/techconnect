@@ -4,9 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { TutorRouteGuard } from "./components/guards/TutorRouteGuard";
 import { useMissedSessionsChecker } from "./hooks/useMissedSessionsChecker";
-import { useUserRole } from "./hooks/useUserRole";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -48,81 +46,6 @@ import QuickStartGuide from "./pages/QuickStartGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
-// Wrapper for Announcements that applies TutorRouteGuard only for tutors
-function AnnouncementsWithGuard() {
-  const { role } = useUserRole();
-  
-  if (role === "tutor") {
-    return (
-      <TutorRouteGuard>
-        <Announcements />
-      </TutorRouteGuard>
-    );
-  }
-  
-  return <Announcements />;
-}
-
-// Wrapper for VideoSession that applies TutorRouteGuard only for tutors
-function VideoSessionWithGuard() {
-  const { role } = useUserRole();
-  
-  if (role === "tutor") {
-    return (
-      <TutorRouteGuard>
-        <VideoSession />
-      </TutorRouteGuard>
-    );
-  }
-  
-  return <VideoSession />;
-}
-
-// Wrapper for DemoPreview that applies TutorRouteGuard only for tutors
-function DemoPreviewWithGuard() {
-  const { role } = useUserRole();
-  
-  if (role === "tutor") {
-    return (
-      <TutorRouteGuard>
-        <DemoPreview />
-      </TutorRouteGuard>
-    );
-  }
-  
-  return <DemoPreview />;
-}
-
-// Wrapper for DemoAdmit that applies TutorRouteGuard only for tutors
-function DemoAdmitWithGuard() {
-  const { role } = useUserRole();
-  
-  if (role === "tutor") {
-    return (
-      <TutorRouteGuard>
-        <DemoAdmit />
-      </TutorRouteGuard>
-    );
-  }
-  
-  return <DemoAdmit />;
-}
-
-// Wrapper for DemoSession that applies TutorRouteGuard only for tutors
-function DemoSessionWithGuard() {
-  const { role } = useUserRole();
-  
-  if (role === "tutor") {
-    return (
-      <TutorRouteGuard>
-        <DemoSession />
-      </TutorRouteGuard>
-    );
-  }
-  
-  return <DemoSession />;
-}
 
 const App = () => {
   // Automatically check and mark missed sessions every 2 minutes
@@ -190,7 +113,7 @@ const App = () => {
             path="/announcements" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor", "admin"]}>
-                <AnnouncementsWithGuard />
+                <Announcements />
               </ProtectedRoute>
             } 
           />
@@ -217,9 +140,7 @@ const App = () => {
             path="/tutor/dashboard" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorRouteGuard>
-                  <TutorDashboard />
-                </TutorRouteGuard>
+                <TutorDashboard />
               </ProtectedRoute>
             } 
           />
@@ -227,9 +148,7 @@ const App = () => {
             path="/tutor/sessions" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorRouteGuard>
-                  <TutorSessions />
-                </TutorRouteGuard>
+                <TutorSessions />
               </ProtectedRoute>
             } 
           />
@@ -237,9 +156,7 @@ const App = () => {
             path="/tutor/tutees" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorRouteGuard>
-                  <TutorTutees />
-                </TutorRouteGuard>
+                <TutorTutees />
               </ProtectedRoute>
             } 
           />
@@ -247,9 +164,7 @@ const App = () => {
             path="/tutor/availability" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorRouteGuard>
-                  <TutorAvailability />
-                </TutorRouteGuard>
+                <TutorAvailability />
               </ProtectedRoute>
             } 
           />
@@ -257,9 +172,7 @@ const App = () => {
             path="/tutor/feedback" 
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorRouteGuard>
-                  <TutorFeedback />
-                </TutorRouteGuard>
+                <TutorFeedback />
               </ProtectedRoute>
             } 
           />
@@ -267,9 +180,7 @@ const App = () => {
             path="/tutor/resources"
             element={
               <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorRouteGuard>
-                  <TutorResources />
-                </TutorRouteGuard>
+                <TutorResources />
               </ProtectedRoute>
             } 
           />
@@ -355,7 +266,7 @@ const App = () => {
             path="/video-session/:sessionId" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor", "admin"]}>
-                <VideoSessionWithGuard />
+                <VideoSession />
               </ProtectedRoute>
             } 
           />
@@ -365,7 +276,7 @@ const App = () => {
             path="/demo-preview" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor"]}>
-                <DemoPreviewWithGuard />
+                <DemoPreview />
               </ProtectedRoute>
             } 
           />
@@ -375,7 +286,7 @@ const App = () => {
             path="/demo-admit" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor"]}>
-                <DemoAdmitWithGuard />
+                <DemoAdmit />
               </ProtectedRoute>
             } 
           />
@@ -385,7 +296,7 @@ const App = () => {
             path="/demo-session" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor"]}>
-                <DemoSessionWithGuard />
+                <DemoSession />
               </ProtectedRoute>
             } 
           />

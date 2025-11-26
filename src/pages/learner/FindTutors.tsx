@@ -814,7 +814,7 @@ const FindTutors = () => {
                   onCheckedChange={(checked) => setShowOnlyBooked(checked as boolean)}
                 />
                 <Label htmlFor="booked-filter" className={`text-sm ${bookedTutorIds.size === 0 ? 'text-muted-foreground cursor-not-allowed' : 'cursor-pointer'}`}>
-                  Show only tutors I've booked before
+                  Show only tutors I've booked earlier
                   {bookedTutorIds.size > 0 && (
                     <span className="text-muted-foreground ml-1">
                       ({bookedTutorIds.size})
