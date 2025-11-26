@@ -309,9 +309,9 @@ const FindTutors = () => {
           console.log("🔍 Fetching booked tutors for learner:", user.id);
           const { data: sessionsData, error: sessionsError } = await supabase
             .from("sessions")
-            .select("tutor_id, session_status, session_type")
+            .select("tutor_id, status, session_type")
             .eq("learner_id", user.id)
-            .in("session_status", ["in_progress", "completed"]);
+            .in("status", ["accepted", "completed"]);
           
           if (sessionsError) {
             console.error("❌ Error fetching booked tutors:", sessionsError);
