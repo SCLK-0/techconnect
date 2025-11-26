@@ -13,9 +13,16 @@ import { Loader2, Users, Sparkles, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { PasswordStrengthMeter } from "@/components/PasswordStrengthMeter";
 
+// Helper function to count words
+const countWords = (text: string): number => {
+  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+};
+
 const registrationSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
-  bio: z.string().trim().min(10, "Bio must be at least 10 characters").max(500, "Bio must be less than 500 characters"),
+  bio: z.string().trim()
+    .refine((val) => countWords(val) >= 10, "Bio must be at least 10 words")
+    .refine((val) => countWords(val) <= 500, "Bio must be less than 500 words"),
   subjects: z.array(z.string()).min(1, "Please select at least one subject").max(10, "Maximum 10 subjects allowed"),
   registeredYear: z.string().min(1, "Please select your year level"),
   password: z.string()
@@ -359,7 +366,6 @@ const TutorRegistration = () => {
                 placeholder="Tell us about yourself and your tutoring experience..."
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                maxLength={500}
                 rows={4}
                 required
               />
@@ -367,8 +373,8 @@ const TutorRegistration = () => {
                 <p className="text-sm text-muted-foreground">
                   Share your experience, qualifications, and what makes you a great tutor
                 </p>
-                <p className={`text-sm font-medium ${bio.length >= 500 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                  {bio.length}/500
+                <p className={`text-sm font-medium ${countWords(bio) >= 500 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {countWords(bio)}/500 words
                 </p>
               </div>
             </div>
