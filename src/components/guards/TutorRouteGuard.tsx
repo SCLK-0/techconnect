@@ -28,8 +28,8 @@ export function TutorRouteGuard({ children }: TutorRouteGuardProps) {
     // Now wait for tutor status to load
     if (statusLoading) return;
 
-    // Check if tutor is approved
-    if (!isApproved) {
+    // Check if tutor is approved (but allow null status - database sync issue)
+    if (!isApproved && tutorStatus !== null) {
       if (tutorStatus === "pending") {
         toast.info("Your tutor application is pending approval");
         navigate("/", { replace: true });
@@ -39,18 +39,17 @@ export function TutorRouteGuard({ children }: TutorRouteGuardProps) {
       } else if (tutorStatus === "disabled") {
         toast.error("Your tutor account has been disabled");
         navigate("/", { replace: true });
-      } else if (tutorStatus === null) {
-        // Tutor profile doesn't exist - this is a data issue
-        // Allow access but log the issue for debugging
-        console.warn("Tutor role exists but no tutor_profile found for user:", role);
-        // Don't block access - this might be a database sync issue
-        // The tutor can still use the system, admin should fix the profile
       } else {
         // This shouldn't happen, but handle it gracefully
         console.error("Unexpected tutor status:", tutorStatus);
         toast.error("Unable to verify tutor status");
         navigate("/", { replace: true });
       }
+    }
+    
+    // Log warning if tutor has no profile (for admin debugging)
+    if (tutorStatus === null) {
+      console.warn("⚠️ Tutor role exists but no tutor_profile found - allowing access");
     }
   }, [role, tutorStatus, isApproved, roleLoading, statusLoading, navigate]);
 
