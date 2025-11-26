@@ -2146,6 +2146,11 @@ export default function VideoSession() {
         </div>
         <div className="flex items-center gap-4">
           {!isMonitorMode && <SessionTimer sessionId={sessionId!} onTimeout={async () => {
+            console.log("⏰ Session timeout - auto-ending session");
+            
+            // Clean up media tracks first
+            cleanupMediaTracks();
+            
             // Update session to completed when timeout occurs
             await supabase
               .from("sessions")
@@ -2155,7 +2160,12 @@ export default function VideoSession() {
               })
               .eq("id", sessionId);
             
+            // Update local state
+            setSessionStatus("completed");
+            
+            // Show appropriate modal based on role
             if (!logModalShown) {
+              console.log("📝 Showing log modal after timeout");
               setShowLogModal(true);
               setLogModalShown(true);
             }
