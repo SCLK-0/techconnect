@@ -82,12 +82,17 @@ export function TutorRatingTagsDisplay({ tags, limit = 5 }: TutorRatingTagsDispl
           <Badge
             key={tag}
             variant="secondary"
-            className="gap-1"
-            title={`${tag_count} reviews (${percentage}%)`}
+            className="gap-1.5 px-3 py-1"
+            title={`${tag_count} learners mentioned this (${percentage}% of reviews)`}
           >
             <span>{emoji}</span>
             <span>{label}</span>
-            <span className="text-xs opacity-70">({percentage}%)</span>
+            <span className="text-xs font-semibold ml-1">
+              {percentage}%
+            </span>
+            <span className="text-xs opacity-60">
+              ({tag_count})
+            </span>
           </Badge>
         );
       })}

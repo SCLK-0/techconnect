@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Wifi, WifiOff, Clock, Zap, Maximize2 } from "lucide-react";
 import { TutorRatingTagsSection } from "@/components/learner/TutorRatingTagsSection";
+import { TutorRatingDistribution } from "@/components/learner/TutorRatingDistribution";
 
 interface TutorProfile {
   id: string;
@@ -113,6 +114,10 @@ export const TutorDetailDialog = ({
               )}
             </div>
           </div>
+
+          {tutor.rating && tutor.rating > 0 && tutor.review_count && tutor.review_count > 0 && (
+            <TutorRatingDistribution tutorUserId={tutor.user_id} />
+          )}
 
           <TutorRatingTagsSection tutorUserId={tutor.user_id} />
 
