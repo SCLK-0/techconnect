@@ -284,14 +284,19 @@ const FindTutors = () => {
       try {
         // Fetch tutors that the learner has had sessions with
         if (user) {
-          const { data: sessionsData } = await supabase
+          const { data: sessionsData, error: sessionsError } = await supabase
             .from("sessions")
             .select("tutor_id")
             .eq("learner_id", user.id)
-            .in("status", ["accepted", "in_progress", "completed", "missed"]);
+            .in("session_status", ["in_progress", "completed"]);
+          
+          if (sessionsError) {
+            console.error("Error fetching booked tutors:", sessionsError);
+          }
           
           if (sessionsData) {
             const uniqueTutorIds = new Set(sessionsData.map(s => s.tutor_id));
+            console.log("Booked tutor IDs:", uniqueTutorIds);
             setBookedTutorIds(uniqueTutorIds);
           }
         }
