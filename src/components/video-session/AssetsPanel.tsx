@@ -281,29 +281,27 @@ export function AssetsPanel({ sessionId, isMonitorMode = false }: AssetsPanelPro
               return (
                 <div
                   key={asset.id}
-                  className="group p-3 bg-card rounded-lg border shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3"
+                  className="group p-3 bg-card rounded-lg border shadow-sm hover:shadow-md transition-all flex items-start gap-3"
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="bg-primary/10 rounded-lg p-2 shrink-0">
-                      <File className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate text-sm">{asset.file_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatFileSize(asset.file_size)} • {format(new Date(asset.created_at), "MMM d, p")}
-                      </p>
-                      <p className="text-xs text-muted-foreground/70 mt-0.5">
-                        Uploaded by {asset.uploader_name}
-                      </p>
-                    </div>
+                  <div className="bg-primary/10 rounded-lg p-2 shrink-0">
+                    <File className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="font-medium text-sm break-words line-clamp-2">{asset.file_name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatFileSize(asset.file_size)} • {format(new Date(asset.created_at), "MMM d, p")}
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-0.5">
+                      Uploaded by {asset.uploader_name}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => downloadFile(asset)}
                       title="Download"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-8 w-8 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -313,7 +311,7 @@ export function AssetsPanel({ sessionId, isMonitorMode = false }: AssetsPanelPro
                         size="icon"
                         onClick={() => deleteFile(asset)}
                         title="Delete"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                        className="h-8 w-8 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
