@@ -1011,7 +1011,7 @@ function FavoriteButton({ tutorId, learnerId }: FavoriteButtonProps) {
           .select('id')
           .eq('learner_id', learnerId)
           .eq('tutor_id', tutorId)
-          .single();
+          .maybeSingle();
         
         if (!error) {
           setIsFavorited(!!data);
