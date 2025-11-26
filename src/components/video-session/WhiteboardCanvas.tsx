@@ -48,10 +48,23 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
+  const [debouncedPeerConnected, setDebouncedPeerConnected] = useState(isPeerConnected);
   
-  // Debug: Log isPeerConnected prop changes
+  // Debounce peer connection status to prevent flickering overlays
   useEffect(() => {
     console.log("🔌 WhiteboardCanvas isPeerConnected prop changed:", isPeerConnected);
+    
+    // If connected, update immediately
+    if (isPeerConnected) {
+      setDebouncedPeerConnected(true);
+    } else {
+      // If disconnected, wait 2 seconds before showing overlay
+      const timeout = setTimeout(() => {
+        setDebouncedPeerConnected(false);
+      }, 2000);
+      
+      return () => clearTimeout(timeout);
+    }
   }, [isPeerConnected]);
   const activeToolRef = useRef<Tool>("select");
   const [drawColor, setDrawColor] = useState("#000000");
@@ -416,35 +429,6 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
               color: color,
             });
             console.log(`✅ ${displayName} presence tracked on channel`);
-            
-            // Manually check for other users after a short delay
-            setTimeout(() => {
-              const state = channel.presenceState();
-              console.log(`🔍 Manual presence check after tracking:`, state);
-              const presences: Record<string, UserPresence> = {};
-              
-              Object.keys(state).forEach((key) => {
-                const presenceArray = state[key] as any[];
-                if (presenceArray.length > 0) {
-                  const presence = presenceArray[0];
-                  if (presence.userId && presence.userId !== user.id) {
-                    presences[presence.userId] = {
-                      userId: presence.userId,
-                      userName: presence.userName,
-                      editingObjectId: presence.editingObjectId,
-                      color: presence.color,
-                    };
-                  }
-                }
-              });
-              
-              if (Object.keys(presences).length > 0) {
-                console.log(`✅ Found ${Object.keys(presences).length} other user(s) immediately!`);
-                setBothUsersPresent(true);
-                setUserPresences(presences);
-                userPresencesRef.current = presences;
-              }
-            }, 1000);
             
             // Set channel ready immediately - no delay
             isChannelReady.current = true;
@@ -962,7 +946,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
 
     // Whiteboard is enabled when both users are present AND peer connection is active
     // Both conditions are required for proper synchronization
-    const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
+    // Use debounced value to prevent flickering
+    const isWhiteboardEnabled = bothUsersPresent && debouncedPeerConnected;
 
     if (isWhiteboardEnabled) {
       // Enable interaction
@@ -1728,48 +1713,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
           });
         }
         
-        // Retry presence check multiple times to ensure we detect the other user
-        let retryCount = 0;
-        const maxRetries = 5;
-        const checkPresence = () => {
-          const state = channel.presenceState();
-          const presences: Record<string, UserPresence> = {};
-          
-          Object.keys(state).forEach((key) => {
-            const presenceArray = state[key] as any[];
-            if (presenceArray.length > 0) {
-              const presence = presenceArray[0];
-              if (presence.userId && presence.userId !== userId) {
-                presences[presence.userId] = {
-                  userId: presence.userId,
-                  userName: presence.userName,
-                  editingObjectId: presence.editingObjectId,
-                  color: presence.color,
-                };
-              }
-            }
-          });
-          
-          const hasOtherUsers = Object.keys(presences).length > 0;
-          console.log(`🔄 Presence check attempt ${retryCount + 1}/${maxRetries} - hasOtherUsers:`, hasOtherUsers);
-          
-          if (hasOtherUsers) {
-            setUserPresences(presences);
-            userPresencesRef.current = presences;
-            setBothUsersPresent(true);
-            if (!isMonitorMode) {
-              updateObjectIndicators(canvas, presences);
-            }
-            console.log("✅ Other user detected!");
-          } else if (retryCount < maxRetries) {
-            retryCount++;
-            setTimeout(checkPresence, 500);
-          } else {
-            console.log("⚠️ No other user detected after all retries");
-          }
-        };
-        
-        setTimeout(checkPresence, 500);
+
         
         toast.success("Whiteboard reconnected!");
       } else if (status === "CHANNEL_ERROR") {
@@ -1780,7 +1724,8 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   };
 
   // Whiteboard is enabled when both users are present AND peer connection is active
-  const isWhiteboardEnabled = bothUsersPresent && isPeerConnected;
+  // Use debounced value to prevent flickering
+  const isWhiteboardEnabled = bothUsersPresent && debouncedPeerConnected;
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20">

@@ -5,14 +5,14 @@ import { Download, X } from "lucide-react";
 interface DonationQRDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  qrCodeUrl: string;
+  qrCodeData: string;
   tutorName: string;
 }
 
-export function DonationQRDialog({ open, onOpenChange, qrCodeUrl, tutorName }: DonationQRDialogProps) {
+export function DonationQRDialog({ open, onOpenChange, qrCodeData, tutorName }: DonationQRDialogProps) {
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = qrCodeUrl;
+    link.href = qrCodeData;
     link.download = `${tutorName}-donation-qr.png`;
     document.body.appendChild(link);
     link.click();
@@ -32,7 +32,7 @@ export function DonationQRDialog({ open, onOpenChange, qrCodeUrl, tutorName }: D
         <div className="flex flex-col items-center gap-4 py-4">
           <div className="relative bg-white p-4 rounded-lg border-2 border-border">
             <img 
-              src={qrCodeUrl} 
+              src={qrCodeData} 
               alt="Donation QR Code" 
               className="w-64 h-64 object-contain"
             />

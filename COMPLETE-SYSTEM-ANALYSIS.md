@@ -468,9 +468,12 @@
 
 ### **Hosting**
 - **Platform:** Vercel
-- **Domain:** cit-techconnect.org
+- **Domains:** 
+  - Primary: cit-techconnect.org (Squarespace domain)
+  - Deployment: techconnect-sand.vercel.app
 - **SSL:** Automatic HTTPS
 - **CDN:** Global edge network
+- **DNS:** Managed through Squarespace
 
 ### **Environment Variables**
 - `VITE_SUPABASE_URL` - Supabase project URL
@@ -627,6 +630,295 @@ For complete transparency:
 
 ---
 
+## 🔄 **SYSTEM EVOLUTION & CHANGES**
+
+### **Terminology Changes**
+- **"Tutee"** → **"Learner"** (Changed for clarity and professionalism)
+  - All database tables use "learner" terminology
+  - UI components updated to "Learner"
+  - Documentation reflects "Learner" throughout
+
+### **Removed Features (From Initial Planning)**
+These features were mentioned in the original proposal but were removed or changed during development:
+
+#### **Role Differentiation**
+❌ **"Study Buddy" Role** (Casual assistance)
+- Initially planned: Informal peer support role
+- Removed: Simplified to single "Tutor" role
+- Reason: Unnecessary complexity, confusing for users
+
+❌ **"Learning Buddy" Role** (Formal support)
+- Initially planned: Structured tutoring role
+- Removed: Simplified to single "Tutor" role
+- Reason: Unnecessary complexity, confusing for users
+
+#### **External Integrations**
+❌ **Google Calendar Integration**
+- Initially planned: "Integration with Google Calendar for scheduling"
+- Removed: Built custom scheduling system instead
+- Reason: Better control, no external dependencies, no API quotas
+
+❌ **Google Meet Integration**
+- Initially planned: "Google Meet for video conferencing"
+- Removed: Implemented WebRTC + PeerJS instead
+- Reason: More control, no meeting limits, better integration, no external dependencies
+
+#### **Tutor Incentive Features**
+❌ **Certificates for Tutors**
+- Initially planned: "Certificates and resume-building features"
+- Removed: Not implemented in v1.0
+- Reason: Time constraints, scope reduction
+
+❌ **Resume-Building Tools**
+- Initially planned: "Resume-building opportunities"
+- Removed: Not implemented in v1.0
+- Reason: Time constraints, scope reduction
+
+❌ **Formal Recognition System**
+- Initially planned: "Official recognition to encourage participation"
+- Removed: Not implemented in v1.0
+- Reason: Scope reduction
+
+❌ **Recommendation Letters**
+- Initially planned: "Recommendation letters for tutors"
+- Removed: Not implemented in v1.0
+- Reason: Scope reduction
+
+#### **Matching & Search Features**
+❌ **Fuse.js Library**
+- Initially planned: "Fuzzy search using Fuse.js"
+- Removed: Implemented custom fuzzy search logic
+- Reason: Lighter weight, more control, one less dependency
+
+❌ **Rule-Based Matchmaking (Automated)**
+- Initially planned: "Dynamic tutor–tutee matching" and "rule-based filtering"
+- Removed: Implemented manual search and filtering instead
+- Reason: Users prefer to choose their own tutors, more control
+
+❌ **Tutor Tagging System (Separate)**
+- Initially planned: "Subject tagging" as separate feature
+- Removed: Integrated into subject expertise arrays
+- Reason: Simpler data model, less redundancy
+
+#### **Progress Tracking Features**
+❌ **Progress Tracking Dashboard**
+- Initially planned: "Progress tracking to monitor student development"
+- Removed: Not implemented as standalone feature
+- Reason: Scope reduction, session history serves similar purpose
+
+❌ **Tutee Development Tracking**
+- Initially planned: "Tools for tracking tutee development"
+- Removed: Not implemented
+- Reason: Scope reduction
+
+#### **Infrastructure & Hosting**
+❌ **Hostinger Hosting**
+- Initially planned: "Hosting on Hostinger"
+- Changed: Deployed to Vercel instead
+- Reason: Better CI/CD, automatic deployments, better performance
+
+#### **UI/UX Features Removed**
+❌ **Bulk Actions in Availability**
+- Initially implemented in v1.0
+- Removed: Removed in v1.1.0 (per PATCH-NOTES)
+- Reason: Rarely used, cluttered UI
+
+❌ **Maintenance Banner**
+- Initially implemented in v1.0
+- Removed: Removed in v1.1.0 (per PATCH-NOTES)
+- Reason: System fully operational, no longer needed
+
+❌ **Redundant Whiteboard Refresh Button**
+- Initially in waiting modal
+- Removed: Moved to toolbar only in v1.1.0
+- Reason: Redundant, simplified UI
+
+#### **Administrative Features**
+❌ **Tutor Recognition Module**
+- Initially planned: "Handle tutor recognition"
+- Removed: Not implemented as separate module
+- Reason: Scope reduction
+
+❌ **Reporting Concerns System**
+- Initially planned: "Handle reporting concerns"
+- Removed: Not implemented
+- Reason: Scope reduction, manual admin oversight instead
+
+#### **Analytics Features**
+❌ **Performance Analytics Dashboard**
+- Initially planned: "Evaluate tutor performance"
+- Removed: Basic statistics only, no advanced analytics
+- Reason: Scope reduction
+
+❌ **Academic Trends Analysis**
+- Initially planned: "Analyze academic trends"
+- Removed: Not implemented
+- Reason: Scope reduction
+
+#### **Content Features**
+❌ **Session Notes (Separate Feature)**
+- Initially planned: "Session notes" as separate feature
+- Changed: Integrated into session logs
+- Reason: Simpler implementation
+
+❌ **Bookmark Resources**
+- Initially planned: "Bookmark resources"
+- Removed: Not implemented
+- Reason: Scope reduction
+
+#### **Notification Features**
+❌ **Push Notifications (Browser)**
+- Initially planned: Implied in notification system
+- Removed: In-app notifications only
+- Reason: Technical complexity, time constraints
+
+#### **Integration Features**
+❌ **University IT Infrastructure Integration**
+- Initially planned: "Potential integration with institutional systems"
+- Removed: Standalone system
+- Reason: Simplified development, no institutional dependencies
+
+❌ **Institutional Single Sign-On**
+- Initially planned: Implied in scope
+- Removed: Separate registration required
+- Reason: Simplified development
+
+#### **Mobile Features**
+❌ **Native Mobile Applications**
+- Initially planned: Implied in scope
+- Removed: Web-responsive only
+- Reason: Time constraints, resource limitations
+
+❌ **Offline Access**
+- Initially planned: Implied in scope
+- Removed: Requires internet connection
+- Reason: Technical complexity
+
+#### **Content Moderation**
+❌ **Fully Automated Content Moderation**
+- Initially planned: Implied in resource management
+- Removed: Manual admin approval only
+- Reason: Technical complexity, time constraints
+
+#### **Payment Features**
+❌ **Third-Party Payment Gateway**
+- Initially planned: Implied in donation module
+- Removed: QR code only
+- Reason: Complexity, regulatory requirements
+
+❌ **Automated Donation Tracking**
+- Initially planned: Implied in donation module
+- Removed: Basic QR code display only
+- Reason: Scope reduction
+
+### **Features Added During Development**
+These features were NOT in initial planning but added based on feedback:
+
+✅ **Rating Tags System** (Added Sprint 7)
+- 10 descriptive feedback tags
+- Inspired by e-commerce review systems
+- Added based on IT expert feedback
+
+✅ **Favorite Tutors** (Added Sprint 7)
+- Bookmark functionality
+- Quick access to preferred tutors
+- Added based on client feedback
+
+✅ **Donation QR Codes** (Added Sprint 7)
+- QR code upload for donations
+- Base64 storage
+- Added based on client request
+
+✅ **Disconnect Tracking** (Added Sprint 7)
+- Track session disconnection reasons
+- Improve reliability metrics
+- Added for analytics
+
+✅ **Auto-Cleanup Past Time Slots** (Added Sprint 7)
+- Automatic removal of expired slots
+- Keep calendar clean
+- Added for maintenance
+
+✅ **Rejection/Cancellation Reasons** (Added Sprint 6)
+- Required reasons for rejections
+- Cancellation tracking
+- Added based on IT expert feedback
+
+✅ **Reschedule Functionality** (Added Sprint 6)
+- Allow session rescheduling
+- Notify both parties
+- Added based on user testing
+
+✅ **Waiting Room System** (Added Sprint 3)
+- Tutor admits learner
+- Controlled session start
+- Added for better session management
+
+✅ **Admin Live Monitoring** (Added Sprint 6)
+- Real-time session viewing
+- Monitor without joining
+- Added based on admin request
+
+✅ **Whiteboard Persistence** (Added Sprint 3)
+- Save whiteboard state
+- Restore on reconnection
+- Added to improve user experience
+
+✅ **Theme Toggle** (Added Sprint 4)
+- Dark/light mode
+- System preference detection
+- Added based on user feedback
+
+### **Domain Evolution**
+- **Initial:** Deployed on Vercel subdomain (techconnect-sand.vercel.app)
+- **Current:** Custom domain via Squarespace (cit-techconnect.org)
+- **DNS Management:** Squarespace domain registrar
+- **Email Domain:** noreply@cit-techconnect.org (Resend)
+
+### **Technology Stack Changes**
+- **Initial Plan:** Google Meet for video
+- **Final Implementation:** WebRTC + PeerJS
+- **Reason:** Better control, no external limits
+
+- **Initial Plan:** Google Calendar for scheduling
+- **Final Implementation:** Custom scheduling with Supabase
+- **Reason:** Better integration, more features
+
+- **Initial Plan:** Fuse.js for search
+- **Final Implementation:** Custom fuzzy search algorithm
+- **Reason:** Lighter weight, sufficient for needs
+
+### **Database Schema Evolution**
+- **Added:** donation_qr_code column (Sprint 7)
+- **Added:** disconnect_reason column (Sprint 7)
+- **Added:** rejection_reason, rejected_at columns (Sprint 6)
+- **Added:** cancelled_reason, cancelled_at, cancelled_by columns (Sprint 6)
+- **Added:** start_time, end_time to tutor_day_availability (Sprint 5)
+- **Added:** registered_year to tutor_profiles (Sprint 5)
+- **Added:** whiteboard_states table (Sprint 3)
+- **Added:** feedback_tags table and enum (Sprint 7)
+- **Added:** favorite_tutors table (Sprint 7)
+
+### **UI/UX Evolution**
+- **v1.0:** Basic functionality
+- **v1.1.0:** Major improvements (per PATCH-NOTES)
+  - Removed "Under Maintenance" banner
+  - Fixed video session bugs
+  - Improved whiteboard reliability
+  - Enhanced availability calendar
+  - Better instant session handling
+  - Removed bulk actions button
+
+### **Terminology Standardization**
+Throughout development, terminology was standardized:
+- **Tutee** → **Learner** (everywhere)
+- **Student** → **Learner** (in some places)
+- **Session Request** → **Session Booking** (for scheduled)
+- **Quick Session** → **Instant Session** (standardized)
+- **Study Buddy/Learning Buddy** → **Tutor** (simplified)  
+
+---
+
 ## 🔍 **TECHNICAL HIGHLIGHTS**
 
 ### **Performance Optimizations**
@@ -658,6 +950,55 @@ For complete transparency:
 
 ---
 
-**Document Version:** 3.0 (Complete Analysis)  
+---
+
+## 📊 **PROJECT TIMELINE SUMMARY**
+
+### **Phase 1: Planning & Implementation (2024)**
+- Requirements gathering
+- System design
+- Database schema design
+- UI/UX mockups
+- Technology selection
+- Proposal approval
+
+### **Phase 2: Development (October 7 - November 23, 2025)**
+
+**Sprint 1-4: Initial Development (Oct 7 - Nov 4)**
+- Core authentication and user management
+- Tutor/learner profiles
+- Session booking system
+- Video session infrastructure (WebRTC + PeerJS)
+- Interactive whiteboard (Fabric.js)
+- Basic admin features
+
+**Sprint 5-6: IT Expert Revisions (Nov 5-18)**
+- Added rejection/cancellation reasons
+- Implemented reschedule functionality
+- Added admin live monitoring
+- Improved session status tracking
+- Enhanced availability management
+- Bug fixes and optimizations
+
+**Sprint 7: Client Revisions (Nov 19-23)**
+- Added rating tags system
+- Implemented favorite tutors
+- Added donation QR codes
+- Disconnect tracking
+- Auto-cleanup features
+- Final polish and bug fixes
+
+### **Current Status (November 24, 2025)**
+- ✅ Development completed
+- ✅ Deployed to production (Vercel)
+- ✅ Custom domain configured (Squarespace)
+- ✅ All features tested and working
+- 📝 Documentation completed
+- 🎓 Preparing for capstone defense
+
+---
+
+**Document Version:** 4.0 (Complete Analysis with Evolution)  
 **Last Updated:** November 24, 2025  
-**Analysis Method:** Full codebase review including all files, dependencies, and configurations
+**Analysis Method:** Full codebase review including all files, dependencies, configurations, and project history  
+**Includes:** Feature evolution, terminology changes, removed features, and domain information
