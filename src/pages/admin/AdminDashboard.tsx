@@ -22,7 +22,7 @@ export default function AdminDashboard() {
       ]);
 
       const activeSessions = sessions.data?.filter(
-        (s) => s.session_status === "in_progress" || s.status === "accepted"
+        (s) => s.session_status === "in_progress"
       ).length || 0;
 
       return {
