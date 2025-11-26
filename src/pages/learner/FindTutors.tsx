@@ -775,9 +775,10 @@ const FindTutors = () => {
                 <Checkbox
                   id="booked-filter"
                   checked={showOnlyBooked}
+                  disabled={bookedTutorIds.size === 0}
                   onCheckedChange={(checked) => setShowOnlyBooked(checked as boolean)}
                 />
-                <Label htmlFor="booked-filter" className="text-sm cursor-pointer">
+                <Label htmlFor="booked-filter" className={`text-sm ${bookedTutorIds.size === 0 ? 'text-muted-foreground cursor-not-allowed' : 'cursor-pointer'}`}>
                   Show only tutors I've booked before
                   {bookedTutorIds.size > 0 && (
                     <span className="text-muted-foreground ml-1">

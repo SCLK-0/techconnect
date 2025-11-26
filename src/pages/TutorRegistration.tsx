@@ -359,12 +359,18 @@ const TutorRegistration = () => {
                 placeholder="Tell us about yourself and your tutoring experience..."
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
+                maxLength={500}
                 rows={4}
                 required
               />
-              <p className="text-sm text-muted-foreground">
-                Share your experience, qualifications, and what makes you a great tutor
-              </p>
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  Share your experience, qualifications, and what makes you a great tutor
+                </p>
+                <p className={`text-sm font-medium ${bio.length >= 500 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {bio.length}/500
+                </p>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 pt-8">
