@@ -15,8 +15,8 @@ export function TutorRouteGuard({ children }: TutorRouteGuardProps) {
   const { tutorStatus, loading: statusLoading, isApproved } = useTutorStatus();
 
   useEffect(() => {
-    // Wait for both role and status to load
-    if (roleLoading || statusLoading) return;
+    // Wait for role to load first
+    if (roleLoading) return;
 
     // Check if user is a tutor
     if (role !== "tutor") {
@@ -24,6 +24,9 @@ export function TutorRouteGuard({ children }: TutorRouteGuardProps) {
       navigate("/", { replace: true });
       return;
     }
+
+    // Now wait for tutor status to load
+    if (statusLoading) return;
 
     // Check if tutor is approved
     if (!isApproved) {
@@ -36,7 +39,14 @@ export function TutorRouteGuard({ children }: TutorRouteGuardProps) {
       } else if (tutorStatus === "disabled") {
         toast.error("Your tutor account has been disabled");
         navigate("/", { replace: true });
+      } else if (tutorStatus === null) {
+        // Tutor profile doesn't exist yet - this is normal for new tutors
+        console.log("Tutor profile not found - may be newly registered");
+        toast.info("Please complete your tutor registration");
+        navigate("/", { replace: true });
       } else {
+        // This shouldn't happen, but handle it gracefully
+        console.error("Unexpected tutor status:", tutorStatus);
         toast.error("Unable to verify tutor status");
         navigate("/", { replace: true });
       }
