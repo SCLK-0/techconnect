@@ -188,19 +188,26 @@ export function SessionChat({ sessionId, userId, disableFullscreen = false, isMo
               </PopoverTrigger>
               <PopoverContent 
                 side="top" 
-                align="start" 
-                sideOffset={5}
+                align="center" 
+                sideOffset={8}
+                alignOffset={0}
                 className="w-auto p-0 border-0 bg-transparent shadow-none"
                 style={{ zIndex: 100000 }}
+                avoidCollisions={true}
+                collisionPadding={8}
               >
-                <EmojiPicker onEmojiClick={(emojiData) => {
-                  setNewMessage((prev) => prev + emojiData.emoji);
-                  if (fullscreenMode) {
-                    setShowFullscreenEmojiPicker(false);
-                  } else {
-                    setShowEmojiPicker(false);
-                  }
-                }} />
+                <EmojiPicker 
+                  onEmojiClick={(emojiData) => {
+                    setNewMessage((prev) => prev + emojiData.emoji);
+                    if (fullscreenMode) {
+                      setShowFullscreenEmojiPicker(false);
+                    } else {
+                      setShowEmojiPicker(false);
+                    }
+                  }}
+                  width={280}
+                  height={350}
+                />
               </PopoverContent>
             </Popover>
             <Input
