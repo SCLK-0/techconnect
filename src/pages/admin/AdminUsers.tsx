@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { toast } from "sonner";
-import { Search, UserX, Calendar, UserCheck, Loader2, Trash2 } from "lucide-react";
+import { Search, UserX, Calendar, UserCheck, Loader2, Trash2, Eye, Mail, BookOpen, Star } from "lucide-react";
 import { format } from "date-fns";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
@@ -29,6 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function AdminUsers() {
   const { user: currentUser } = useUserRole();
@@ -38,6 +46,8 @@ export default function AdminUsers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const itemsPerPage = 7;
   const queryClient = useQueryClient();
 
@@ -164,6 +174,61 @@ export default function AdminUsers() {
       console.error("Delete error:", error);
       toast.error(error.message || "Failed to delete user account");
     },
+  });
+
+  // Fetch detailed user info when viewing
+  const { data: userDetails, isLoading: loadingDetails } = useQuery({
+    queryKey: ["user-details", selectedUser?.user_id],
+    queryFn: async () => {
+      if (!selectedUser) return null;
+      
+      const userId = selectedUser.user_id;
+      
+      // Get email
+      const { data: emailData } = await supabase.rpc('get_user_email', { user_id: userId });
+      
+      // Get role-specific profile
+      let roleProfile = null;
+      if (selectedUser.user_roles?.[0]?.role === 'tutor') {
+        const { data } = await supabase
+          .from('tutor_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        roleProfile = data;
+      } else if (selectedUser.user_roles?.[0]?.role === 'learner') {
+        const { data } = await supabase
+          .from('learner_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        roleProfile = data;
+      }
+      
+      // Get session count
+      const role = selectedUser.user_roles?.[0]?.role;
+      let sessionCount = 0;
+      if (role === 'tutor') {
+        const { count } = await supabase
+          .from('sessions')
+          .select('*', { count: 'exact', head: true })
+          .eq('tutor_id', userId);
+        sessionCount = count || 0;
+      } else if (role === 'learner') {
+        const { count } = await supabase
+          .from('sessions')
+          .select('*', { count: 'exact', head: true })
+          .eq('learner_id', userId);
+        sessionCount = count || 0;
+      }
+      
+      return {
+        email: emailData,
+        roleProfile,
+        sessionCount,
+      };
+    },
+    enabled: !!selectedUser && viewDetailsOpen,
   });
 
   const filteredUsers = users.filter((user: any) => {
@@ -371,6 +436,18 @@ export default function AdminUsers() {
                                 {!isUserAdmin(user) && (
                                   <div className="flex gap-2 justify-end">
                                     <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedUser(user);
+                                        setViewDetailsOpen(true);
+                                      }}
+                                      className="transition-all duration-300 hover:scale-105"
+                                      title="View user details"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button
                                       variant={user.is_active ? "destructive" : "default"}
                                       size="sm"
                                       onClick={() => {
@@ -500,6 +577,120 @@ export default function AdminUsers() {
           </main>
         </div>
       </div>
+
+      {/* User Details Dialog */}
+      <Dialog open={viewDetailsOpen} onOpenChange={setViewDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about this user
+            </DialogDescription>
+          </DialogHeader>
+          
+          {loadingDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : selectedUser && (
+            <div className="space-y-6">
+              {/* Profile Header */}
+              <div className="flex items-center gap-4 pb-4 border-b">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={selectedUser.avatar_url} alt={selectedUser.full_name} />
+                  <AvatarFallback className="text-2xl">
+                    {selectedUser.full_name?.charAt(0).toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold">{selectedUser.full_name || "No name"}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant={
+                      selectedUser.user_roles?.[0]?.role === "admin" ? "destructive" :
+                      selectedUser.user_roles?.[0]?.role === "tutor" ? "default" : "secondary"
+                    }>
+                      {selectedUser.user_roles?.[0]?.role || "none"}
+                    </Badge>
+                    <Badge variant={selectedUser.is_active ? "default" : "secondary"}>
+                      {selectedUser.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </div>
+                  <p className="font-medium">{userDetails?.email || "N/A"}</p>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                    <Calendar className="h-4 w-4" />
+                    Joined
+                  </div>
+                  <p className="font-medium">
+                    {selectedUser.created_at ? format(new Date(selectedUser.created_at), "PPP") : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                    <BookOpen className="h-4 w-4" />
+                    Total Sessions
+                  </div>
+                  <p className="font-medium">{userDetails?.sessionCount || 0}</p>
+                </div>
+                {selectedUser.registered_year && (
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Year Level</div>
+                    <p className="font-medium">{selectedUser.registered_year}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Bio */}
+              {selectedUser.bio && (
+                <div>
+                  <div className="text-sm text-muted-foreground mb-2">Bio</div>
+                  <p className="text-sm bg-muted p-3 rounded-md">{selectedUser.bio}</p>
+                </div>
+              )}
+
+              {/* Role-Specific Info */}
+              {userDetails?.roleProfile && (
+                <div>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {selectedUser.user_roles?.[0]?.role === 'tutor' ? 'Subject Expertise' : 'Subjects of Interest'}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(userDetails.roleProfile.subject_expertise || userDetails.roleProfile.subjects_of_interest || []).map((subject: string) => (
+                      <Badge key={subject} variant="outline">{subject}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tutor-specific: Rating */}
+              {selectedUser.user_roles?.[0]?.role === 'tutor' && userDetails?.roleProfile?.status && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Status</div>
+                    <Badge variant={
+                      userDetails.roleProfile.status === 'approved' ? 'default' :
+                      userDetails.roleProfile.status === 'pending' ? 'secondary' : 'destructive'
+                    }>
+                      {userDetails.roleProfile.status}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
