@@ -2358,9 +2358,9 @@ export default function VideoSession() {
                     {/* Camera Off Overlay - Show only when camera is explicitly off AND not screen sharing */}
                     {isConnected && !remoteCameraOn && !remoteScreenSharing && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg z-20">
-                        {(role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url) ? (
+                        {(role === "tutor" ? sessionData?.learner_profiles?.avatar_url : sessionData?.tutor_profiles?.avatar_url) ? (
                           <img 
-                            src={role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url} 
+                            src={role === "tutor" ? sessionData?.learner_profiles?.avatar_url : sessionData?.tutor_profiles?.avatar_url} 
                             alt={role === "tutor" ? sessionData?.learner_profiles?.full_name : sessionData?.tutor_profiles?.full_name} 
                             className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
                           />
@@ -2433,9 +2433,9 @@ export default function VideoSession() {
                     </div>
                     {!isCameraOn && !isScreenSharing && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-700 rounded-lg pointer-events-none z-20">
-                        {(role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url) ? (
+                        {(role === "tutor" ? sessionData?.tutor_profiles?.avatar_url : sessionData?.learner_profiles?.avatar_url) ? (
                           <img 
-                            src={role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url} 
+                            src={role === "tutor" ? sessionData?.tutor_profiles?.avatar_url : sessionData?.learner_profiles?.avatar_url} 
                             alt="You" 
                             className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
                           />
@@ -2615,9 +2615,9 @@ export default function VideoSession() {
             {/* Camera Off Overlay - Local (works for both demo and regular sessions) */}
             {fullscreenVideo === 'local' && !isCameraOn && !isScreenSharing && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-                {sessionData?.tutor_profiles?.profile_picture_url || sessionData?.learner_profiles?.profile_picture_url ? (
+                {sessionData?.tutor_profiles?.avatar_url || sessionData?.learner_profiles?.avatar_url ? (
                   <img 
-                    src={role === "tutor" ? sessionData?.tutor_profiles?.profile_picture_url : sessionData?.learner_profiles?.profile_picture_url} 
+                    src={role === "tutor" ? sessionData?.tutor_profiles?.avatar_url : sessionData?.learner_profiles?.avatar_url} 
                     alt="Your profile" 
                     className="w-32 h-32 rounded-full object-cover border-4 border-white/20 shadow-2xl mb-4"
                   />
@@ -2640,9 +2640,9 @@ export default function VideoSession() {
             {/* Camera Off Overlay - Remote */}
             {fullscreenVideo === 'remote' && !remoteCameraOn && !remoteScreenSharing && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-                {(role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url) ? (
+                {(role === "tutor" ? sessionData?.learner_profiles?.avatar_url : sessionData?.tutor_profiles?.avatar_url) ? (
                   <img 
-                    src={role === "tutor" ? sessionData?.learner_profiles?.profile_picture_url : sessionData?.tutor_profiles?.profile_picture_url} 
+                    src={role === "tutor" ? sessionData?.learner_profiles?.avatar_url : sessionData?.tutor_profiles?.avatar_url} 
                     alt="Their profile" 
                     className="w-32 h-32 rounded-full object-cover border-4 border-white/20 shadow-2xl mb-4"
                   />
