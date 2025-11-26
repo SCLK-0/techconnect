@@ -23,6 +23,7 @@ export function SessionTimer({ sessionId, onTimeout }: SessionTimerProps) {
   const [showWarning, setShowWarning] = useState(false);
   const [isMissed, setIsMissed] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasTriggeredTimeout, setHasTriggeredTimeout] = useState(false);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -49,6 +50,7 @@ export function SessionTimer({ sessionId, onTimeout }: SessionTimerProps) {
           // Session is more than 20 minutes late - mark as missed
           setIsMissed(true);
           setTimeLeft(0);
+          setHasTriggeredTimeout(true);
           toast.error("This session has been missed (more than 20 minutes late)");
           setTimeout(() => onTimeout(), 2000);
         } else {
@@ -63,9 +65,10 @@ export function SessionTimer({ sessionId, onTimeout }: SessionTimerProps) {
   }, [sessionId, onTimeout]);
 
   useEffect(() => {
-    if (isMissed || !isInitialized) return;
+    if (isMissed || !isInitialized || hasTriggeredTimeout) return;
 
-    if (timeLeft === 0 && duration > 0) {
+    if (timeLeft === 0 && duration > 0 && !hasTriggeredTimeout) {
+      setHasTriggeredTimeout(true);
       onTimeout();
       return;
     }
@@ -79,7 +82,10 @@ export function SessionTimer({ sessionId, onTimeout }: SessionTimerProps) {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          onTimeout();
+          if (!hasTriggeredTimeout) {
+            setHasTriggeredTimeout(true);
+            onTimeout();
+          }
           return 0;
         }
         return prev - 1;
@@ -87,7 +93,7 @@ export function SessionTimer({ sessionId, onTimeout }: SessionTimerProps) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeLeft, duration, onTimeout, showWarning, isInitialized]);
+  }, [timeLeft, duration, showWarning, isInitialized, isMissed, hasTriggeredTimeout]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);

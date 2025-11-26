@@ -2146,6 +2146,12 @@ export default function VideoSession() {
         </div>
         <div className="flex items-center gap-4">
           {!isMonitorMode && <SessionTimer sessionId={sessionId!} onTimeout={async () => {
+            // Prevent multiple timeout triggers
+            if (sessionStatus === "completed" || logModalShown) {
+              console.log("⏰ Timeout already handled, skipping");
+              return;
+            }
+            
             console.log("⏰ Session timeout - auto-ending session");
             
             // Clean up media tracks first
@@ -2168,6 +2174,7 @@ export default function VideoSession() {
               console.log("📝 Showing log modal after timeout");
               setShowLogModal(true);
               setLogModalShown(true);
+              toast.info("Session time has ended");
             }
           }} />}
           {isMonitorMode ? (

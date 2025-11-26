@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas, PencilBrush, IText, FabricImage, Rect as FabricRect, Text } from "fabric";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   MousePointer2,
@@ -77,6 +78,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   const [userPresences, setUserPresences] = useState<Record<string, UserPresence>>({});
   const [remoteCursors, setRemoteCursors] = useState<Record<string, CursorPosition>>({});
   const [bothUsersPresent, setBothUsersPresent] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'failed' | 'disconnected'>('connecting');
   const isRemoteUpdate = useRef(false);
   const channelRef = useRef<any>(null);
   const isChannelReady = useRef(false);
@@ -362,8 +364,32 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
           })
           .on("presence", { event: "join" }, ({ newPresences }) => {
             console.log(`👋 ${displayName} saw user JOIN whiteboard:`, newPresences);
-            newPresences.forEach((p: any) => {
-              console.log(`  - Joined: ${p.userName} (${p.userId?.substring(0, 8)})`);
+            
+            // Immediately update userPresences when someone joins
+            setUserPresences(prev => {
+              const updated = { ...prev };
+              newPresences.forEach((p: any) => {
+                console.log(`  - Joined: ${p.userName} (${p.userId?.substring(0, 8)})`);
+                if (p.userId && p.userId !== user.id) {
+                  updated[p.userId] = {
+                    userId: p.userId,
+                    userName: p.userName,
+                    editingObjectId: p.editingObjectId,
+                    color: p.color,
+                  };
+                }
+              });
+              return updated;
+            });
+            
+            // Update bothUsersPresent immediately
+            setUserPresences(prev => {
+              const hasOtherUsers = Object.keys(prev).length > 0;
+              if (hasOtherUsers !== bothUsersPresent) {
+                setBothUsersPresent(hasOtherUsers);
+                console.log("✅ User joined - whiteboard enabled");
+              }
+              return prev;
             });
           })
           .on("presence", { event: "leave" }, ({ leftPresences }) => {
@@ -411,7 +437,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         });
         
         const timeoutPromise = new Promise<string>((resolve) => {
-          setTimeout(() => resolve('TIMEOUT'), 10000); // 10 second timeout
+          setTimeout(() => resolve('TIMEOUT'), 30000); // 30 second timeout (increased for reliability)
         });
         
         const status = await Promise.race([subscribePromise, timeoutPromise]);
@@ -419,6 +445,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         if (status === 'SUBSCRIBED') {
           console.log(`✅ ${displayName} whiteboard channel SUBSCRIBED to ${channelName}`);
           channelRef.current = channel;
+          setConnectionStatus('connected');
           
           // Only track presence if not in monitor mode
           if (!isMonitorMode) {
@@ -432,7 +459,6 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
             
             // Set channel ready immediately - no delay
             isChannelReady.current = true;
-            // toast.success("Whiteboard ready"); // Removed - too noisy
             console.log(`🎨 ${displayName} channel is now ready for broadcasts`);
           } else {
             console.log(`👀 ${displayName} in monitor mode - not tracking presence`);
@@ -448,11 +474,13 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
           
           if (subscriptionAttempts < maxAttempts) {
             console.log(`🔄 ${displayName} retrying subscription in 2 seconds...`);
+            setConnectionStatus('connecting');
             await new Promise(resolve => setTimeout(resolve, 2000));
             return attemptSubscription();
           } else {
             console.error(`❌ ${displayName} failed to subscribe after ${maxAttempts} attempts`);
-            toast.error("Whiteboard sync failed - drawing will not sync");
+            setConnectionStatus('failed');
+            toast.error("Whiteboard connection failed - click refresh to retry");
             isChannelReady.current = false;
             return channel; // Return channel anyway for cleanup
           }
@@ -940,14 +968,12 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
     initCanvas();
   }, [sessionId]);
 
-  // Enable/disable canvas interaction based on both users being present AND peer connected
+  // Enable/disable canvas interaction based on both users being present
+  // Simplified: Only require presence, not peer connection (more reliable)
   useEffect(() => {
     if (!canvas || isMonitorMode) return;
 
-    // Whiteboard is enabled when both users are present AND peer connection is active
-    // Both conditions are required for proper synchronization
-    // Use debounced value to prevent flickering
-    const isWhiteboardEnabled = bothUsersPresent && debouncedPeerConnected;
+    const isWhiteboardEnabled = bothUsersPresent && connectionStatus === 'connected';
 
     if (isWhiteboardEnabled) {
       // Enable interaction
@@ -964,9 +990,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         }
       });
       
-      console.log("✅ Whiteboard enabled - bothUsers:", bothUsersPresent, "peerConnected:", isPeerConnected);
+      console.log("✅ Whiteboard enabled - bothUsers:", bothUsersPresent, "connected:", connectionStatus);
     } else {
-      // Completely disable interaction until both conditions are met
+      // Disable interaction until conditions are met
       canvas.selection = false;
       canvas.isDrawingMode = false;
       canvas.defaultCursor = "not-allowed";
@@ -983,9 +1009,9 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       });
       
       canvas.renderAll();
-      console.log("⏳ Whiteboard disabled - bothUsers:", bothUsersPresent, "peerConnected:", isPeerConnected);
+      console.log("⏳ Whiteboard disabled - bothUsers:", bothUsersPresent, "connected:", connectionStatus);
     }
-  }, [bothUsersPresent, isPeerConnected, canvas, isMonitorMode, activeTool]);
+  }, [bothUsersPresent, connectionStatus, canvas, isMonitorMode, activeTool]);
 
   const updateObjectIndicators = (fabricCanvas: Canvas, presences: Record<string, UserPresence>) => {
     const existingIndicators = fabricCanvas.getObjects().filter((obj) => (obj as any).isIndicator);
@@ -1611,6 +1637,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   const refreshWhiteboard = async () => {
     if (!canvas || !userId) return;
     
+    setConnectionStatus('connecting');
     toast.info("Refreshing whiteboard connection...");
     
     // Unsubscribe from current channel
@@ -1665,7 +1692,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
       })
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState();
-        console.log(`👥 ${displayName} presence sync after reconnect, total keys:`, Object.keys(state).length);
+        console.log(`👥 ${userName} presence sync after reconnect, total keys:`, Object.keys(state).length);
         
         const presences: Record<string, UserPresence> = {};
         
@@ -1685,11 +1712,11 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
           }
         });
         
-        console.log(`👥 ${displayName} other users present after reconnect:`, Object.keys(presences).length);
+        console.log(`👥 ${userName} other users present after reconnect:`, Object.keys(presences).length);
         setUserPresences(presences);
         userPresencesRef.current = presences;
         const hasOtherUsers = Object.keys(presences).length > 0;
-        console.log(`🔄 ${displayName} hasOtherUsers after reconnect:`, hasOtherUsers);
+        console.log(`🔄 ${userName} hasOtherUsers after reconnect:`, hasOtherUsers);
         setBothUsersPresent(hasOtherUsers);
         
         if (!isMonitorMode) {
@@ -1702,6 +1729,7 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
         console.log("✅ Whiteboard reconnected successfully");
         channelRef.current = channel;
         isChannelReady.current = true;
+        setConnectionStatus('connected');
         
         // Track presence
         if (!isMonitorMode) {
@@ -1713,11 +1741,10 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
           });
         }
         
-
-        
         toast.success("Whiteboard reconnected!");
       } else if (status === "CHANNEL_ERROR") {
         console.error("❌ Failed to reconnect whiteboard");
+        setConnectionStatus('failed');
         toast.error("Failed to reconnect. Please try again.");
       }
     });
@@ -1728,7 +1755,36 @@ export function WhiteboardCanvas({ sessionId, isMonitorMode = false, isPeerConne
   const isWhiteboardEnabled = bothUsersPresent && debouncedPeerConnected;
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20">
+    <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20 relative">
+      {/* Connection Status Badge */}
+      <div className="absolute top-2 right-2 z-50">
+        {connectionStatus === 'connecting' && (
+          <Badge variant="secondary" className="animate-pulse">
+            Connecting...
+          </Badge>
+        )}
+        {connectionStatus === 'connected' && !bothUsersPresent && (
+          <Badge variant="secondary">
+            Waiting for other user...
+          </Badge>
+        )}
+        {connectionStatus === 'connected' && bothUsersPresent && (
+          <Badge variant="default" className="bg-green-600">
+            ✓ Connected
+          </Badge>
+        )}
+        {connectionStatus === 'failed' && (
+          <Badge variant="destructive">
+            Connection failed
+          </Badge>
+        )}
+        {connectionStatus === 'disconnected' && (
+          <Badge variant="destructive">
+            Disconnected
+          </Badge>
+        )}
+      </div>
+      
       {/* Toolbar - Hidden in monitor mode */}
       {!isMonitorMode && (
         <div className="bg-background/95 backdrop-blur-sm border-b p-3 flex items-center gap-2 flex-wrap shadow-sm">
