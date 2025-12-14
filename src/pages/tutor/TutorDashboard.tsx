@@ -201,13 +201,13 @@ export default function TutorDashboard() {
                 </Card>
               )}
               
-              {tutorStatus === "rejected" && (
+              {tutorStatus === "declined" && (
                 <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-3">
                       <Clock className="h-5 w-5 text-red-600" />
                       <div>
-                        <p className="font-semibold text-red-900 dark:text-red-100">Application Rejected</p>
+                        <p className="font-semibold text-red-900 dark:text-red-100">Application Declined</p>
                         <p className="text-sm text-red-700 dark:text-red-200">
                           Unfortunately, your tutor application was not approved. Please contact support for more information.
                         </p>

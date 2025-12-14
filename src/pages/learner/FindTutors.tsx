@@ -516,7 +516,7 @@ const FindTutors = () => {
             setIsWaitingModalOpen(false);
             // Redirect immediately
             navigate(`/video-session/${session.id}`);
-          } else if (session.status === 'rejected') {
+          } else if (session.status === 'declined') {
             sonnerToast.error("Tutor declined the session request");
             setIsWaitingModalOpen(false);
             setCreatedSessionId(null);

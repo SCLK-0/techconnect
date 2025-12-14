@@ -409,7 +409,7 @@ entity "Sessions" as sessions {
   status : ENUM
   session_type : ENUM
   cancellation_reason : TEXT
-  rejection_reason : TEXT
+  declination_reason : TEXT
   disconnect_reason : TEXT
   created_at : TIMESTAMP
   updated_at : TIMESTAMP

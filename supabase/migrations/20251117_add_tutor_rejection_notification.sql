@@ -1,5 +1,5 @@
--- Add notification for tutor rejection
--- This ensures tutors are notified when their application is rejected
+-- Add notification for tutor declination
+-- This ensures tutors are notified when their application is declined
 
 CREATE OR REPLACE FUNCTION public.notify_tutor_approval()
 RETURNS trigger
@@ -20,8 +20,8 @@ BEGIN
     );
   END IF;
   
-  -- Notify on rejection
-  IF NEW.status != OLD.status AND NEW.status = 'rejected' THEN
+  -- Notify on declination
+  IF NEW.status != OLD.status AND NEW.status = 'declined' THEN
     INSERT INTO public.notifications (user_id, title, message, type, related_id)
     VALUES (
       NEW.user_id,

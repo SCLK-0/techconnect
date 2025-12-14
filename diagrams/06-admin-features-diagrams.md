@@ -27,7 +27,7 @@ if (Approve tutor?) then (yes)
   
   :Show success message;
 else (no)
-  :Update status to rejected;
+  :Update status to declined;
   :Notify tutor with reason;
 endif
 
@@ -120,7 +120,7 @@ if (Approve resource?) then (yes)
   :Notify tutor;
   :Show success message;
 else (no)
-  :Update status to rejected;
+  :Update status to declined;
   :Delete file;
   :Notify tutor with reason;
 endif
@@ -385,7 +385,7 @@ alt Approve
     Edge -> Tutor: Resource approved
     deactivate Edge
 else Reject
-    React -> DB: UPDATE resources\nSET status = 'rejected'
+    React -> DB: UPDATE resources\nSET status = 'declined'
     activate DB
     DB --> React: Status updated
     deactivate DB
@@ -402,7 +402,7 @@ else Reject
     
     React -> Edge: Send rejection email
     activate Edge
-    Edge -> Tutor: Resource rejected
+    Edge -> Tutor: Resource declined
     deactivate Edge
 end
 

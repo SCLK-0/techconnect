@@ -14,9 +14,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X } from "lucide-react";
-import { sendSessionRejectedEmail } from "@/utils/sendNotificationEmail";
+import { sendSessionDeclinedEmail } from "@/utils/sendNotificationEmail";
 
-interface RejectSessionDialogProps {
+interface DeclineSessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sessionId: string;
@@ -26,7 +26,7 @@ interface RejectSessionDialogProps {
   onSuccess: () => void;
 }
 
-const REJECTION_REASONS = [
+const DECLINATION_REASONS = [
   "Schedule conflict - I'm not available at this time",
   "Outside my expertise area",
   "Too short notice",
@@ -34,7 +34,7 @@ const REJECTION_REASONS = [
   "Other (please specify)",
 ];
 
-export function RejectSessionDialog({
+export function DeclineSessionDialog({
   open,
   onOpenChange,
   sessionId,
@@ -42,12 +42,12 @@ export function RejectSessionDialog({
   learnerName,
   subject,
   onSuccess,
-}: RejectSessionDialogProps) {
+}: DeclineSessionDialogProps) {
   const [selectedReason, setSelectedReason] = useState("");
   const [customReason, setCustomReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleReject = async () => {
+  const handleDecline = async () => {
     const reason = selectedReason === "Other (please specify)" 
       ? customReason.trim()
       : selectedReason;
@@ -59,10 +59,10 @@ export function RejectSessionDialog({
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc('reject_session_with_reason', {
+      const { data, error } = await supabase.rpc('decline_session_with_reason', {
         p_session_id: sessionId,
         p_tutor_id: tutorId,
-        p_rejection_reason: reason,
+        p_declination_reason: reason,
       });
 
       if (error) throw error;
@@ -97,7 +97,7 @@ export function RejectSessionDialog({
           }
 
           if (learnerEmail) {
-            await sendSessionRejectedEmail(
+            await sendSessionDeclinedEmail(
               learnerEmail,
               learnerProfile?.full_name || "User",
               tutorProfile?.full_name || "Your tutor",
@@ -138,7 +138,7 @@ export function RejectSessionDialog({
           <div>
             <Label>Reason for declining</Label>
             <RadioGroup value={selectedReason} onValueChange={setSelectedReason} className="mt-2 space-y-2">
-              {REJECTION_REASONS.map((reason) => (
+              {DECLINATION_REASONS.map((reason) => (
                 <div key={reason} className="flex items-center space-x-2">
                   <RadioGroupItem value={reason} id={reason} />
                   <Label htmlFor={reason} className="font-normal cursor-pointer">
@@ -174,7 +174,7 @@ export function RejectSessionDialog({
           </Button>
           <Button
             variant="destructive"
-            onClick={handleReject}
+            onClick={handleDecline}
             disabled={isSubmitting || !selectedReason}
           >
             <X className="mr-2 h-4 w-4" />

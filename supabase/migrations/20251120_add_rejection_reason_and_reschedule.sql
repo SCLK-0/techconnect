@@ -1,18 +1,18 @@
--- Add rejection reason and reschedule functionality
+-- Add declination reason and reschedule functionality
 
--- Add rejection_reason column to sessions table
+-- Add declination_reason column to sessions table
 ALTER TABLE public.sessions 
-ADD COLUMN IF NOT EXISTS rejection_reason TEXT,
-ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS declination_reason TEXT,
+ADD COLUMN IF NOT EXISTS declined_at TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS cancelled_reason TEXT,
 ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS cancelled_by UUID REFERENCES auth.users(id);
 
--- Create function to reject session with reason and notify learner
-CREATE OR REPLACE FUNCTION public.reject_session_with_reason(
+-- Create function to decline session with reason and notify learner
+CREATE OR REPLACE FUNCTION public.decline_session_with_reason(
   p_session_id uuid,
   p_tutor_id uuid,
-  p_rejection_reason text
+  p_declination_reason text
 )
 RETURNS json
 LANGUAGE plpgsql
@@ -56,10 +56,10 @@ BEGIN
   -- Update session status
   UPDATE sessions
   SET 
-    status = 'rejected',
+    status = 'declined',
     session_status = 'cancelled',
-    rejection_reason = p_rejection_reason,
-    rejected_at = NOW(),
+    declination_reason = p_declination_reason,
+    declined_at = NOW(),
     updated_at = NOW()
   WHERE id = p_session_id;
 
@@ -78,7 +78,7 @@ BEGIN
       v_tutor_name,
       v_subject,
       to_char(v_scheduled_at, 'Mon DD at HH24:MI'),
-      p_rejection_reason
+      p_declination_reason
     ),
     'session',
     p_session_id
@@ -184,18 +184,18 @@ END;
 $$;
 
 -- Grant execute permissions
-GRANT EXECUTE ON FUNCTION public.reject_session_with_reason(uuid, uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.decline_session_with_reason(uuid, uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_session_with_reason(uuid, uuid, text) TO authenticated;
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_sessions_rejection_reason ON public.sessions(rejection_reason) WHERE rejection_reason IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sessions_declination_reason ON public.sessions(declination_reason) WHERE declination_reason IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_sessions_cancelled_by ON public.sessions(cancelled_by) WHERE cancelled_by IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_sessions_rejected_at ON public.sessions(rejected_at) WHERE rejected_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sessions_declined_at ON public.sessions(declined_at) WHERE declined_at IS NOT NULL;
 
-COMMENT ON COLUMN public.sessions.rejection_reason IS 'Reason provided by tutor when declining a session request';
-COMMENT ON COLUMN public.sessions.rejected_at IS 'Timestamp when session was rejected';
+COMMENT ON COLUMN public.sessions.declination_reason IS 'Reason provided by tutor when declining a session request';
+COMMENT ON COLUMN public.sessions.declined_at IS 'Timestamp when session was declined';
 COMMENT ON COLUMN public.sessions.cancelled_reason IS 'Reason provided when cancelling a session';
 COMMENT ON COLUMN public.sessions.cancelled_at IS 'Timestamp when session was cancelled';
 COMMENT ON COLUMN public.sessions.cancelled_by IS 'User ID of who cancelled the session';
-COMMENT ON FUNCTION public.reject_session_with_reason IS 'Reject a session with reason and notify learner';
+COMMENT ON FUNCTION public.decline_session_with_reason IS 'Decline a session with reason and notify learner';
 COMMENT ON FUNCTION public.cancel_session_with_reason IS 'Cancel a session with reason and notify the other party';

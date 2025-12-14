@@ -53,7 +53,7 @@ CREATE TABLE public.tutor_profiles (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
     subject_expertise TEXT[] NOT NULL,
     bio TEXT NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
     is_online BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
@@ -66,7 +66,7 @@ CREATE TABLE public.sessions (
     subject TEXT NOT NULL,
     scheduled_at TIMESTAMP WITH TIME ZONE,
     duration_minutes INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled')),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'completed', 'cancelled')),
     session_type TEXT DEFAULT 'scheduled' CHECK (session_type IN ('scheduled', 'instant')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
@@ -80,7 +80,7 @@ CREATE TABLE public.resources (
     description TEXT,
     file_url TEXT NOT NULL,
     file_type TEXT,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -792,7 +792,7 @@ ALTER TABLE public.sessions DROP CONSTRAINT IF EXISTS sessions_status_check;
 
 -- Add the new check constraint with 'missed' included
 ALTER TABLE public.sessions ADD CONSTRAINT sessions_status_check 
-CHECK (status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled', 'missed'));
+CHECK (status IN ('pending', 'accepted', 'declined', 'completed', 'cancelled', 'missed'));
 
 
 -- Migration: 20251105071159

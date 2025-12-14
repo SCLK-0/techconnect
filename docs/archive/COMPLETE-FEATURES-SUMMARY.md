@@ -61,7 +61,7 @@
 
 ---
 
-### 4. 🔄 **Rejection Reason & Reschedule**
+### 4. 🔄 **Declination Reason & Reschedule**
 **Status:** ✅ Complete
 
 **What it does:**
@@ -73,9 +73,9 @@
 
 **Files:**
 - Migration: `supabase/migrations/20251120_add_rejection_reason_and_reschedule.sql`
-- Component: `src/components/tutor/RejectSessionDialog.tsx`
+- Component: `src/components/tutor/DeclineSessionDialog.tsx`
 - Component: `src/components/learner/RescheduleSessionDialog.tsx`
-- Updated: `src/pages/tutor/TutorRequests.tsx` (rejection dialog)
+- Updated: `src/pages/tutor/TutorRequests.tsx` (declination dialog)
 - Updated: `src/pages/learner/MySessions.tsx` (reschedule button)
 
 ---
@@ -131,7 +131,7 @@ All 4 migrations have been applied manually:
 - [ ] Click heart again to unfavorite
 - [ ] Verify tutor disappears
 
-### Rejection & Reschedule
+### Declination & Reschedule
 - [ ] Book a session as learner
 - [ ] Login as tutor, decline with reason
 - [ ] Login as learner, check notification
@@ -169,10 +169,10 @@ All 4 migrations have been applied manually:
 
 1. **Notifications**
    - "Your favorite tutor is now online!"
-   - Email notifications for rejections
+   - Email notifications for declinations
 
 2. **Analytics Dashboard**
-   - Track rejection reasons
+   - Track declination reasons
    - Most common tags
    - Favorite counts for tutors
 
@@ -208,7 +208,7 @@ All features are documented in:
 - `MISSED-SESSIONS-HANDLING.md`
 - `RATING-TAGS-FEATURE.md`
 - `FAVORITE-TUTORS-FEATURE.md`
-- `REJECTION-RESCHEDULE-FEATURE.md`
+- `DECLINATION-RESCHEDULE-FEATURE.md`
 
 ---
 

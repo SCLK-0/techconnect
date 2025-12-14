@@ -16,7 +16,7 @@ interface RescheduleSessionDialogProps {
   tutorId: string;
   tutorName: string;
   tutorSubjects: string[];
-  rejectionReason?: string;
+  declinationReason?: string;
   cancelledReason?: string;
 }
 
@@ -26,21 +26,21 @@ export function RescheduleSessionDialog({
   tutorId,
   tutorName,
   tutorSubjects,
-  rejectionReason,
+  declinationReason,
   cancelledReason,
 }: RescheduleSessionDialogProps) {
   const [showBookDialog, setShowBookDialog] = useState(false);
 
-  const reason = rejectionReason || cancelledReason;
+  const reason = declinationReason || cancelledReason;
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Session {rejectionReason ? 'Declined' : 'Cancelled'}</DialogTitle>
+            <DialogTitle>Session {declinationReason ? 'Declined' : 'Cancelled'}</DialogTitle>
             <DialogDescription>
-              {rejectionReason 
+              {declinationReason 
                 ? `${tutorName} declined your session request.`
                 : `Your session with ${tutorName} was cancelled.`
               }

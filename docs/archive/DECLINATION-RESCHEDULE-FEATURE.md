@@ -1,11 +1,11 @@
-# Session Rejection & Reschedule Feature
+# Session Declination & Reschedule Feature
 
 ## Overview
 Tutors can now decline session requests with a reason, and learners receive notifications with the option to reschedule.
 
 ## Features
 
-### 1. Rejection with Reason (Tutor Side)
+### 1. Declination with Reason (Tutor Side)
 
 **When tutor clicks "Decline":**
 1. Dialog opens with predefined reasons:
@@ -72,15 +72,15 @@ Reason: [Rejection Reason]. You can reschedule or find another tutor."
 
 ## UI Components
 
-### RejectSessionDialog
-**Location:** `src/components/tutor/RejectSessionDialog.tsx`
+### DeclineSessionDialog
+**Location:** `src/components/tutor/DeclineSessionDialog.tsx`
 
 **Props:**
-- `sessionId` - Session to reject
+- `sessionId` - Session to decline
 - `tutorId` - Current tutor ID
 - `learnerName` - For display
 - `subject` - For display
-- `onSuccess` - Callback after rejection
+- `onSuccess` - Callback after declination
 
 **Features:**
 - Radio button selection for reasons
@@ -108,23 +108,23 @@ Reason: [Rejection Reason]. You can reschedule or find another tutor."
 
 ### Tutor Requests Page ✅
 **File:** `src/pages/tutor/TutorRequests.tsx`
-- "Decline" button opens RejectSessionDialog
+- "Decline" button opens DeclineSessionDialog
 - Reason is required before declining
 - Learner is notified automatically
 
 ### Learner Sessions Page (TODO)
 **File:** `src/pages/learner/MySessions.tsx`
-- Show rejection reason on rejected sessions
+- Show declination reason on declined sessions
 - Add "Reschedule" button
 - Opens RescheduleSessionDialog
 
 **Implementation needed:**
 ```tsx
-// In MySessions.tsx, for rejected/cancelled sessions
-{session.status === 'rejected' && (
+// In MySessions.tsx, for declined/cancelled sessions
+{session.status === 'declined' && (
   <div className="mt-2">
     <p className="text-sm text-muted-foreground">
-      Reason: {session.rejection_reason}
+      Reason: {session.declination_reason}
     </p>
     <Button 
       size="sm" 

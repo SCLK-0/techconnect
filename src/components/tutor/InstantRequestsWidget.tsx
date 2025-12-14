@@ -231,7 +231,7 @@ export function InstantRequestsWidget({ userId }: InstantRequestsWidgetProps) {
                               onClick={() =>
                                 updateStatusMutation.mutate({
                                   sessionId: request.id,
-                                  status: "rejected",
+                                  status: "declined",
                                 })
                               }
                               disabled={updateStatusMutation.isPending}

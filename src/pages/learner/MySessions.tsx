@@ -45,7 +45,7 @@ interface Session {
 const statusConfig = {
   pending: { label: "Pending", variant: "secondary" as const },
   accepted: { label: "Accepted", variant: "default" as const },
-  rejected: { label: "Rejected", variant: "destructive" as const },
+  declined: { label: "Declined", variant: "destructive" as const },
   completed: { label: "Completed", variant: "outline" as const },
   cancelled: { label: "Cancelled", variant: "destructive" as const },
 };
@@ -296,11 +296,11 @@ export default function MySessions() {
                               )}
                             </div>
                             
-                            {/* Show rejection reason if session was rejected */}
-                            {session.status === 'rejected' && session.rejection_reason && (
+                            {/* Show declination reason if session was declined */}
+                            {session.status === 'declined' && session.declination_reason && (
                               <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
                                 <p className="text-sm font-medium text-destructive mb-1">Reason for declining:</p>
-                                <p className="text-sm text-muted-foreground">{session.rejection_reason}</p>
+                                <p className="text-sm text-muted-foreground">{session.declination_reason}</p>
                               </div>
                             )}
                             

@@ -14,7 +14,7 @@ import { Calendar, Clock, User, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
-import { RejectSessionDialog } from "@/components/tutor/RejectSessionDialog";
+import { DeclineSessionDialog } from "@/components/tutor/DeclineSessionDialog";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 export default function TutorRequests() {
@@ -177,7 +177,7 @@ export default function TutorRequests() {
       </div>
 
       {selectedSession && (
-        <RejectSessionDialog
+        <DeclineSessionDialog
           open={rejectDialogOpen}
           onOpenChange={setRejectDialogOpen}
           sessionId={selectedSession.id}

@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
-import { RejectSessionDialog } from "@/components/tutor/RejectSessionDialog";
+import { DeclineSessionDialog } from "@/components/tutor/DeclineSessionDialog";
 import { TutorCancelSessionDialog } from "@/components/tutor/TutorCancelSessionDialog";
 import { sendScheduledSessionAcceptedEmail, sendSessionMissedEmail } from "@/utils/sendNotificationEmail";
 import { format as formatDate } from "date-fns";
@@ -435,7 +435,7 @@ export default function TutorSessions() {
 
       {selectedSession && (
         <>
-          <RejectSessionDialog
+          <DeclineSessionDialog
             open={rejectDialogOpen}
             onOpenChange={setRejectDialogOpen}
             sessionId={selectedSession.id}

@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationEmailPayload {
   to: string;
-  type: "session_request" | "session_accepted" | "session_rejected" | "session_reminder" | "session_started" | "session_ended" | "instant_session_starting" | "session_missed" | "tutor_cancelled" | "scheduled_session_accepted";
+  type: "session_request" | "session_accepted" | "session_declined" | "session_reminder" | "session_started" | "session_ended" | "instant_session_starting" | "session_missed" | "tutor_cancelled" | "scheduled_session_accepted";
   data: {
     recipientName?: string;
     senderName?: string;
@@ -100,7 +100,7 @@ export async function sendSessionAcceptedEmail(
   });
 }
 
-export async function sendSessionRejectedEmail(
+export async function sendSessionDeclinedEmail(
   learnerEmail: string,
   learnerName: string,
   tutorName: string,
@@ -108,7 +108,7 @@ export async function sendSessionRejectedEmail(
 ) {
   return sendNotificationEmail({
     to: learnerEmail,
-    type: "session_rejected",
+    type: "session_declined",
     data: {
       recipientName: learnerName,
       senderName: tutorName,

@@ -117,7 +117,7 @@ export function GlobalInstantRequestsWidget({ userId }: GlobalInstantRequestsWid
               size="sm"
               onClick={() => updateStatusMutation.mutate({ 
                 sessionId: currentRequest.id, 
-                status: "rejected" 
+                status: "declined" 
               })}
               disabled={updateStatusMutation.isPending}
               className="flex-1 h-8 text-xs"

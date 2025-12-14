@@ -59,7 +59,7 @@ export function useInstantSessionNotifications(userId: string | undefined, isOnl
           
           // Invalidate queries when session status changes
           if (updatedSession.session_type === "instant" && 
-              (updatedSession.status === "accepted" || updatedSession.status === "rejected")) {
+              (updatedSession.status === "accepted" || updatedSession.status === "declined")) {
             queryClient.invalidateQueries({ queryKey: ["instant-requests"] });
             queryClient.invalidateQueries({ queryKey: ["tutor-stats"] });
           }

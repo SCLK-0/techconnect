@@ -54,7 +54,7 @@ Specifically, it aims to:
 
    - Providing a dashboard that visualizes tutoring activity, session history, feedback summaries with rating tags, and performance metrics to support self-improvement and data-driven decisions.
 
-   - Enabling administrators to manage user accounts, verify tutor applications with approval or rejection workflows, monitor tutoring sessions, post announcements and events, and oversee learning material submissions.
+   - Enabling administrators to manage user accounts, verify tutor applications with approval or declination workflows, monitor tutoring sessions, post announcements and events, and oversee learning material submissions.
 
    - Supporting a voluntary donation system where learners can contribute to tutors through QR code-based payments, with tutors able to upload and manage their donation QR codes.
 

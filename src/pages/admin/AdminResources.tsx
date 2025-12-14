@@ -97,7 +97,7 @@ export default function AdminResources() {
       return data;
     },
     onSuccess: (_, variables) => {
-      toast.success(`Resource ${variables.status === "approved" ? "approved" : "rejected"}`);
+      toast.success(`Resource ${variables.status === "approved" ? "approved" : "declined"}`);
       queryClient.invalidateQueries({ queryKey: ["pending-resources"] });
     },
     onError: (error: any) => {
@@ -291,12 +291,12 @@ export default function AdminResources() {
                             size="sm"
                             className="flex-1 sm:flex-none"
                             onClick={() =>
-                              updateStatusMutation.mutate({ id: resource.id, status: "rejected" })
+                              updateStatusMutation.mutate({ id: resource.id, status: "declined" })
                             }
                             disabled={updateStatusMutation.isPending}
                           >
                             <XCircle className="h-4 w-4 mr-2" />
-                            Reject
+                            Decline
                           </Button>
                         </div>
                       </CardContent>

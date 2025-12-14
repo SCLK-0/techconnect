@@ -97,17 +97,17 @@ stop
 @enduml
 ```
 
-###  Reject Session Request
+###  Decline Session Request
 
-**Figure 14. Reject Session Request Process**
+**Figure 14. Decline Session Request Process**
 
-This diagram depicts how tutors reject session requests by clicking the reject button, providing a reason in the dialog, and confirming the rejection. The system updates the session status and notifies the learner with the rejection reason.
+This diagram depicts how tutors decline session requests by clicking the decline button, providing a reason in the dialog, and confirming the declination. The system updates the session status and notifies the learner with the declination reason.
 
 ```plantuml
 @startuml
 skinparam conditionStyle diamond
 
-rectangle "**TechConnect - Reject Session Request Process**" {
+rectangle "**TechConnect - Decline Session Request Process**" {
 start
 :Tutor views session request;
 :Click reject button;
@@ -118,8 +118,8 @@ if (Reason provided?) then (yes)
   :Submit rejection;
   
   fork
-    :Update session status to rejected;
-    :Save rejection reason;
+    :Update session status to declined;
+    :Save declination reason;
   fork again
     :Send notification to learner;
   end fork
@@ -144,7 +144,7 @@ skinparam conditionStyle diamond
 
 rectangle "**TechConnect - Reschedule Session Process**" {
 start
-:Session rejected or cancelled;
+:Session declined or cancelled;
 :Show reschedule dialog;
 :Display reason;
 
@@ -467,14 +467,14 @@ deactivate React
 @enduml
 ```
 
-### 4. Reject Session Request
+### 4. Decline Session Request
 
-**Figure 24. Reject Session Request Flow** - Technical flow for tutors rejecting sessions with reasons.
+**Figure 24. Decline Session Request Flow** - Technical flow for tutors declining sessions with reasons.
 
 ```plantuml
 @startuml
 
-title TechConnect - Reject Session Request Flow
+title TechConnect - Decline Session Request Flow
 
 actor Tutor
 participant "React UI" as React
@@ -485,8 +485,8 @@ actor Learner
 Tutor -> React: Click reject button
 activate React
 React --> Tutor: Show reason dialog
-Tutor -> React: Enter rejection reason
-React -> DB: UPDATE sessions\nSET status = 'rejected',\nrejection_reason = reason
+Tutor -> React: Enter declination reason
+React -> DB: UPDATE sessions\nSET status = 'declined',\ndeclination_reason = reason
 activate DB
 DB --> React: Session updated
 deactivate DB
@@ -498,7 +498,7 @@ deactivate DB
 
 React -> Realtime: Broadcast notification
 activate Realtime
-Realtime -> Learner: Session rejected (with reason)
+Realtime -> Learner: Session declined (with reason)
 deactivate Realtime
 
 React --> Tutor: Show success message

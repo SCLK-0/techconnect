@@ -18,7 +18,7 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
 
   // Check if user profile is active
   // Note: is_active is for ACCOUNT-level deactivation (complete ban)
-  // For tutors, use tutor_profiles.status (pending/approved/rejected/disabled) instead
+  // For tutors, use tutor_profiles.status (pending/approved/declined/disabled) instead
   useEffect(() => {
     const checkUserStatus = async () => {
       if (user) {

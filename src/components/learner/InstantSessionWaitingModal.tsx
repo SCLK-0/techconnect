@@ -51,7 +51,7 @@ export function InstantSessionWaitingModal({
               description: `${tutorName} has accepted your instant session`,
             });
             onOpenChange(false);
-          } else if (newStatus === "rejected") {
+          } else if (newStatus === "declined") {
             toast.error("Tutor is currently busy", {
               description: `${tutorName} is unable to start a session right now. Please try again later or book a scheduled session.`,
             });

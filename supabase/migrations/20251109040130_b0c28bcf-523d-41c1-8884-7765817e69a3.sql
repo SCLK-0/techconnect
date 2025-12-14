@@ -8,4 +8,4 @@ ALTER TABLE public.donations DROP CONSTRAINT IF EXISTS donations_status_check;
 
 -- Add updated check constraint with all valid statuses
 ALTER TABLE public.donations ADD CONSTRAINT donations_status_check 
-CHECK (status IN ('pending', 'verified', 'rejected', 'completed'));
+CHECK (status IN ('pending', 'verified', 'declined', 'completed'));

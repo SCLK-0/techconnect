@@ -201,7 +201,7 @@ The database schema consists of 15 main tables organized into logical domains:
 **Session Lifecycle States:**
 - `pending` - Awaiting tutor response
 - `accepted` - Tutor confirmed, scheduled
-- `rejected` - Tutor declined with reason
+- `declined` - Tutor declined with reason
 - `in_progress` - Currently active
 - `completed` - Successfully finished
 - `cancelled` - Cancelled by either party
@@ -364,7 +364,7 @@ The database schema consists of 15 main tables organized into logical domains:
 1. Admin reviews uploaded resource
 2. Can approve or reject
 3. If approved, visible to all learners
-4. If rejected, tutor notified
+4. If declined, tutor notified
 
 **Resource Access (Learner):**
 1. Browse approved resources
@@ -591,7 +591,7 @@ Learner Joins → Generate Peer ID → Enter Waiting Room → Notify Tutor
 - `get_tutor_rating(tutor_user_id)` - Calculate average ratings
 - `get_tutor_stats(tutor_user_id)` - Aggregate statistics
 - `get_tutor_rating_tags(tutor_user_id)` - Tag statistics
-- `reject_session_with_reason()` - Handle rejections
+- `decline_session_with_reason()` - Handle declinations
 - `cancel_session_with_reason()` - Handle cancellations
 - `mark_missed_sessions()` - Auto-mark no-shows
 - `is_tutor_favorited()` - Check favorite status

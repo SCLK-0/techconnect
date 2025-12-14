@@ -57,8 +57,8 @@
   - Tutor-specific cancellation
   - Reason required
   - Notify learner
-- **Reject Session Dialog** (Tutor)
-  - Reject with detailed reason
+- **Decline Session Dialog** (Tutor)
+  - Decline with detailed reason
   - Suggest alternative tutors
   - Automatic learner notification
 
@@ -127,7 +127,7 @@
 - **Email Types:**
   - session_request
   - session_accepted
-  - session_rejected
+  - session_declined
   - session_reminder
   - session_started
   - session_ended
@@ -365,7 +365,7 @@
 - `get_tutor_rating_tags(tutor_user_id)` - Tag statistics
 
 ### **Session Management**
-- `reject_session_with_reason(session_id, tutor_id, reason)` - Reject with notification
+- `decline_session_with_reason(session_id, tutor_id, reason)` - Decline with notification
 - `cancel_session_with_reason(session_id, user_id, reason)` - Cancel with notification
 - `mark_missed_sessions()` - Auto-mark no-shows
 
@@ -383,7 +383,7 @@
 ### **In-App Notifications**
 1. Session request received
 2. Session accepted
-3. Session rejected
+3. Session declined
 4. Session cancelled
 5. Session reminder (upcoming)
 6. Instant session request
@@ -397,7 +397,7 @@
 2. Password reset
 3. Session request
 4. Session accepted
-5. Session rejected
+5. Session declined
 6. Session reminder
 7. Session started
 8. Session ended
@@ -515,7 +515,7 @@
 ✅ Session booking  
 ✅ Session rescheduling  
 ✅ Session cancellation (with reasons)  
-✅ Session rejection (with reasons)  
+✅ Session declination (with reasons)  
 ✅ Waiting room  
 ✅ Auto-mark missed sessions  
 ✅ Session history  

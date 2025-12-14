@@ -17,7 +17,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 
 export default function AdminApprovals() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"pending" | "rejected">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "declined">("pending");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -51,10 +51,10 @@ export default function AdminApprovals() {
     queryFn: () => fetchTutorsByStatus("pending"),
   });
 
-  const { data: rejectedTutors = [], isLoading: isLoadingRejected } = useQuery({
-    queryKey: ["rejected-tutors"],
-    queryFn: () => fetchTutorsByStatus("rejected"),
-    enabled: activeTab === "rejected",
+  const { data: declinedTutors = [], isLoading: isLoadingDeclined } = useQuery({
+    queryKey: ["declined-tutors"],
+    queryFn: () => fetchTutorsByStatus("declined"),
+    enabled: activeTab === "declined",
   });
 
   // Show error toast if query fails
@@ -71,21 +71,21 @@ export default function AdminApprovals() {
         .eq("id", id);
       if (error) throw error;
 
-      // TODO: Add email notification for tutor approval/rejection
+      // TODO: Add email notification for tutor approval/declination
       // Currently disabled due to RLS permission issues
       // Will be fixed in a future update
     },
     onSuccess: (_, variables) => {
-      toast.success(`Tutor ${variables.status === "approved" ? "approved" : "rejected"}`);
+      toast.success(`Tutor ${variables.status === "approved" ? "approved" : "declined"}`);
       queryClient.invalidateQueries({ queryKey: ["pending-tutors"] });
-      queryClient.invalidateQueries({ queryKey: ["rejected-tutors"] });
+      queryClient.invalidateQueries({ queryKey: ["declined-tutors"] });
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to update status");
     },
   });
 
-  const currentTutors = activeTab === "pending" ? pendingTutors : rejectedTutors;
+  const currentTutors = activeTab === "pending" ? pendingTutors : declinedTutors;
   const totalPages = Math.ceil(currentTutors.length / itemsPerPage);
   const paginatedTutors = currentTutors.slice(
     (currentPage - 1) * itemsPerPage,
@@ -185,7 +185,7 @@ export default function AdminApprovals() {
                 <p className="text-xs sm:text-sm text-muted-foreground">Review and manage tutor applications</p>
               </div>
 
-              <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as "pending" | "rejected"); setCurrentPage(1); }}>
+              <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as "pending" | "declined"); setCurrentPage(1); }}>
                 <TabsList className="grid w-full max-w-md grid-cols-2">
                   <TabsTrigger value="pending" className="gap-2">
                     Pending
@@ -193,10 +193,10 @@ export default function AdminApprovals() {
                       <Badge variant="secondary" className="ml-1">{pendingTutors.length}</Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="rejected" className="gap-2">
-                    Rejected
-                    {rejectedTutors.length > 0 && (
-                      <Badge variant="secondary" className="ml-1">{rejectedTutors.length}</Badge>
+                  <TabsTrigger value="declined" className="gap-2">
+                    Declined
+                    {declinedTutors.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">{declinedTutors.length}</Badge>
                     )}
                   </TabsTrigger>
                 </TabsList>
@@ -215,7 +215,7 @@ export default function AdminApprovals() {
                     <UserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">All caught up!</h3>
                     <p className="text-muted-foreground">
-                      {activeTab === "pending" ? "No pending tutor applications" : "No rejected tutors"}
+                      {activeTab === "pending" ? "No pending tutor applications" : "No declined tutors"}
                     </p>
                   </CardContent>
                 </Card>
@@ -279,12 +279,12 @@ export default function AdminApprovals() {
                                 variant="destructive"
                                 className="flex-1"
                                 onClick={() =>
-                                  updateStatusMutation.mutate({ id: tutor.id, status: "rejected" })
+                                  updateStatusMutation.mutate({ id: tutor.id, status: "declined" })
                                 }
                                 disabled={updateStatusMutation.isPending}
                               >
                                 <XCircle className="h-4 w-4 mr-2" />
-                                Reject
+                                Decline
                               </Button>
                             </>
                           ) : (
@@ -310,18 +310,18 @@ export default function AdminApprovals() {
               )}
                 </TabsContent>
 
-                <TabsContent value="rejected" className="space-y-4 mt-6">
-                  {isLoadingRejected ? (
+                <TabsContent value="declined" className="space-y-4 mt-6">
+                  {isLoadingDeclined ? (
                     <Card>
                       <CardContent className="py-8 text-center">
-                        Loading rejected tutors...
+                        Loading declined tutors...
                       </CardContent>
                     </Card>
-                  ) : rejectedTutors.length === 0 ? (
+                  ) : declinedTutors.length === 0 ? (
                     <Card>
                       <CardContent className="py-8 text-center">
                         <UserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No rejected tutors</h3>
+                        <h3 className="text-lg font-semibold mb-2">No declined tutors</h3>
                         <p className="text-muted-foreground">All tutor applications have been approved or are pending</p>
                       </CardContent>
                     </Card>
@@ -345,7 +345,7 @@ export default function AdminApprovals() {
                                     </span>
                                   </CardDescription>
                                 </div>
-                                <Badge variant="destructive">Rejected</Badge>
+                                <Badge variant="destructive">Declined</Badge>
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-4">

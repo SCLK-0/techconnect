@@ -148,7 +148,7 @@ After logging in, your dashboard displays:
 1. Click **"Approvals"** in sidebar
 2. See two tabs:
    - **Pending** - Applications awaiting review
-   - **Rejected** - Previously rejected applications
+   - **Declined** - Previously declined applications
 
 ### Review Application
 
@@ -174,19 +174,19 @@ Each application shows:
 ### Reject Tutor
 
 1. Review application
-2. Click **"Reject"** button
-3. Confirm rejection
+2. Click **"Decline"** button
+3. Confirm declination
 
 **What Happens:**
-- Tutor status changes to "Rejected"
-- Tutor receives rejection email
-- Application moves to "Rejected" tab
+- Tutor status changes to "Declined"
+- Tutor receives declination email
+- Application moves to "Declined" tab
 - Tutor can update profile and reapply
 
-### Re-approve Rejected Tutor
+### Re-approve Declined Tutor
 
-From "Rejected" tab:
-1. Find rejected tutor
+From "Declined" tab:
+1. Find declined tutor
 2. Click **"Re-approve Tutor"** button
 3. Confirm action
 4. Tutor status changes to "Approved"
@@ -346,11 +346,11 @@ Click on resource to view:
 ### Reject Resource
 
 1. Review resource
-2. Click **"Reject"** button
-3. Confirm rejection
+2. Click **"Decline"** button
+3. Confirm declination
 
 **What Happens:**
-- Resource status changes to "Rejected"
+- Resource status changes to "Declined"
 - Not available to users
 - Uploader receives notification
 - Tutor can upload revised version
@@ -457,7 +457,7 @@ Click on resource to view:
 
 **Solutions:**
 1. ✅ Refresh page
-2. ✅ Check tab (Pending vs Rejected)
+2. ✅ Check tab (Pending vs Declined)
 3. ✅ Verify there are pending applications
 4. ✅ Clear browser cache
 
@@ -609,7 +609,7 @@ A: Yes, but desktop is recommended.
 **Q: How long should verification take?**  
 A: Aim for 1-3 business days.
 
-**Q: What if applicant reapplies after rejection?**  
+**Q: What if applicant reapplies after declination?**  
 A: Review new application. If improvements made, can approve.
 
 **Q: What if tutor's performance declines?**  

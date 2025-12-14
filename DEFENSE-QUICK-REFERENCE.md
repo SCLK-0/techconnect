@@ -106,7 +106,7 @@ WebRTC (P2P) ← Video/Audio direct between browsers
 **Key Functions:**
 - get_tutor_rating()
 - mark_missed_sessions()
-- reject_session_with_reason()
+- decline_session_with_reason()
 - cancel_session_with_reason()
 
 ---
@@ -115,7 +115,7 @@ WebRTC (P2P) ← Video/Audio direct between browsers
 
 1. **pending** - Awaiting tutor response
 2. **accepted** - Tutor confirmed
-3. **rejected** - Tutor declined
+3. **declined** - Tutor declined
 4. **in_progress** - Currently active
 5. **completed** - Successfully finished
 6. **cancelled** - Cancelled by either party

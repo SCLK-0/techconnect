@@ -1,17 +1,17 @@
-# How to Re-Approve Rejected Tutors
+# How to Re-Approve Declined Tutors
 
 ## Current Limitation
-The admin Approvals page only shows **pending** tutors. Once a tutor is rejected, they disappear from the UI and cannot be re-approved through the interface.
+The admin Approvals page only shows **pending** tutors. Once a tutor is declined, they disappear from the UI and cannot be re-approved through the interface.
 
 ---
 
 ## Solution 1: Manual Database Update (Current Method)
 
-### Step 1: Find the Rejected Tutor
+### Step 1: Find the Declined Tutor
 Run this query in Supabase SQL Editor:
 
 ```sql
--- View all rejected tutors
+-- View all declined tutors
 SELECT 
   tp.id,
   tp.user_id,
@@ -22,7 +22,7 @@ SELECT
   tp.created_at
 FROM tutor_profiles tp
 JOIN profiles p ON p.user_id = tp.user_id
-WHERE tp.status = 'rejected'
+WHERE tp.status = 'declined'
 ORDER BY tp.created_at DESC;
 ```
 
@@ -41,12 +41,12 @@ WHERE id = 'TUTOR_PROFILE_ID';
 
 ---
 
-## Solution 2: Add Rejected Tutors Tab (Recommended Enhancement)
+## Solution 2: Add Declined Tutors Tab (Recommended Enhancement)
 
 ### What to Add:
-Create a new tab in the Approvals page to view rejected tutors with the ability to:
-1. View all rejected tutors
-2. See rejection date
+Create a new tab in the Approvals page to view declined tutors with the ability to:
+1. View all declined tutors
+2. See declination date
 3. Re-approve with one click
 4. Permanently delete if needed
 
@@ -55,22 +55,22 @@ Create a new tab in the Approvals page to view rejected tutors with the ability 
 #### 1. Update AdminApprovals.tsx
 Add a tab system:
 ```typescript
-const [activeTab, setActiveTab] = useState<'pending' | 'rejected'>('pending');
+const [activeTab, setActiveTab] = useState<'pending' | 'declined'>('pending');
 
-// Add query for rejected tutors
-const { data: rejectedTutors = [] } = useQuery({
-  queryKey: ["rejected-tutors"],
+// Add query for declined tutors
+const { data: declinedTutors = [] } = useQuery({
+  queryKey: ["declined-tutors"],
   queryFn: async () => {
     const { data: tutorProfiles } = await supabase
       .from("tutor_profiles")
       .select("*")
-      .eq("status", "rejected")
+      .eq("status", "declined")
       .order("created_at", { ascending: false });
     
     // ... merge with profiles like pending tutors
     return tutorsWithProfiles;
   },
-  enabled: activeTab === 'rejected'
+  enabled: activeTab === 'declined'
 });
 ```
 
@@ -81,8 +81,8 @@ const { data: rejectedTutors = [] } = useQuery({
     <TabsTrigger value="pending">
       Pending ({pendingTutors.length})
     </TabsTrigger>
-    <TabsTrigger value="rejected">
-      Rejected ({rejectedTutors.length})
+    <TabsTrigger value="declined">
+      Declined ({declinedTutors.length})
     </TabsTrigger>
   </TabsList>
   
@@ -90,8 +90,8 @@ const { data: rejectedTutors = [] } = useQuery({
     {/* Existing pending tutors UI */}
   </TabsContent>
   
-  <TabsContent value="rejected">
-    {/* Rejected tutors with "Re-approve" button */}
+  <TabsContent value="declined">
+    {/* Declined tutors with "Re-approve" button */}
   </TabsContent>
 </Tabs>
 ```
@@ -114,26 +114,26 @@ const { data: rejectedTutors = [] } = useQuery({
 
 ## Solution 3: Quick SQL Script for Bulk Re-approval
 
-If you need to re-approve multiple rejected tutors:
+If you need to re-approve multiple declined tutors:
 
 ```sql
--- Re-approve all rejected tutors (use with caution!)
+-- Re-approve all declined tutors (use with caution!)
 UPDATE tutor_profiles
 SET status = 'pending'
-WHERE status = 'rejected';
+WHERE status = 'declined';
 
 -- Re-approve specific tutors by name
 UPDATE tutor_profiles tp
 SET status = 'pending'
 FROM profiles p
 WHERE tp.user_id = p.user_id
-  AND tp.status = 'rejected'
+  AND tp.status = 'declined'
   AND p.full_name IN ('John Doe', 'Jane Smith');
 
--- Re-approve tutors rejected after a certain date
+-- Re-approve tutors declined after a certain date
 UPDATE tutor_profiles
 SET status = 'pending'
-WHERE status = 'rejected'
+WHERE status = 'declined'
   AND created_at > '2025-11-01';
 ```
 
@@ -163,37 +163,37 @@ UPDATE tutor_profiles SET status = 'approved' WHERE id = 'xxx';
 
 ### When to Re-approve:
 1. **Tutor improved their profile** - They contacted support and updated their bio/qualifications
-2. **Initial rejection was a mistake** - Admin clicked wrong button
+2. **Initial declination was a mistake** - Admin clicked wrong button
 3. **Policy changed** - Requirements were relaxed
 4. **Tutor reapplied** - After addressing concerns
 
 ### When NOT to Re-approve:
 1. **Serious violations** - Inappropriate content, fraud
-2. **No changes made** - Tutor didn't address rejection reasons
+2. **No changes made** - Tutor didn't address declination reasons
 3. **Duplicate accounts** - Should be merged, not re-approved
 
 ### Documentation:
 Consider adding a notes field to track:
-- Why tutor was rejected
+- Why tutor was declined
 - Why they were re-approved
 - Date of status changes
 - Admin who made the decision
 
 ---
 
-## Future Enhancement: Rejection Reasons
+## Future Enhancement: Declination Reasons
 
 Add these fields to tutor_profiles:
 ```sql
 ALTER TABLE tutor_profiles
-ADD COLUMN rejection_reason TEXT,
-ADD COLUMN rejection_notes TEXT,
-ADD COLUMN rejected_at TIMESTAMP,
-ADD COLUMN rejected_by UUID REFERENCES auth.users(id);
+ADD COLUMN declination_reason TEXT,
+ADD COLUMN declination_notes TEXT,
+ADD COLUMN declined_at TIMESTAMP,
+ADD COLUMN declined_by UUID REFERENCES auth.users(id);
 ```
 
 This would help:
-- Track why tutors were rejected
+- Track why tutors were declined
 - Provide feedback to tutors
 - Make re-approval decisions easier
 - Audit trail for admin actions
@@ -203,14 +203,14 @@ This would help:
 ## Summary
 
 **Current State:**
-- ❌ No UI to view rejected tutors
+- ❌ No UI to view declined tutors
 - ❌ No way to re-approve through interface
 - ✅ Can manually update via SQL
 
 **Recommended:**
-- ✅ Add "Rejected" tab to Approvals page
+- ✅ Add "Declined" tab to Approvals page
 - ✅ Add "Re-approve" button
-- ✅ Add rejection reasons for better tracking
+- ✅ Add declination reasons for better tracking
 
 **Quick Fix (Now):**
-Use SQL to change status from 'rejected' to 'pending', then approve through UI.
+Use SQL to change status from 'declined' to 'pending', then approve through UI.

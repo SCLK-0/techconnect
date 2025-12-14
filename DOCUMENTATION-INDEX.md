@@ -199,7 +199,7 @@ Your **CHAPTER-III-METHODOLOGY.md** contains:
 1. Request Scheduled Session
 2. Request Instant Session
 3. Accept Session Request
-4. Reject Session Request
+4. Decline Session Request
 5. Reschedule Session
 6. Cancel Session (Learner)
 7. Cancel Session (Tutor)
@@ -211,7 +211,7 @@ Your **CHAPTER-III-METHODOLOGY.md** contains:
 1. Request Scheduled Session
 2. Request Instant Session
 3. Accept Session Request
-4. Reject Session Request
+4. Decline Session Request
 5. Reschedule Session
 6. Cancel Session (Learner)
 7. Cancel Session (Tutor)

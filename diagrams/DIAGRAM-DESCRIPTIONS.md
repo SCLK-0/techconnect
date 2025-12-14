@@ -53,8 +53,8 @@ This diagram illustrates how learners request an instant tutoring session by ent
 **Figure 13. Accept Session Request Process**
 This diagram shows how tutors accept incoming session requests by reviewing the request details and confirming acceptance. The system updates the session status to accepted and notifies the learner.
 
-**Figure 14. Reject Session Request Process**
-This diagram depicts how tutors reject session requests by clicking the reject button, providing a reason in the dialog, and confirming the rejection. The system updates the session status and notifies the learner with the rejection reason.
+**Figure 14. Decline Session Request Process**
+This diagram depicts how tutors decline session requests by clicking the decline button, providing a reason in the dialog, and confirming the declination. The system updates the session status and notifies the learner with the declination reason.
 
 **Figure 15. Cancel Session Process**
 This diagram shows how users (learner or tutor) cancel a session by clicking the cancel button, providing a cancellation reason, and confirming. The system updates the session status and notifies the other party.
@@ -85,8 +85,8 @@ This sequence diagram shows the instant session request process, including broad
 **Figure 23. Accept Session Request Flow**
 This sequence diagram illustrates how tutors accept session requests, including updating the session status in the database and sending notifications to the learner via Realtime and email.
 
-**Figure 24. Reject Session Request Flow**
-This sequence diagram shows how tutors reject sessions with a reason, update the database, and notify the learner through multiple channels.
+**Figure 24. Decline Session Request Flow**
+This sequence diagram shows how tutors decline sessions with a reason, update the database, and notify the learner through multiple channels.
 
 **Figure 25. Cancel Session Flow**
 This sequence diagram depicts the session cancellation process, including updating the session status, recording the cancellation reason, and notifying the other party.

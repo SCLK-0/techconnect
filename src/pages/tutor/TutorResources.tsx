@@ -155,8 +155,8 @@ export default function TutorResources() {
         return <Badge className="bg-green-500"><Check className="w-3 h-3 mr-1" /> Approved</Badge>;
       case "pending":
         return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
-      case "rejected":
-        return <Badge variant="destructive"><X className="w-3 h-3 mr-1" /> Rejected</Badge>;
+      case "declined":
+        return <Badge variant="destructive"><X className="w-3 h-3 mr-1" /> Declined</Badge>;
       default:
         return null;
     }
