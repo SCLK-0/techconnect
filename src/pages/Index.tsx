@@ -55,7 +55,7 @@ const Index = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="border-primary/30 hover:border-primary hover:bg-primary/10">
               <Link to="/quick-start">Quick Start</Link>
             </Button>
             <ThemeToggle />
