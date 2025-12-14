@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Users, BookOpen, Video, Sparkles, ArrowRight, Gift, Star } from "lucide-react";
+import { GraduationCap, Users, BookOpen, Video, Sparkles, ArrowRight, Star } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.png";
 import { useEffect } from "react";
@@ -103,31 +103,7 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Promotion Banner - Below CTA buttons */}
-            <div className="w-full max-w-2xl pt-4">
-              <div className="text-center p-6 rounded-xl border border-primary/20 bg-card/50 backdrop-blur-sm">
-                <div className="inline-flex items-center gap-2 mb-2">
-                  <Gift className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Limited Offer</span>
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-2">
-                  Win <span className="text-primary">₱1,000</span>
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  To be eligible in winning, you must answer this form and try our system
-                </p>
-                <Button asChild variant="default" size="sm" className="gap-2">
-                  <a 
-                    href="https://docs.google.com/forms/d/e/1FAIpQLScCnBXKIhpiBbzD7l4X3ZBqv52K0VRf2I1cKnUL7Edl1F_lHw/viewform?usp=dialog" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    Fill Out Form
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                </Button>
-              </div>
-            </div>
+
           </div>
         </div>
         </div>
