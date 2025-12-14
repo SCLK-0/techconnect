@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Users, BookOpen, Video, Sparkles, ArrowRight, Star } from "lucide-react";
+import { GraduationCap, Users, BookOpen, Video, Sparkles, ArrowRight, Star, Bug } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.png";
 import { useEffect } from "react";
@@ -70,7 +70,7 @@ const Index = () => {
         
         <div className="container relative mx-auto px-4">
           {/* Hero Content */}
-          <div className="py-8 sm:py-16 pb-20 sm:pb-32">
+          <div className="py-4 sm:py-8">
             <div className="flex flex-col items-center text-center space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -103,6 +103,29 @@ const Index = () => {
               </Button>
             </div>
 
+            {/* Bug Hunt Program - Below CTA buttons */}
+            <div className="w-full max-w-2xl pt-4">
+              <div className="text-center p-6 rounded-xl border border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20 backdrop-blur-sm">
+                <div className="inline-flex items-center gap-2 mb-2">
+                  <Bug className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300 uppercase tracking-wider">Bug Hunt Program</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-bold mb-2 text-orange-900 dark:text-orange-100">
+                  Help Us Improve TechConnect
+                </h3>
+                <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
+                  Found a bug or have suggestions? We'd love to hear from you! Help us make the platform better for everyone.
+                </p>
+                <Button asChild variant="default" size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
+                  <a 
+                    href="mailto:it.rbfremorin@gmail.com?subject=TechConnect Bug Report&body=Hi! I found an issue with TechConnect:%0D%0A%0D%0ASteps to reproduce:%0D%0A1. %0D%0A2. %0D%0A3. %0D%0A%0D%0AExpected behavior:%0D%0A%0D%0AActual behavior:%0D%0A%0D%0ABrowser/Device info:%0D%0A%0D%0AAdditional notes:%0D%0A"
+                  >
+                    Report Bug via Email
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                </Button>
+              </div>
+            </div>
 
           </div>
         </div>
