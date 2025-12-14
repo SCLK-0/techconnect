@@ -105,18 +105,18 @@ const Index = () => {
 
             {/* Bug Hunt Program - Below CTA buttons */}
             <div className="w-full max-w-2xl pt-4">
-              <div className="text-center p-6 rounded-xl border border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20 backdrop-blur-sm">
+              <div className="text-center p-6 rounded-xl border border-primary/20 bg-card/50 backdrop-blur-sm">
                 <div className="inline-flex items-center gap-2 mb-2">
-                  <Bug className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300 uppercase tracking-wider">Bug Hunt Program</span>
+                  <Bug className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Bug Hunt Program</span>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-2 text-orange-900 dark:text-orange-100">
-                  Help Us Improve TechConnect
+                <h3 className="text-2xl sm:text-3xl font-bold mb-2">
+                  Help Us Improve <span className="text-primary">TechConnect</span>
                 </h3>
-                <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   Found a bug or have suggestions? We'd love to hear from you! Help us make the platform better for everyone.
                 </p>
-                <Button asChild variant="default" size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
+                <Button asChild variant="default" size="sm" className="gap-2">
                   <a 
                     href="mailto:it.rbfremorin@gmail.com?subject=TechConnect Bug Report&body=Hi! I found an issue with TechConnect:%0D%0A%0D%0ASteps to reproduce:%0D%0A1. %0D%0A2. %0D%0A3. %0D%0A%0D%0AExpected behavior:%0D%0A%0D%0AActual behavior:%0D%0A%0D%0ABrowser/Device info:%0D%0A%0D%0AAdditional notes:%0D%0A"
                   >
