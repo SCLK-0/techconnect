@@ -50,7 +50,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={logo} alt="TechConnect Logo" className="w-10 h-10 rounded-xl" />
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <span className="text-xl font-bold text-white">
               TechConnect
             </span>
           </div>
