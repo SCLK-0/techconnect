@@ -70,7 +70,7 @@ const Index = () => {
         
         <div className="container relative mx-auto px-4">
           {/* Hero Content */}
-          <div className="py-4 sm:py-8">
+          <div className="py-8 sm:py-16 pb-20 sm:pb-32">
             <div className="flex flex-col items-center text-center space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
