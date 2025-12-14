@@ -25,8 +25,8 @@
 - Fixed "Show only tutors I've booked before" filter to include in-progress sessions
 
 ### ⚡ Instant Sessions
-- Changed duration input from dropdown to text field (10-30 minutes)
-- Added clear messaging about 10-30 minute time limit
+- Changed duration input from dropdown to text field (10-60 minutes)
+- Added clear messaging about 10-60 minute time limit
 - Improved validation for duration input
 
 ### 🐛 Bug Fixes

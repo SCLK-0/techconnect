@@ -188,13 +188,13 @@ For immediate help (tutor must be online):
 3. **Fill Form:**
    - Subject
    - What you need help with
-   - Duration (10-30 minutes)
+   - Duration (10-60 minutes)
 4. Click **"Send Request"**
 5. **Tutor responds in real-time:**
    - If accepted: Session starts immediately
    - If declined: Try another online tutor
 
-**Note:** Instant sessions are limited to 10-30 minutes.
+**Note:** Instant sessions are limited to 10-60 minutes.
 
 
 ### Managing Sessions
@@ -535,7 +535,7 @@ When online, requests appear as popups:
 - Learner name
 - Subject
 - What they need help with
-- Duration (10-30 minutes)
+- Duration (10-60 minutes)
 
 **You Have 2 Minutes:**
 - Click **"Accept"** - Session starts
@@ -1084,7 +1084,7 @@ A: Wait 10 minutes, report issue. Session marked as "Missed by Tutor".
 A: Yes, go to My Sessions and click Cancel. Try to cancel 24 hours in advance.
 
 **Q: How long are sessions?**  
-A: Scheduled: 30-60 minutes typically. Instant: 10-30 minutes.
+A: Scheduled: 30-60 minutes typically. Instant: 10-60 minutes.
 
 **Q: Multiple sessions with same tutor?**  
 A: Yes! Add to favorites for easy access.

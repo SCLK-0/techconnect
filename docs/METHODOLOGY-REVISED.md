@@ -22,7 +22,7 @@ To ensure quality and reliability, the platform will be evaluated using the ISO 
 **Added Actual Features:**
 - ✅ Fuzzy search with Levenshtein distance algorithm
 - ✅ Rule-based filtering (subject, year level, online status, rating)
-- ✅ Instant sessions (10-30 minutes)
+- ✅ Instant sessions (10-60 minutes)
 - ✅ PeerJS for WebRTC video communication
 - ✅ Integrated whiteboard, chat, screen share, file sharing
 - ✅ Feedback tags (10 predefined categories)

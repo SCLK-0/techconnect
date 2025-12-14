@@ -36,7 +36,7 @@ import { sendSessionRequestEmail } from "@/utils/sendNotificationEmail";
 const instantSessionSchema = z.object({
   duration: z.coerce.number()
     .min(10, "Minimum duration is 10 minutes")
-    .max(30, "Maximum duration is 30 minutes"),
+    .max(60, "Maximum duration is 60 minutes"),
   subjectCategory: z.string().min(1, "Please select a subject category"),
   specificTopic: z.string()
     .trim()
@@ -72,7 +72,7 @@ export function InstantSessionDialog({
     defaultValues: {
       subjectCategory: tutorSubjects[0] || "",
       specificTopic: "",
-      duration: "30",
+      duration: "60",
     },
   });
 
@@ -249,7 +249,7 @@ export function InstantSessionDialog({
           <DialogDescription className="break-words text-center">
             Connect with <span className="break-words font-medium">{tutorName}</span> right now for an immediate tutoring session.
             <span className="block mt-2 text-xs text-muted-foreground">
-              ⏱️ Instant sessions are limited to 10-30 minutes only
+              ⏱️ Instant sessions are limited to 10-60 minutes only
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -273,7 +273,7 @@ export function InstantSessionDialog({
                     />
                   </FormControl>
                   <FormDescription className="text-xs">
-                    Enter a duration between 10-30 minutes
+                    Enter a duration between 10-60 minutes
                   </FormDescription>
                   <FormMessage className="text-xs" />
                 </FormItem>

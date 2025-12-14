@@ -10,7 +10,7 @@ For user account management, enrolled CIT students are able to register using th
 
 Tutor discovery is accomplished through a learner-driven search and filtering system. Learners browse available tutors using a custom fuzzy search algorithm that employs Levenshtein distance calculation to find matches even with typographical errors or partial input. The search algorithm prioritizes exact matches, prefix matches, and substring matches before applying distance-based fuzzy matching, then ranks results using weighted scores that consider both tutor name and subject expertise. Learners can apply rule-based filters to narrow results by subject specialization, year level compatibility, online availability status, and minimum rating thresholds. The system displays tutor profiles showing subject expertise, ratings with review counts, bio, year level, and online status, empowering learners to independently select tutors that match their needs.
 
-Learners may request sessions in two ways: scheduled sessions where they select from a tutor's available time slots and provide session details, or instant sessions where they request immediate help from online tutors (limited to 10-30 minutes). Tutors receive in-app and email notifications of session requests and may accept or decline, with the option to provide rejection reasons. Confirmed sessions appear in both participants' calendars. Sessions can be rescheduled or cancelled by either party with reason selection. Completed sessions are followed by learner feedback, which includes a 1-5 star rating, selection of predefined feedback tags (Clear Explanations, Patient & Friendly, Well Prepared, Helpful Materials, Great Communication, Always On Time, Very Knowledgeable, Helped Me Improve, Engaging Session, Good Examples, Responsive), and optional written review, all of which contribute to tutor performance metrics.
+Learners may request sessions in two ways: scheduled sessions where they select from a tutor's available time slots and provide session details, or instant sessions where they request immediate help from online tutors (limited to 10-60 minutes). Tutors receive in-app and email notifications of session requests and may accept or decline, with the option to provide rejection reasons. Confirmed sessions appear in both participants' calendars. Sessions can be rescheduled or cancelled by either party with reason selection. Completed sessions are followed by learner feedback, which includes a 1-5 star rating, selection of predefined feedback tags (Clear Explanations, Patient & Friendly, Well Prepared, Helpful Materials, Great Communication, Always On Time, Very Knowledgeable, Helped Me Improve, Engaging Session, Good Examples, Responsive), and optional written review, all of which contribute to tutor performance metrics.
 
 ## Video Session Features
 
@@ -82,7 +82,7 @@ Email notifications are sent through Resend service via Supabase Edge Functions,
 **Added Actual Features:**
 - ✅ Fuzzy search with Levenshtein distance algorithm
 - ✅ Rule-based filtering (subject, year level, online status, rating)
-- ✅ Instant sessions (10-30 minutes)
+- ✅ Instant sessions (10-60 minutes)
 - ✅ Feedback tags (10 predefined categories)
 - ✅ Donation QR code system (upload/view)
 - ✅ Performance statistics dashboards
