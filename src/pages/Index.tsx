@@ -104,7 +104,7 @@ const Index = () => {
             </div>
 
             {/* Bug Hunt Program - Below CTA buttons */}
-            <div className="w-full max-w-2xl pt-4">
+            <div className="w-full max-w-2xl pt-8">
               <div className="text-center p-6 rounded-xl border border-primary/20 bg-card/50 backdrop-blur-sm">
                 <div className="inline-flex items-center gap-2 mb-2">
                   <Bug className="w-4 h-4 text-primary" />
