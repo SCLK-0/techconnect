@@ -16,7 +16,8 @@ export default function AdminDashboard() {
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
       const [userRoles, sessions, tutorProfiles] = await Promise.all([
-        supabase.from("user_roles").select("*", { count: "exact", head: true }),
+        // Count only learners and tutors, exclude admins
+        supabase.from("user_roles").select("*", { count: "exact", head: true }).neq("role", "admin"),
         supabase.from("sessions").select("*"),
         supabase.from("tutor_profiles").select("*", { count: "exact" }).eq("status", "pending"),
       ]);

@@ -1,13 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Users, BookOpen, Video, Sparkles, ArrowRight, Star, Bug } from "lucide-react";
+import { GraduationCap, Users, BookOpen, Video, Sparkles, ArrowRight, Star, Bug, AlertTriangle } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import logo from "@/assets/logo.png";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [isWarningOpen, setIsWarningOpen] = useState(false);
 
   useEffect(() => {
     // Handle OAuth callback, email confirmations, and password resets
@@ -55,7 +64,50 @@ const Index = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild className="border-primary/30 hover:border-primary hover:bg-primary/10">
+            <Dialog open={isWarningOpen} onOpenChange={setIsWarningOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="border-2 border-orange-500 hover:border-orange-600 bg-orange-100 hover:bg-orange-200 text-orange-800 hover:text-orange-900 font-semibold shadow-sm dark:bg-orange-500/20 dark:hover:bg-orange-500/30 dark:text-orange-400 dark:hover:text-orange-300 animate-pulse">
+                  <AlertTriangle className="w-4 h-4 mr-2 animate-pulse" />
+                  Important Notice
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-orange-600">
+                    <AlertTriangle className="w-5 h-5" />
+                    Important System Notice
+                  </DialogTitle>
+                  <DialogDescription className="text-left space-y-3 pt-2">
+                    <p className="font-medium text-foreground">
+                      We sincerely apologize for any login issues you may experience.
+                    </p>
+                    <p>
+                      Due to the implementation of new features in our system, user accounts were accidentally deleted from our database. We want to assure you that:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li>Only user accounts were affected - no other system data was lost</li>
+                      <li>All platform features remain fully functional</li>
+                      <li>Your data is completely removed from our database</li>
+                    </ul>
+                    <p>
+                      <strong>If you'd like to continue using TechConnect</strong>, please register again with your email. We understand this is inconvenient and appreciate your patience.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      This occurred because TechConnect is still in early deployment stage. We're working hard to prevent such issues in the future.
+                    </p>
+                    <p className="font-medium text-primary">
+                      Thank you for your understanding and continued support! 🙏
+                    </p>
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-end pt-4">
+                  <Button onClick={() => setIsWarningOpen(false)} className="w-full">
+                    I Understand
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="outline" size="sm" asChild>
               <Link to="/quick-start">Quick Start</Link>
             </Button>
             <ThemeToggle />
@@ -118,7 +170,7 @@ const Index = () => {
                 </p>
                 <Button asChild variant="default" size="sm" className="gap-2">
                   <a 
-                    href="mailto:it.rbfremorin@gmail.com?subject=TechConnect Bug Report&body=Hi! I found an issue with TechConnect:%0D%0A%0D%0ASteps to reproduce:%0D%0A1. %0D%0A2. %0D%0A3. %0D%0A%0D%0AExpected behavior:%0D%0A%0D%0AActual behavior:%0D%0A%0D%0ABrowser/Device info:%0D%0A%0D%0AAdditional notes:%0D%0A"
+                    href="mailto:it.rbfremorin@gmail.com?subject=TechConnect Bug Report&body=Hi! I found a problem with TechConnect:%0D%0A%0D%0AWhat happened?%0D%0A%0D%0AWhat did you do before this happened?%0D%0A1. %0D%0A2. %0D%0A3. %0D%0A%0D%0AScreenshots or videos (if you have any):%0D%0A%0D%0AWhat device are you using? (phone, computer, tablet)%0D%0A%0D%0AWhen did this happen?%0D%0A%0D%0AWhich part of TechConnect had the problem?%0D%0A"
                   >
                     Report Bug via Email
                     <ArrowRight className="w-4 h-4" />

@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
-import { DonationQRManager } from "@/components/tutor/DonationQRManager";
 
 // Helper function to count words
 const countWords = (text: string): number => {
@@ -59,16 +58,19 @@ export default function EditProfile() {
   const [subjectsOfInterest, setSubjectsOfInterest] = useState<string[]>([]);
   const [tutorStatus, setTutorStatus] = useState<string>("");
   const [loadingRoleData, setLoadingRoleData] = useState(true);
-  const [donationQRCode, setDonationQRCode] = useState<string>("");
   
   // Store original values for cancel functionality
   const [originalValues, setOriginalValues] = useState<any>({});
 
   useEffect(() => {
-    if (user) {
+    // Wait for both user and role to be available before loading profile
+    // Also wait for roleLoading to be false to ensure role is fully loaded
+    console.log("EditProfile useEffect - user:", user?.id, "role:", role, "roleLoading:", roleLoading);
+    if (user && role && !roleLoading) {
+      console.log("Loading profile for user:", user.id, "with role:", role);
       loadProfile();
     }
-  }, [user]);
+  }, [user, role, roleLoading]);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -98,7 +100,7 @@ export default function EditProfile() {
       if (role === "tutor") {
         const { data, error } = await supabase
           .from("tutor_profiles")
-          .select("subject_expertise, status, donation_qr_code")
+          .select("subject_expertise, status, registered_year, bio")
           .eq("user_id", user.id)
           .single();
         
@@ -111,7 +113,10 @@ export default function EditProfile() {
         tutorData = data;
         setTutorInfo(tutorData || {});
         setTutorStatus(tutorData?.status || "");
-        setDonationQRCode(tutorData?.donation_qr_code || "");
+        // Use bio from tutor_profiles if available, otherwise keep profile bio
+        if (tutorData?.bio) {
+          setBio(tutorData.bio);
+        }
         const expertise = Array.isArray(tutorData?.subject_expertise) ? tutorData.subject_expertise : [];
         setSubjectExpertise(expertise);
         console.log("Set subject expertise:", expertise);
@@ -203,6 +208,17 @@ export default function EditProfile() {
         .getPublicUrl(filePath);
 
       setAvatarUrl(publicUrl);
+      
+      // Save avatar URL to database immediately so it persists across navigation
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("user_id", user.id);
+      
+      if (updateError) {
+        console.error("Error saving avatar to profile:", updateError);
+      }
+      
       toast.success("Avatar uploaded successfully!");
     } catch (error) {
       console.error("Error uploading avatar:", error);
@@ -314,7 +330,8 @@ export default function EditProfile() {
   // Determine which sidebar to use based on role (uses cached role for instant loading)
   const Sidebar = role === "admin" ? AdminSidebar : role === "tutor" ? TutorSidebar : LearnerSidebar;
 
-  if (loading) {
+  // Show loading if either profile is loading or role is still being determined
+  if (loading || roleLoading) {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
@@ -489,6 +506,10 @@ export default function EditProfile() {
                         </div>
                       ) : (
                         <>
+                          <div>
+                            <Label>Year Level</Label>
+                            <p className="mt-2 text-sm">{tutorInfo?.registered_year || 'Not specified'}</p>
+                          </div>
                           <div className="space-y-4">
                             <Label>Subject Expertise *</Label>
                             <p className="text-sm text-muted-foreground">Select the subjects you can teach</p>
@@ -518,6 +539,7 @@ export default function EditProfile() {
                             </div>
                             <p className="text-xs text-muted-foreground">
                               Selected: {subjectExpertise.length} subject{subjectExpertise.length !== 1 ? 's' : ''}
+                              {subjectExpertise.length > 0 && ` (${subjectExpertise.join(', ')})`}
                             </p>
                           </div>
                         </>
@@ -527,18 +549,9 @@ export default function EditProfile() {
                 </CardContent>
               </Card>
 
-              {/* Donation QR Code Section - Tutors Only */}
-              {role === "tutor" && user && (
-                <DonationQRManager
-                  userId={user.id}
-                  currentQRCode={donationQRCode}
-                  onUpdate={setDonationQRCode}
-                />
-              )}
-
               <Card className="border-2 w-full max-w-full overflow-hidden">
                 <CardContent className="pt-6 px-4 md:px-6">
-                  {role === "learner" && (
+                  {role === "learner" && learnerInfo && (
                     <div className="space-y-4 pt-4 border-t">
                       {loadingRoleData ? (
                         <div className="flex items-center justify-center py-8">
@@ -547,12 +560,10 @@ export default function EditProfile() {
                         </div>
                       ) : (
                         <>
-                          {learnerInfo?.registered_year && (
-                            <div>
-                              <Label>Registered Year</Label>
-                              <p className="mt-2 text-sm">{learnerInfo.registered_year}</p>
-                            </div>
-                          )}
+                          <div>
+                            <Label>Registered Year</Label>
+                            <p className="mt-2 text-sm">{learnerInfo?.registered_year || 'Not specified'}</p>
+                          </div>
                           <div className="space-y-4">
                             <Label>Subjects of Interest *</Label>
                             <p className="text-sm text-muted-foreground">Select the subjects you want to learn</p>
@@ -582,6 +593,7 @@ export default function EditProfile() {
                             </div>
                             <p className="text-xs text-muted-foreground">
                               Selected: {subjectsOfInterest.length} subject{subjectsOfInterest.length !== 1 ? 's' : ''}
+                              {subjectsOfInterest.length > 0 && ` (${subjectsOfInterest.join(', ')})`}
                             </p>
                           </div>
                         </>

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface SessionLogModalProps {
   open: boolean;
@@ -44,29 +45,33 @@ export function SessionLogModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("session_logs").insert({
+      // Insert log without waiting for response for faster UX
+      supabase.from("session_logs").insert({
         session_id: sessionId,
         user_id: user.id,
         user_role: userRole,
         topics_covered: topicsCovered.trim(),
         accomplishments: null,
         homework: null,
+      }).then(({ error }) => {
+        if (error) {
+          console.error("Error saving session log:", error);
+          // Log error but don't block navigation - user already moved on
+        }
       });
 
-      if (error) throw error;
-
-      toast.success("Session log saved successfully");
+      toast.success("Session log saved");
+      // Call onComplete immediately without waiting for DB response
       onComplete();
     } catch (error) {
       console.error("Error saving session log:", error);
       toast.error("Failed to save session log");
-    } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open ? null : onOpenChange(open)}>
+    <Dialog open={open} onOpenChange={() => {/* Prevent closing - user must submit log */}}>
       <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto rounded-2xl" hideCloseButton onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader className="text-center space-y-2">
           <DialogTitle className="break-words">Session Log</DialogTitle>
@@ -95,7 +100,14 @@ export function SessionLogModal({
 
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={submitting || !topicsCovered.trim()} className="w-full h-11 rounded-xl">
-            {submitting ? "Saving..." : "Save Log"}
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Log"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

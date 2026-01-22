@@ -51,6 +51,11 @@ export function SessionFeedbackModal({
       return;
     }
 
+    // Prevent double submission
+    if (submitting) {
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -58,6 +63,21 @@ export function SessionFeedbackModal({
       
       if (!user) {
         toast.error("User not authenticated");
+        setSubmitting(false);
+        return;
+      }
+
+      // Check if feedback already exists for this session and user
+      const { data: existingFeedback } = await supabase
+        .from("feedback")
+        .select("id")
+        .eq("session_id", sessionId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingFeedback) {
+        toast.info("You have already submitted feedback for this session");
+        onComplete();
         return;
       }
 

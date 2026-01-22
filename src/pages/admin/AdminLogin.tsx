@@ -13,14 +13,14 @@ const AdminLogin = () => {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      console.log("🔍 Checking admin auth status...");
+      console.log(" Checking admin auth status...");
       
       // Check if this is an OAuth callback
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const isCallback = hashParams.has('access_token');
       
       if (isCallback) {
-        console.log("✅ OAuth callback detected, processing...");
+        console.log(" OAuth callback detected, processing...");
         setLoading(true); // Show loading while processing
         // Mark this as a fresh admin login
         sessionStorage.setItem('admin_session_active', 'true');
@@ -33,25 +33,26 @@ const AdminLogin = () => {
       
       // If there's a session but no active admin session marker, sign out
       if (session?.user && !wasAdminSessionActive && !isCallback) {
-        console.log("⚠️ Admin session expired (browser was closed), signing out...");
+        console.log(" Admin session expired (browser was closed), signing out...");
         await supabase.auth.signOut();
         return;
       }
       
       // Check if user is already authenticated (callback or existing session)
       if (session?.user) {
-        console.log("👤 User session found:", session.user.email);
+        console.log(" User session found:", session.user.email);
         
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
+          .eq("role", "admin")
           .single();
 
-        console.log("🎭 User role:", roleData?.role);
+        console.log(" User admin role:", roleData?.role);
 
         if (roleData?.role === "admin") {
-          console.log("✅ Admin verified! Redirecting to dashboard...");
+          console.log(" Admin verified! Redirecting to dashboard...");
           // Mark admin session as active
           sessionStorage.setItem('admin_session_active', 'true');
           // Clean up the admin OAuth flag
@@ -85,7 +86,7 @@ const AdminLogin = () => {
           }
         }
       } else if (isCallback) {
-        console.log("⚠️ OAuth callback but no session found");
+        console.log(" OAuth callback but no session found");
         setLoading(false);
       }
     };
@@ -96,7 +97,7 @@ const AdminLogin = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      console.log("🔐 Starting Google OAuth for admin...");
+      console.log(" Starting Google OAuth for admin...");
       
       // Store a flag in sessionStorage to indicate this is an admin OAuth attempt
       sessionStorage.setItem('admin_oauth_attempt', 'true');

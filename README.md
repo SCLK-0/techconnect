@@ -1,148 +1,230 @@
-# TechConnect - Online Tutoring Platform
+# TechConnect
 
-A modern, real-time tutoring platform connecting learners with tutors for personalized educational sessions.
+A real-time peer tutoring platform that connects college students for collaborative learning sessions with video conferencing, interactive whiteboard, and session management.
 
-## Features
+## Overview
+
+TechConnect is a web-based platform designed to facilitate peer-to-peer tutoring sessions between college students. The platform supports real-time video communication, collaborative whiteboard, chat functionality, and session observation features.
+
+## Key Features
 
 ### For Learners
-- 🔍 Browse and find qualified tutors by subject
-- 📅 Book scheduled tutoring sessions
-- ⚡ Request instant tutoring sessions
-- 💬 Real-time video sessions with chat, whiteboard, and file sharing
-- ⭐ Rate and provide feedback on sessions
-- 📚 Access learning resources
+- Browse and search available tutors by subject expertise
+- Book instant or scheduled tutoring sessions
+- Request to observe ongoing sessions (tag-along feature)
+- Real-time video and audio communication
+- Interactive whiteboard for collaborative problem-solving
+- Session chat for text-based communication
+- Session history and feedback system
+- Reschedule or cancel sessions
 
 ### For Tutors
-- 📊 Comprehensive dashboard with session analytics
-- 🗓️ Manage availability and schedule
-- 🔔 Receive instant session requests
-- 👥 Track learners and session history
-- 💰 Donation system for voluntary contributions
-- 📝 View learner feedback
+- Create and manage tutor profile with subject expertise
+- Accept or decline session requests
+- Admit learners to sessions with waiting room
+- Control session flow and duration
+- Share screen during sessions
+- View tutee history and session logs
+- Receive feedback from learners
+
+### For Observers (Tag-Along Learners)
+- Request to observe ongoing sessions
+- View-only access to video streams
+- Access to whiteboard and chat
+- Learn by watching tutor-learner interactions
 
 ### For Administrators
-- 👤 User management and tutor approvals
-- 📈 Platform analytics and monitoring
-- 📢 Announcement system
-- 💵 Donation tracking
-- 📋 Session logs and monitoring
-- 🎯 Live session monitoring
+- Live monitoring of active sessions
+- User management (tutors, learners, admins)
+- Session oversight and intervention capabilities
+- Platform analytics and reporting
 
 ## Tech Stack
 
-- **Frontend**: React + TypeScript + Vite
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Backend**: Supabase (PostgreSQL, Authentication, Realtime, Storage)
-- **Video**: WebRTC for peer-to-peer video sessions
-- **State Management**: React Hooks + Context API
+### Frontend
+- React 18 with TypeScript
+- Vite for build tooling
+- TanStack Query for data fetching and caching
+- React Router for navigation
+- Tailwind CSS for styling
+- shadcn/ui component library
+- Fabric.js for whiteboard canvas
 
-## Getting Started
+### Backend & Services
+- Supabase for backend services
+  - PostgreSQL database
+  - Authentication
+  - Realtime subscriptions
+  - Storage
+- WebRTC for peer-to-peer video/audio
+- Custom signaling server using Supabase Realtime
 
-### Prerequisites
+### Real-time Features
+- WebRTC for video/audio streams
+- Supabase Realtime for signaling
+- Collaborative whiteboard with real-time sync
+- Live chat with typing indicators
+- Presence tracking for observers
+
+## Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account
+- Supabase account and project
+- Modern web browser with WebRTC support
 
-### Installation
+## Installation
 
-1. Clone the repository:
+1. Clone the repository
 ```bash
-git clone https://github.com/SCLK-0/techconnect.git
+git clone <repository-url>
 cd techconnect
 ```
 
-2. Install dependencies:
+2. Install dependencies
 ```bash
 npm install
 ```
 
-3. Set up environment variables:
-   - Copy `.env` to create your environment file
-   - Add your Supabase credentials:
+3. Set up environment variables
+
+Create a `.env` file in the root directory:
+
 ```env
-VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-4. Set up the database:
-   - Run the migrations in `supabase/migrations/` in your Supabase project
-   - Or use the `database-schema.sql` file for the complete schema
-
-5. Start the development server:
+4. Run the development server
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+The application will be available at `http://localhost:xxx` for local development, or access the live deployment at https://www.cit-techconnect.org/
 
 ## Project Structure
 
 ```
 techconnect/
 ├── src/
-│   ├── components/       # Reusable UI components
-│   │   ├── admin/       # Admin-specific components
-│   │   ├── learner/     # Learner-specific components
-│   │   ├── tutor/       # Tutor-specific components
-│   │   ├── ui/          # shadcn/ui components
-│   │   └── video-session/ # Video session components
-│   ├── hooks/           # Custom React hooks
-│   ├── integrations/    # Supabase integration
-│   ├── pages/           # Page components
-│   │   ├── admin/       # Admin pages
-│   │   ├── learner/     # Learner pages
-│   │   └── tutor/       # Tutor pages
-│   ├── lib/             # Utility functions
-│   └── utils/           # Helper utilities
-├── supabase/
-│   ├── functions/       # Edge functions
-│   └── migrations/      # Database migrations
-└── public/              # Static assets
+│   ├── components/          # Reusable UI components
+│   │   ├── admin/          # Admin-specific components
+│   │   ├── learner/        # Learner-specific components
+│   │   ├── tutor/          # Tutor-specific components
+│   │   ├── video-session/  # Video session components
+│   │   └── ui/             # Base UI components (shadcn)
+│   ├── pages/              # Page components
+│   │   ├── admin/          # Admin pages
+│   │   ├── learner/        # Learner pages
+│   │   └── tutor/          # Tutor pages
+│   ├── utils/              # Utility functions
+│   │   ├── supabaseSignaling.ts  # WebRTC signaling
+│   │   ├── observerWebRTC.ts     # Observer connections
+│   │   └── webrtcConfig.ts       # WebRTC configuration
+│   ├── integrations/       # External service integrations
+│   │   └── supabase/       # Supabase client and types
+│   ├── hooks/              # Custom React hooks
+│   └── lib/                # Library configurations
+├── supabase/               # Supabase migrations and functions
+└── public/                 # Static assets
 ```
 
-## Available Scripts
+## Key Components
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+### Video Session
+- Real-time video/audio communication using WebRTC
+- Screen sharing capability
+- Camera and microphone controls
+- Connection quality monitoring
+- Automatic reconnection handling
 
-## Deployment
+### Whiteboard
+- Collaborative drawing and annotation
+- Text insertion
+- Image upload and manipulation
+- Real-time synchronization across participants
+- Object manipulation indicators
+- Persistent state storage
 
-### Vercel (Recommended)
+### Session Management
+- Waiting room for learners
+- Session status tracking (waiting, in-progress, completed)
+- Session duration timer
+- Automatic session logging
+- Feedback collection
 
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add environment variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Deploy
+### Observer Mode
+- Receive-only WebRTC connections
+- Real-time presence tracking
+- Heartbeat-based connection monitoring
+- Automatic cleanup on disconnect
 
-### Other Platforms
+## Database Schema
 
-The app can be deployed to any static hosting service that supports Vite:
-- Netlify
-- Cloudflare Pages
-- AWS Amplify
-- GitHub Pages
+The application uses Supabase PostgreSQL with the following main tables:
 
-## Documentation
+- `profiles` - User profile information
+- `user_roles` - User role assignments (tutor, learner, admin)
+- `tutor_profiles` - Tutor-specific information and expertise
+- `learner_profiles` - Learner-specific information and interests
+- `sessions` - Tutoring session records
+- `session_participants` - Session participant tracking
+- `observer_requests` - Tag-along observation requests
+- `session_logs` - Session activity logs
+- `feedback` - Session feedback from learners
+- `whiteboard_states` - Persistent whiteboard data
 
-- `MIGRATION-INSTRUCTIONS.md` - Guide for migrating to external Supabase
-- `SETUP-AUTH-HOOKS.md` - Authentication hooks setup
-- `SETUP-RESEND-EMAILS.md` - Email system configuration
-- `SYSTEM-ARCHITECTURE.md` - System architecture overview
-- `TESTING-GUIDE.md` - Testing guidelines
-- `storage-setup-guide.md` - Storage bucket configuration
+## Development
+
+### Running Tests
+```bash
+npm run test
+```
+
+### Building for Production
+```bash
+npm run build
+```
+
+### Linting
+```bash
+npm run lint
+```
+
+## Environment Variables
+
+Required environment variables:
+
+- `VITE_SUPABASE_URL` - Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
+
+## Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+WebRTC features require a modern browser with full WebRTC support.
+
+## Known Limitations
+
+- Maximum 2 participants per session (1 tutor, 1 learner) plus observers
+- Whiteboard state is saved every 2 seconds (not instant)
+- Screen sharing is one-way (tutor/learner to others)
+- Observer connections are receive-only (no sending media)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a pull request
 
 ## License
 
-This project is licensed under the MIT License.
+This project is proprietary software. All rights reserved.
 
 ## Support
 
-For issues and questions, please open an issue on GitHub.
+For issues or questions, please contact the development team.

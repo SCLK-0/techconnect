@@ -71,11 +71,18 @@ export const useUserRole = () => {
                 .from("user_roles")
                 .select("role")
                 .eq("user_id", session.user.id)
-                .single()
                 .then(({ data, error }) => {
-                  if (!error && data?.role !== cachedRole) {
-                    console.log("Role updated from cache:", cachedRole, "to:", data?.role);
-                    updateRole(data?.role as UserRole, session.user.id);
+                  if (!error && data && data.length > 0) {
+                    // Prioritize admin role if user has multiple roles
+                    const roles = data.map(r => r.role);
+                    const primaryRole = roles.includes('admin') ? 'admin' : 
+                                     roles.includes('tutor') ? 'tutor' : 
+                                     roles.includes('learner') ? 'learner' : null;
+                    
+                    if (primaryRole !== cachedRole) {
+                      console.log("Role updated from cache:", cachedRole, "to:", primaryRole);
+                      updateRole(primaryRole as UserRole, session.user.id);
+                    }
                   }
                 });
             }, 0);
@@ -86,14 +93,22 @@ export const useUserRole = () => {
                 .from("user_roles")
                 .select("role")
                 .eq("user_id", session.user.id)
-                .single()
                 .then(({ data, error }) => {
                   if (error) {
                     console.error("Error fetching role on auth change:", error);
                     setLoading(false);
+                  } else if (data && data.length > 0) {
+                    // Prioritize admin role if user has multiple roles
+                    const roles = data.map(r => r.role);
+                    const primaryRole = roles.includes('admin') ? 'admin' : 
+                                     roles.includes('tutor') ? 'tutor' : 
+                                     roles.includes('learner') ? 'learner' : null;
+                    
+                    console.log("User roles:", roles, "Primary role:", primaryRole);
+                    updateRole(primaryRole as UserRole, session.user.id);
+                    setLoading(false);
                   } else {
-                    console.log("User role:", data?.role);
-                    updateRole(data?.role as UserRole ?? null, session.user.id);
+                    updateRole(null, session.user.id);
                     setLoading(false);
                   }
                 });
@@ -133,11 +148,18 @@ export const useUserRole = () => {
             .from("user_roles")
             .select("role")
             .eq("user_id", session.user.id)
-            .single()
             .then(({ data, error: roleError }) => {
-              if (!roleError && data?.role !== cachedRole) {
-                console.log("Role updated from cache:", cachedRole, "to:", data?.role);
-                updateRole(data?.role as UserRole, session.user.id);
+              if (!roleError && data && data.length > 0) {
+                // Prioritize admin role if user has multiple roles
+                const roles = data.map(r => r.role);
+                const primaryRole = roles.includes('admin') ? 'admin' : 
+                                 roles.includes('tutor') ? 'tutor' : 
+                                 roles.includes('learner') ? 'learner' : null;
+                
+                if (primaryRole !== cachedRole) {
+                  console.log("Role updated from cache:", cachedRole, "to:", primaryRole);
+                  updateRole(primaryRole as UserRole, session.user.id);
+                }
               }
             });
         } else {
@@ -146,15 +168,25 @@ export const useUserRole = () => {
             .from("user_roles")
             .select("role")
             .eq("user_id", session.user.id)
-            .single()
             .then(({ data, error: roleError }) => {
               if (roleError) {
                 console.error("Error fetching role:", roleError);
+                updateRole(null, session.user.id);
+                setLoading(false);
+              } else if (data && data.length > 0) {
+                // Prioritize admin role if user has multiple roles
+                const roles = data.map(r => r.role);
+                const primaryRole = roles.includes('admin') ? 'admin' : 
+                                 roles.includes('tutor') ? 'tutor' : 
+                                 roles.includes('learner') ? 'learner' : null;
+                
+                console.log("User roles:", roles, "Primary role:", primaryRole);
+                updateRole(primaryRole as UserRole, session.user.id);
+                setLoading(false);
               } else {
-                console.log("User role:", data?.role);
+                updateRole(null, session.user.id);
+                setLoading(false);
               }
-              updateRole(data?.role as UserRole ?? null, session.user.id);
-              setLoading(false);
             });
         }
       } else {

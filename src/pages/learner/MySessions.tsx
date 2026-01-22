@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, User, CalendarDays, X, Video, RefreshCw, MessageSquare } from "lucide-react";
+import { Calendar, Clock, User, CalendarDays, X, Video, RefreshCw, MessageSquare, Eye } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -17,6 +17,11 @@ import logo from "@/assets/logo.png";
 import { FeedbackDialog } from "@/components/learner/FeedbackDialog";
 import { RescheduleSessionDialog } from "@/components/learner/RescheduleSessionDialog";
 import { CancelSessionDialog } from "@/components/learner/CancelSessionDialog";
+import { AllowObserversToggle } from "@/components/learner/AllowObserversToggle";
+import { ObserverCount } from "@/components/learner/ObserverCount";
+import { ObserverSessions } from "@/components/learner/ObserverSessions";
+import { ObserverRequestBrowser } from "@/components/learner/ObserverRequestBrowser";
+import { ObserverRequestsManager } from "@/components/learner/ObserverRequestsManager";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSessionNotifications } from "@/hooks/useSessionNotifications";
@@ -34,9 +39,15 @@ interface Session {
   rejection_reason?: string;
   cancelled_reason?: string;
   disconnect_reason?: string;
+  declination_reason?: string;
   tutor_id: string;
   has_feedback?: boolean;
-  tutor: {
+  allow_observers?: boolean;
+  tutor?: {
+    full_name: string;
+    subject_expertise?: string[];
+  };
+  profiles?: {
     full_name: string;
     subject_expertise?: string[];
   };
@@ -71,6 +82,23 @@ export default function MySessions() {
     queryFn: async () => {
       if (!user) return [];
       
+      // First, fix any sessions where session_status is completed but status is not
+      // This handles cases where a user was disconnected when the session ended
+      const { data: mismatchedSessions } = await supabase
+        .from("sessions")
+        .select("id")
+        .eq("learner_id", user.id)
+        .eq("session_status", "completed")
+        .neq("status", "completed");
+      
+      if (mismatchedSessions && mismatchedSessions.length > 0) {
+        console.log(" Fixing mismatched session statuses:", mismatchedSessions.length);
+        await supabase
+          .from("sessions")
+          .update({ status: "completed" })
+          .in("id", mismatchedSessions.map(s => s.id));
+      }
+      
       // Auto-update passed accepted sessions to missed (only if still waiting)
       // Sessions are missed only if: current time > (scheduled_at + duration_minutes + 20 minutes grace period)
       if (filter === "accepted") {
@@ -87,7 +115,7 @@ export default function MySessions() {
           const missedSessionIds = sessionsToCheck.filter(session => {
             const scheduledAt = new Date(session.scheduled_at);
             const durationMinutes = session.duration_minutes || 60; // Default 60 if not set
-            const gracePeriodMinutes = 20;
+            const gracePeriodMinutes = 10;
             const missedThreshold = new Date(scheduledAt.getTime() + (durationMinutes + gracePeriodMinutes) * 60000);
             return now > missedThreshold;
           }).map(s => s.id);
@@ -122,22 +150,26 @@ export default function MySessions() {
                       .eq("user_id", user.id)
                       .single();
 
-                    const { data: tutorEmail, error: emailError } = await supabase
-                      .rpc('get_user_email', { user_id: sessionData.tutor_id });
+                    // Get tutor profile for email (temporarily disabled)
+                    // const { data: tutorEmailProfile, error: emailError } = await supabase
+                    //   .from('profiles')
+                    //   .select('email')
+                    //   .eq('user_id', sessionData.tutor_id)
+                    //   .single();
 
-                    if (emailError) {
-                      console.error("Error fetching tutor email:", emailError);
-                    }
+                    // if (emailError || !tutorEmailProfile?.email) {
+                    //   console.error("Error fetching tutor email:", emailError);
+                    // }
 
-                    if (tutorEmail) {
-                      await sendSessionMissedEmail(
-                        tutorEmail,
-                        tutorProfile?.full_name || "Tutor",
-                        learnerProfile?.full_name || "A learner",
-                        sessionData.subject,
-                        format(new Date(sessionData.scheduled_at), "MMMM d, yyyy 'at' h:mm a")
-                      );
-                    }
+                    // if (tutorEmailProfile?.email) {
+                    //   await sendSessionMissedEmail(
+                    //     tutorEmailProfile.email,
+                    //     tutorProfile?.full_name || "Tutor",
+                    //     learnerProfile?.full_name || "A learner",
+                    //     sessionData.subject,
+                    //     format(new Date(sessionData.scheduled_at), "MMMM d, yyyy 'at' h:mm a")
+                    //   );
+                    // }
                   }
                 }
               }
@@ -272,11 +304,11 @@ export default function MySessions() {
                               </div>
                               <div className="flex flex-col gap-2 items-end">
                                 <Badge>{session.session_type}</Badge>
-                                {session.disconnect_reason && (
+                                {/* {session.disconnect_reason && (
                                   <Badge variant="destructive" className="text-xs">
                                     Ended due to disconnect
                                   </Badge>
-                                )}
+                                )} */}
                               </div>
                             </div>
                           </CardHeader>
@@ -297,18 +329,31 @@ export default function MySessions() {
                             </div>
                             
                             {/* Show declination reason if session was declined */}
-                            {session.status === 'declined' && session.declination_reason && (
+                            {/* {session.status === 'declined' && session.declination_reason && (
                               <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
                                 <p className="text-sm font-medium text-destructive mb-1">Reason for declining:</p>
                                 <p className="text-sm text-muted-foreground">{session.declination_reason}</p>
                               </div>
-                            )}
+                            )} */}
                             
                             {/* Show cancellation reason if session was cancelled */}
-                            {session.status === 'cancelled' && session.cancelled_reason && (
+                            {/* {session.status === 'cancelled' && session.cancelled_reason && (
                               <div className="bg-muted border rounded-md p-3">
                                 <p className="text-sm font-medium mb-1">Cancellation reason:</p>
                                 <p className="text-sm text-muted-foreground">{session.cancelled_reason}</p>
+                              </div>
+                            )} */}
+                            
+                            {/* Allow Tag-Along Toggle - only for individual/scheduled sessions that are pending or accepted */}
+                            {(session.session_type === 'individual' || session.session_type === 'scheduled') && (session.status === 'pending' || session.status === 'accepted') && (
+                              <div className="my-4 space-y-2">
+                                <AllowObserversToggle
+                                  sessionId={session.id}
+                                  currentValue={(session as any).allow_observers || false}
+                                />
+                                {(session as any).allow_observers && (
+                                  <ObserverCount sessionId={session.id} />
+                                )}
                               </div>
                             )}
                             
@@ -329,7 +374,7 @@ export default function MySessions() {
                                 const scheduledTime = new Date(session.scheduled_at);
                                 const now = new Date();
                                 const durationMinutes = session.duration_minutes || 60;
-                                const gracePeriodMinutes = 20;
+                                const gracePeriodMinutes = 10;
                                 
                                 // Session end time = scheduled + duration + grace period
                                 const sessionEndTime = new Date(scheduledTime.getTime() + (durationMinutes + gracePeriodMinutes) * 60000);
@@ -374,7 +419,7 @@ export default function MySessions() {
                             </div>
                             
                             {/* Show rejection/cancellation reason and reschedule option */}
-                            {(session.rejection_reason || session.cancelled_reason) && (
+                            {/* {(session.rejection_reason || session.cancelled_reason) && (
                               <div className="mt-4 p-3 bg-muted rounded-lg space-y-2">
                                 <p className="text-sm font-medium">
                                   {session.rejection_reason ? 'Rejection Reason:' : 'Cancellation Reason:'}
@@ -395,7 +440,7 @@ export default function MySessions() {
                                   Reschedule with {session.profiles?.full_name}
                                 </Button>
                               </div>
-                            )}
+                            )} */}
                           </CardContent>
                         </Card>
                       ))}
@@ -446,6 +491,56 @@ export default function MySessions() {
                 )}
               </TabsContent>
             </Tabs>
+
+            {/* Tag-Along Sessions Section */}
+            <div className="mt-8 space-y-6">
+              <div className="border-t pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Eye className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-xl font-semibold">Tag-Along Sessions</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Manage tag-along settings and requests for your sessions
+                </p>
+
+                {/* Tabs for Tag-Along functionality */}
+                <Tabs defaultValue="sessions-im-tagging-along" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="sessions-im-tagging-along">Sessions I'm Tagging Along To</TabsTrigger>
+                    <TabsTrigger value="find-sessions">Find Sessions</TabsTrigger>
+                    <TabsTrigger value="approve-requests">Approve Requests</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="sessions-im-tagging-along" className="mt-4">
+                    <ObserverSessions />
+                  </TabsContent>
+                  
+                  <TabsContent value="find-sessions" className="mt-4">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium mb-2">Available Sessions</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Request to tag along to upcoming sessions that allow tag-along learners
+                        </p>
+                      </div>
+                      <ObserverRequestBrowser />
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="approve-requests" className="mt-4">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium mb-2">Pending Requests</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Approve or decline tag-along requests for your sessions (enable tag-along on your sessions above)
+                        </p>
+                      </div>
+                      <ObserverRequestsManager />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
             </div>
           </main>
         </div>
@@ -458,8 +553,8 @@ export default function MySessions() {
           tutorId={selectedSessionForReschedule.tutor_id}
           tutorName={selectedSessionForReschedule.profiles?.full_name || "Tutor"}
           tutorSubjects={selectedSessionForReschedule.profiles?.subject_expertise || []}
-          rejectionReason={selectedSessionForReschedule.rejection_reason}
-          cancelledReason={selectedSessionForReschedule.cancelled_reason}
+          // declinationReason={selectedSessionForReschedule.declination_reason}
+          // cancelledReason={selectedSessionForReschedule.cancelled_reason}
         />
       )}
 

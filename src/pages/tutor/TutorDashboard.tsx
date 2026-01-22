@@ -11,7 +11,7 @@ import logo from "@/assets/logo.png";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Star, Clock, CheckCircle, FileText, Video } from "lucide-react";
+import { Calendar, Star, Clock, CheckCircle, FileText, Video, Users, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useInstantSessionNotifications } from "@/hooks/useInstantSessionNotifications";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+// Removed CreateGroupSessionDialog - focusing only on observer functionality
 
 export default function TutorDashboard() {
   const { user } = useUserRole();
@@ -28,6 +29,7 @@ export default function TutorDashboard() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [tutorStatus, setTutorStatus] = useState<string>("");
   const [initialLoad, setInitialLoad] = useState(true);
+  // Removed showCreateGroupDialog state - focusing only on observer functionality
 
   // Enable instant session notifications
   useInstantSessionNotifications(user?.id, isOnline);
@@ -40,6 +42,20 @@ export default function TutorDashboard() {
         tutor_user_id: user.id 
       });
       return data?.[0];
+    },
+    enabled: !!user,
+  });
+
+  const { data: tutorSubjects = [] } = useQuery({
+    queryKey: ["tutor-subjects", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from("tutor_profiles")
+        .select("subject_expertise")
+        .eq("user_id", user.id)
+        .single();
+      return data?.subject_expertise || [];
     },
     enabled: !!user,
   });
@@ -209,7 +225,7 @@ export default function TutorDashboard() {
                       <div>
                         <p className="font-semibold text-red-900 dark:text-red-100">Application Declined</p>
                         <p className="text-sm text-red-700 dark:text-red-200">
-                          Unfortunately, your tutor application was not approved. Please contact support for more information.
+                          We regret to inform you that your tutor application was not approved at this time. For reconsideration, please visit the Student Council office or contact the Governor or Student Council Adviser.
                         </p>
                       </div>
                     </div>
@@ -400,6 +416,7 @@ export default function TutorDashboard() {
                       <FileText className="mr-2 h-4 w-4" />
                       Upload Resources
                     </Button>
+                    {/* Removed Create Group Session button - focusing only on observer functionality */}
                   </CardContent>
                 </Card>
               </div>
@@ -407,6 +424,8 @@ export default function TutorDashboard() {
           </main>
         </div>
       </div>
+
+      {/* Removed Group Session Dialog - focusing only on observer functionality */}
     </SidebarProvider>
   );
 }

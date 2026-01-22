@@ -43,15 +43,15 @@ export function SessionTimer({ sessionId, onTimeout }: SessionTimerProps) {
         const now = Date.now();
         const remaining = Math.floor((endTime - now) / 1000);
         
-        // Allow 20 minute grace period (1200 seconds)
-        const gracePeriodinSeconds = 20 * 60;
+        // Allow 10 minute grace period (600 seconds)
+        const gracePeriodinSeconds = 10 * 60;
         
         if (remaining < -gracePeriodinSeconds) {
-          // Session is more than 20 minutes late - mark as missed
+          // Session is more than 10 minutes late - mark as missed
           setIsMissed(true);
           setTimeLeft(0);
           setHasTriggeredTimeout(true);
-          toast.error("This session has been missed (more than 20 minutes late)");
+          toast.error("This session has been missed (more than 10 minutes late)");
           setTimeout(() => onTimeout(), 2000);
         } else {
           // Set time left (can be negative if late but within grace period)

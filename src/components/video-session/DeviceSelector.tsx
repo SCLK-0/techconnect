@@ -82,7 +82,7 @@ export function DeviceSelector({ onDeviceChange, selectedVideoDevice, selectedAu
           <SelectTrigger id="camera-select">
             <SelectValue placeholder="Select camera" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[200]">
             {videoDevices.map((device) => (
               <SelectItem key={device.deviceId} value={device.deviceId}>
                 {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
@@ -100,7 +100,7 @@ export function DeviceSelector({ onDeviceChange, selectedVideoDevice, selectedAu
           <SelectTrigger id="microphone-select">
             <SelectValue placeholder="Select microphone" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[200]">
             {audioDevices.map((device) => (
               <SelectItem key={device.deviceId} value={device.deviceId}>
                 {device.label || `Microphone ${audioDevices.indexOf(device) + 1}`}

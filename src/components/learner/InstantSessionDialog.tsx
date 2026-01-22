@@ -267,7 +267,7 @@ export function InstantSessionDialog({
                       type="number"
                       placeholder="Enter duration in minutes"
                       min={10}
-                      max={30}
+                      max={60}
                       className="h-11 rounded-xl"
                       {...field}
                     />

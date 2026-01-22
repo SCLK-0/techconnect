@@ -1,4 +1,4 @@
-import { Users, Calendar, Clock, FileText, Heart, User, Settings, LayoutDashboard, Star, LogOut, Megaphone } from "lucide-react";
+import { Users, Calendar, Clock, FileText, User, Settings, LayoutDashboard, Star, LogOut, Megaphone } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -34,8 +34,8 @@ export function TutorSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
   const { user, role } = useUserRole();
-  const [isActive, setIsActive] = useState(true);
-  const [tutorStatus, setTutorStatus] = useState<string>("approved"); // Default to approved to prevent flickering
+  const [isActive, setIsActive] = useState(false); // Start restrictive to prevent race conditions
+  const [tutorStatus, setTutorStatus] = useState<string>("pending"); // Start restrictive to prevent race conditions
   const [isLoading, setIsLoading] = useState(true);
 
   // Enable instant request notifications on all tutor pages
@@ -99,7 +99,9 @@ export function TutorSidebar() {
   }, []);
 
   const canNavigate = isActive && tutorStatus === "approved";
-  const shouldShowDisabled = !isLoading && !canNavigate;
+  // During loading, always show as disabled and prevent clicks to avoid race conditions
+  const shouldShowDisabled = isLoading || !canNavigate;
+  const shouldPreventClick = isLoading || !canNavigate;
 
   const handleLogout = async () => {
     try {
@@ -156,13 +158,19 @@ export function TutorSidebar() {
                             : ""
                         }
                         onClick={(e) => {
-                          if (!canNavigate && !isLoading) {
+                          if (shouldPreventClick) {
                             e.preventDefault();
-                            toast.error(
-                              !isActive 
-                                ? "Your account is inactive. Please contact an administrator." 
-                                : "Your tutor profile must be approved to access this feature."
-                            );
+                            if (isLoading) {
+                              // During loading, show a loading message
+                              toast.info("Loading account status...");
+                            } else {
+                              // After loading, show specific restriction message
+                              toast.error(
+                                !isActive 
+                                  ? "Your account is inactive. Please contact an administrator." 
+                                  : "Your tutor profile must be approved to access this feature."
+                              );
+                            }
                           }
                         }}
                       >
@@ -196,13 +204,19 @@ export function TutorSidebar() {
                           : ""
                       }
                       onClick={(e) => {
-                        if (!canNavigate && !isLoading) {
+                        if (shouldPreventClick) {
                           e.preventDefault();
-                          toast.error(
-                            !isActive 
-                              ? "Your account is inactive. Please contact an administrator." 
-                              : "Your tutor profile must be approved to access this feature."
-                          );
+                          if (isLoading) {
+                            // During loading, show a loading message
+                            toast.info("Loading account status...");
+                          } else {
+                            // After loading, show specific restriction message
+                            toast.error(
+                              !isActive 
+                                ? "Your account is inactive. Please contact an administrator." 
+                                : "Your tutor profile must be approved to access this feature."
+                            );
+                          }
                         }
                       }}
                     >
@@ -227,13 +241,19 @@ export function TutorSidebar() {
                           : ""
                       }
                       onClick={(e) => {
-                        if (!canNavigate && !isLoading) {
+                        if (shouldPreventClick) {
                           e.preventDefault();
-                          toast.error(
-                            !isActive 
-                              ? "Your account is inactive. Please contact an administrator." 
-                              : "Your tutor profile must be approved to access this feature."
-                          );
+                          if (isLoading) {
+                            // During loading, show a loading message
+                            toast.info("Loading account status...");
+                          } else {
+                            // After loading, show specific restriction message
+                            toast.error(
+                              !isActive 
+                                ? "Your account is inactive. Please contact an administrator." 
+                                : "Your tutor profile must be approved to access this feature."
+                            );
+                          }
                         }
                       }}
                     >

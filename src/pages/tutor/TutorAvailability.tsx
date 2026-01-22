@@ -176,6 +176,60 @@ export default function TutorAvailability() {
   };
 
   const toggleSlot = async (id: string, isAvailable: boolean) => {
+    if (!user) return;
+    
+    // If trying to mark as unavailable, check for existing sessions
+    if (isAvailable) {
+      const slotToToggle = slots.find(s => s.id === id);
+      if (!slotToToggle) {
+        toast.error("Slot not found");
+        return;
+      }
+      
+      // Check for existing sessions on this day of week in the next 60 days
+      const today = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 60);
+      
+      const { data: existingSessions, error: sessionError } = await supabase
+        .from("sessions")
+        .select("id, scheduled_at, learner_id")
+        .eq("tutor_id", user.id)
+        .in("status", ["pending", "accepted"])
+        .gte("scheduled_at", today.toISOString())
+        .lte("scheduled_at", endDate.toISOString());
+      
+      if (sessionError) {
+        toast.error("Failed to check for existing sessions");
+        return;
+      }
+      
+      // Filter sessions that fall on this day of week and within the time slot
+      const [slotStartHours, slotStartMinutes] = slotToToggle.start_time.split(':').map(Number);
+      const [slotEndHours, slotEndMinutes] = slotToToggle.end_time.split(':').map(Number);
+      const slotStartInMinutes = slotStartHours * 60 + slotStartMinutes;
+      const slotEndInMinutes = slotEndHours * 60 + slotEndMinutes;
+      
+      const conflictingSessions = existingSessions?.filter(session => {
+        const sessionDate = new Date(session.scheduled_at);
+        if (sessionDate.getDay() !== slotToToggle.day_of_week) return false;
+        
+        const sessionHours = sessionDate.getHours();
+        const sessionMinutes = sessionDate.getMinutes();
+        const sessionTimeInMinutes = sessionHours * 60 + sessionMinutes;
+        
+        return sessionTimeInMinutes >= slotStartInMinutes && sessionTimeInMinutes < slotEndInMinutes;
+      }) || [];
+      
+      if (conflictingSessions.length > 0) {
+        toast.error(`Cannot mark as unavailable: ${conflictingSessions.length} existing session(s)`, {
+          description: "Please cancel or reschedule these sessions first.",
+          duration: 6000,
+        });
+        return;
+      }
+    }
+    
     const { error } = await supabase
       .from("tutor_availability")
       .update({ is_available: !isAvailable })
@@ -189,6 +243,89 @@ export default function TutorAvailability() {
   };
 
   const deleteSlot = async (id: string) => {
+    if (!user) return;
+    
+    // Get the slot details first
+    const slotToDelete = slots.find(s => s.id === id);
+    if (!slotToDelete) {
+      toast.error("Slot not found");
+      return;
+    }
+    
+    // Check for existing sessions on this day of week in the next 60 days
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 60);
+    
+    // Find all dates that match this day of week
+    const datesToCheck: Date[] = [];
+    const currentDate = new Date(today);
+    while (currentDate <= endDate) {
+      if (currentDate.getDay() === slotToDelete.day_of_week) {
+        datesToCheck.push(new Date(currentDate));
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Check for sessions on any of these dates
+    const { data: existingSessions, error: sessionError } = await supabase
+      .from("sessions")
+      .select("id, scheduled_at, learner_id")
+      .eq("tutor_id", user.id)
+      .in("status", ["pending", "accepted"])
+      .gte("scheduled_at", today.toISOString())
+      .lte("scheduled_at", endDate.toISOString());
+    
+    if (sessionError) {
+      toast.error("Failed to check for existing sessions");
+      return;
+    }
+    
+    // Filter sessions that fall on this day of week and within the time slot
+    const [slotStartHours, slotStartMinutes] = slotToDelete.start_time.split(':').map(Number);
+    const [slotEndHours, slotEndMinutes] = slotToDelete.end_time.split(':').map(Number);
+    const slotStartInMinutes = slotStartHours * 60 + slotStartMinutes;
+    const slotEndInMinutes = slotEndHours * 60 + slotEndMinutes;
+    
+    const conflictingSessions = existingSessions?.filter(session => {
+      const sessionDate = new Date(session.scheduled_at);
+      if (sessionDate.getDay() !== slotToDelete.day_of_week) return false;
+      
+      // Check if session time falls within this slot
+      const sessionHours = sessionDate.getHours();
+      const sessionMinutes = sessionDate.getMinutes();
+      const sessionTimeInMinutes = sessionHours * 60 + sessionMinutes;
+      
+      return sessionTimeInMinutes >= slotStartInMinutes && sessionTimeInMinutes < slotEndInMinutes;
+    }) || [];
+    
+    if (conflictingSessions.length > 0) {
+      // Fetch learner names
+      const learnerIds = conflictingSessions.map(s => s.learner_id);
+      const { data: learnerProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", learnerIds);
+      
+      const learnerMap = new Map(learnerProfiles?.map(p => [p.user_id, p.full_name]) || []);
+      
+      const sessionList = conflictingSessions.slice(0, 3).map(s => {
+        const sessionDate = new Date(s.scheduled_at);
+        const dateStr = sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const timeStr = sessionDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const learnerName = learnerMap.get(s.learner_id) || 'Unknown';
+        return `• ${dateStr} ${timeStr} with ${learnerName}`;
+      }).join('\n');
+      
+      const moreText = conflictingSessions.length > 3 ? `\n...and ${conflictingSessions.length - 3} more` : '';
+      
+      toast.error(`Cannot delete: ${conflictingSessions.length} existing session(s)`, {
+        description: `Please cancel or reschedule these sessions first:\n${sessionList}${moreText}`,
+        duration: 8000,
+      });
+      return;
+    }
+    
     const { error } = await supabase
       .from("tutor_availability")
       .delete()

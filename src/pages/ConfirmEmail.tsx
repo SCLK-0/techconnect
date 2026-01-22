@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
@@ -7,266 +7,254 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const ConfirmEmail = () => {
-  const [status, setStatus] = useState<"waiting" | "confirmed" | "error" | "can_close">("waiting");
+  const [status, setStatus] = useState<"waiting" | "confirmed" | "error">("waiting");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const location = useLocation();
   const { toast } = useToast();
-  const shouldStopChecking = useRef(false);
 
   useEffect(() => {
     let pollInterval: NodeJS.Timeout;
-    let isConfirmed = false;
+    let redirectTimeout: NodeJS.Timeout;
+    let localStorageCheckInterval: NodeJS.Timeout;
     
-    // IMMEDIATE CHECK: If this is an admin OAuth attempt, redirect immediately
-    const checkIfAdminOAuth = async () => {
-      // Check if this was an admin OAuth attempt (flag set in sessionStorage)
-      const isAdminOAuthAttempt = sessionStorage.getItem('admin_oauth_attempt') === 'true';
+    // Check if user came from registration
+    const cameFromRegistration = location.state?.fromRegistration;
+    
+    // Clear any stale confirmation data from previous sessions on mount
+    if (cameFromRegistration) {
+      console.log(" Clearing stale localStorage data (came from registration)");
+      localStorage.removeItem('email_confirmed');
+      localStorage.removeItem('email_confirmed_role');
+      localStorage.removeItem('email_confirmed_timestamp');
+    }
+    
+    // Function to redirect based on role
+    const redirectToDashboard = (role: string | null) => {
+      console.log(" Redirecting to dashboard for role:", role);
       
-      if (isAdminOAuthAttempt) {
-        console.log("🔐 Admin OAuth attempt detected! Redirecting to admin/login immediately...");
-        sessionStorage.removeItem('admin_oauth_attempt'); // Clean up
-        navigate("/admin/login", { replace: true });
-        return true; // Signal that we're redirecting
+      if (role === "learner") {
+        navigate("/learner/dashboard", { replace: true });
+      } else if (role === "tutor") {
+        navigate("/tutor/dashboard", { replace: true });
+      } else if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        fetchRoleAndRedirect();
       }
-      
-      // Also check if this is an OAuth callback with an admin role
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const hasOAuthToken = hashParams.has('access_token');
-      
-      if (hasOAuthToken) {
-        console.log("🔍 OAuth callback detected on confirm-email page");
-        
-        // Get the session immediately
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          console.log("👤 User session found, checking role...");
-          
-          // Check if user is admin
-          const { data: roleData } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .single();
-          
-          if (roleData?.role === "admin") {
-            console.log("🔐 Admin OAuth detected! Redirecting to admin/login...");
-            // Redirect admin OAuth to admin login page immediately
-            navigate("/admin/login", { replace: true });
-            return true; // Signal that we're redirecting
-          }
-        }
-      }
-      return false; // Not an admin OAuth
     };
     
-    // Listen for confirmation from other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'email_confirmed' && e.newValue === 'true') {
-        console.log("📨 Email confirmed in another tab! Showing 'can close' message.");
-        shouldStopChecking.current = true;
-        setStatus("can_close");
-        if (pollInterval) clearInterval(pollInterval);
+    // Fetch role from database and redirect
+    const fetchRoleAndRedirect = async () => {
+      console.log(" Fetching role from database...");
+      
+      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.error("Session refresh error:", refreshError);
       }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    
-    const checkConfirmation = async () => {
-      // First check if this is an admin OAuth - if so, redirect immediately
-      const isAdminOAuth = await checkIfAdminOAuth();
-      if (isAdminOAuth) return; // Stop processing if redirecting
       
-      // Don't check again if already confirmed or if we should stop checking
-      if (isConfirmed || shouldStopChecking.current) return;
-      
-      // Check if this is a redirect from email confirmation link
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const hasTokenParams = searchParams.get('token_hash') || 
-                            searchParams.get('type') || 
-                            searchParams.get('access_token') ||
-                            hashParams.get('access_token') ||
-                            hashParams.get('token_hash');
-      const error = searchParams.get('error') || hashParams.get('error');
-      const errorDescription = searchParams.get('error_description') || hashParams.get('error_description');
-      
-      console.log("🔍 Checking access - hasTokenParams:", !!hasTokenParams, "searchParams:", Object.fromEntries(searchParams.entries()));
-      
-      // Check if user came from registration (has state)
-      const cameFromRegistration = location.state?.fromRegistration;
-      
-      // Allow access if: has token params OR came from registration OR already has a confirmed session
-      // (The session check allows Tab B to work when opened from email link)
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      // Block direct access unless:
-      // 1. Has token params (email confirmation link) - MOST IMPORTANT
-      // 2. Came from registration page
-      // 3. Has a session (even without confirmed email, to allow waiting state)
-      const hasConfirmedEmail = currentUser?.email_confirmed_at || currentUser?.confirmed_at;
-      
-      // RELAXED: Allow if has token params OR came from registration OR has ANY session
-      // This ensures email confirmation links always work
-      if (!hasTokenParams && !cameFromRegistration && !currentSession) {
-        console.log("⛔ Direct access blocked - no valid context. Redirecting to home");
-        navigate('/', { replace: true });
+      const userId = session?.user?.id;
+      if (!userId) {
+        console.log("No user ID found, redirecting to login");
+        navigate("/login", { replace: true });
         return;
       }
       
-      console.log("✅ Access allowed - hasTokenParams:", !!hasTokenParams, "cameFromRegistration:", cameFromRegistration, "hasSession:", !!currentSession);
-      
-      // Handle errors from email confirmation
-      if (error) {
-        console.error("Email confirmation error:", error, errorDescription);
-        setStatus("error");
-        setErrorMessage(errorDescription || "Failed to confirm email");
-        if (pollInterval) clearInterval(pollInterval);
-        return;
-      }
-      
-      // Get current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        setStatus("error");
-        setErrorMessage(sessionError.message);
-        if (pollInterval) clearInterval(pollInterval);
-        return;
-      }
-
-      // If user has session and email is confirmed
-      if (session?.user) {
-        const { data: { user } } = await supabase.auth.getUser();
+      for (let attempt = 0; attempt < 5; attempt++) {
+        console.log(`Attempt ${attempt + 1} to fetch role...`);
         
-        if (user?.email_confirmed_at || user?.confirmed_at) {
-          console.log("✅ Email confirmed! Setting status to confirmed");
-          isConfirmed = true;
-          setStatus("confirmed");
-          
-          // Notify other tabs that email is confirmed
-          localStorage.setItem('email_confirmed', 'true');
-          setTimeout(() => localStorage.removeItem('email_confirmed'), 2000);
-          
-          // Stop polling
-          if (pollInterval) clearInterval(pollInterval);
-          
-          // Check user role and redirect
-          const { data: roles } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id);
-          
-          toast({
-            title: "Email confirmed!",
-            description: "Redirecting to your dashboard...",
-            duration: 5000,
-          });
-
-          // Wait 5 seconds to show the green confirmation state
-          setTimeout(() => {
-            if (roles && roles.length > 0) {
-              const role = roles[0].role;
-              console.log("Redirecting to dashboard for role:", role);
-              if (role === "learner") {
-                navigate("/learner/dashboard", { replace: true });
-              } else if (role === "tutor") {
-                navigate("/tutor/dashboard", { replace: true });
-              } else {
-                // Unknown role, redirect to login
-                console.log("Unknown role, redirecting to login");
-                navigate("/login", { replace: true });
-              }
-            } else {
-              // No role assigned - likely OAuth user without metadata
-              console.log("⚠️ No role found - OAuth user needs to complete registration");
-              toast({
-                title: "Complete Your Profile",
-                description: "Please select your role and complete your profile",
-                variant: "default",
-              });
-              navigate("/role-selection", { replace: true });
-            }
-          }, 5000);
-        }
-      }
-    };
-
-    checkConfirmation();
-    
-    // Poll every 2 seconds to check if email was confirmed
-    pollInterval = setInterval(checkConfirmation, 2000);
-
-    // Listen for auth state changes (when user clicks email link)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("🔔 Auth state changed:", event);
-      
-      // Don't process if we should stop checking (Tab A showing "can close")
-      if (shouldStopChecking.current) {
-        console.log("Ignoring auth state change - already showing 'can close' message");
-        return;
-      }
-      
-      if (event === "SIGNED_IN" && session && !isConfirmed) {
-        console.log("✅ User signed in! Setting status to confirmed");
-        isConfirmed = true;
-        setStatus("confirmed");
-        
-        // Notify other tabs that email is confirmed
-        localStorage.setItem('email_confirmed', 'true');
-        setTimeout(() => localStorage.removeItem('email_confirmed'), 2000);
-        
-        // Stop polling
-        if (pollInterval) clearInterval(pollInterval);
-        
-        // Check role and redirect
-        const { data: roles } = await supabase
+        const { data: roles, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", session.user.id);
+          .eq("user_id", userId);
+        
+        if (roleError) {
+          console.error("Role fetch error:", roleError);
+        }
+        
+        if (roles && roles.length > 0) {
+          const role = roles[0].role;
+          console.log(" Role found:", role);
+          
+          if (role === "learner") {
+            navigate("/learner/dashboard", { replace: true });
+          } else if (role === "tutor") {
+            navigate("/tutor/dashboard", { replace: true });
+          } else if (role === "admin") {
+            navigate("/admin/dashboard", { replace: true });
+          }
+          return;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      console.log(" No role found after retries");
+      navigate("/role-selection", { replace: true });
+    };
+    
+    // Listen for confirmation from Tab B (AuthCallback) via localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      console.log(" Storage event received:", e.key, e.newValue);
+      
+      if (e.key === 'email_confirmed' && e.newValue === 'true') {
+        console.log(" Email confirmed signal received from Tab B!");
+        
+        if (pollInterval) clearInterval(pollInterval);
+        if (localStorageCheckInterval) clearInterval(localStorageCheckInterval);
+        
+        setStatus("confirmed");
         
         toast({
-          title: "Email confirmed!",
+          title: "Email Confirmed!",
           description: "Redirecting to your dashboard...",
-          duration: 5000,
         });
+        
+        const role = localStorage.getItem('email_confirmed_role');
+        console.log("Role from localStorage:", role);
+        
+        redirectTimeout = setTimeout(() => {
+          redirectToDashboard(role);
+        }, 1500);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Initial access check
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!cameFromRegistration && !session) {
+        console.log("⛔ Direct access blocked - redirecting to home");
+        navigate('/', { replace: true });
+        return false;
+      }
+      return true;
+    };
+    
+    checkAccess();
+    
+    // Check localStorage for recent confirmation (with timestamp validation)
+    const checkLocalStorageNow = () => {
+      const confirmed = localStorage.getItem('email_confirmed');
+      const confirmedTimestamp = localStorage.getItem('email_confirmed_timestamp');
+      
+      if (confirmed === 'true' && confirmedTimestamp) {
+        const timestamp = parseInt(confirmedTimestamp, 10);
+        const now = Date.now();
+        const isRecent = (now - timestamp) < 60000; // 60 seconds
+        
+        if (isRecent) {
+          console.log(" Found recent email_confirmed in localStorage!");
+          setStatus("confirmed");
+          if (pollInterval) clearInterval(pollInterval);
+          if (localStorageCheckInterval) clearInterval(localStorageCheckInterval);
+          
+          const role = localStorage.getItem('email_confirmed_role');
+          
+          toast({
+            title: "Email Confirmed!",
+            description: "Redirecting to your dashboard...",
+          });
+          
+          redirectTimeout = setTimeout(() => {
+            redirectToDashboard(role);
+          }, 1500);
+        } else {
+          console.log(" Found stale email_confirmed in localStorage, ignoring");
+          localStorage.removeItem('email_confirmed');
+          localStorage.removeItem('email_confirmed_role');
+          localStorage.removeItem('email_confirmed_timestamp');
+        }
+      }
+    };
+    
+    checkLocalStorageNow();
+    localStorageCheckInterval = setInterval(checkLocalStorageNow, 1000);
+    
+    // Track initial confirmed_at to detect changes
+    let initialConfirmedAt: string | null = null;
+    let hasCheckedInitial = false;
+    
+    const checkEmailConfirmed = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
+        
+        const confirmedAt = user.email_confirmed_at || user.confirmed_at;
+        
+        if (!hasCheckedInitial) {
+          initialConfirmedAt = confirmedAt || null;
+          hasCheckedInitial = true;
+          console.log(" Initial confirmed_at state:", initialConfirmedAt);
+          return;
+        }
+        
+        // Only trigger if confirmed_at changed from null to a value
+        if (confirmedAt && !initialConfirmedAt) {
+          console.log(" Email confirmed detected via auth polling!");
+          setStatus("confirmed");
+          if (pollInterval) clearInterval(pollInterval);
+          if (localStorageCheckInterval) clearInterval(localStorageCheckInterval);
+          
+          toast({
+            title: "Email Confirmed!",
+            description: "Redirecting to your dashboard...",
+          });
+          
+          redirectTimeout = setTimeout(() => {
+            fetchRoleAndRedirect();
+          }, 1500);
+        }
+      } catch (error) {
+        console.error("Error checking email confirmation:", error);
+      }
+    };
+    
+    pollInterval = setInterval(checkEmailConfirmed, 3000);
 
-        // Wait 5 seconds to show the green confirmation state
-        setTimeout(() => {
-          if (roles && roles.length > 0) {
-            const role = roles[0].role;
-            console.log("Redirecting to dashboard for role:", role);
-            if (role === "learner") {
-              navigate("/learner/dashboard", { replace: true });
-            } else if (role === "tutor") {
-              navigate("/tutor/dashboard", { replace: true });
-            } else {
-              // Unknown role, redirect to login
-              console.log("Unknown role, redirecting to login");
-              navigate("/login", { replace: true });
-            }
-          } else {
-            // No role assigned - likely OAuth user without metadata
-            console.log("⚠️ No role found - OAuth user needs to complete registration");
-            toast({
-              title: "Complete Your Profile",
-              description: "Please select your role and complete your profile",
-              variant: "default",
-            });
-            navigate("/role-selection", { replace: true });
-          }
-        }, 5000);
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(" Auth state changed:", event, session?.user?.email);
+      
+      if (event === "SIGNED_IN" && session) {
+        const user = session.user;
+        const isEmailConfirmed = user?.email_confirmed_at || user?.confirmed_at;
+        
+        console.log(" Email confirmed status:", isEmailConfirmed);
+        
+        // Only trigger if email is actually confirmed AND we didn't have it confirmed initially
+        if (isEmailConfirmed && !initialConfirmedAt) {
+          console.log(" SIGNED_IN event with newly confirmed email!");
+          setStatus("confirmed");
+          if (pollInterval) clearInterval(pollInterval);
+          if (localStorageCheckInterval) clearInterval(localStorageCheckInterval);
+          
+          toast({
+            title: "Email Confirmed!",
+            description: "Redirecting to your dashboard...",
+          });
+
+          redirectTimeout = setTimeout(() => {
+            fetchRoleAndRedirect();
+          }, 1500);
+        } else {
+          console.log(" SIGNED_IN but email not yet confirmed or was already confirmed, waiting...");
+        }
       }
     });
 
     return () => {
       subscription.unsubscribe();
       if (pollInterval) clearInterval(pollInterval);
+      if (localStorageCheckInterval) clearInterval(localStorageCheckInterval);
+      if (redirectTimeout) clearTimeout(redirectTimeout);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [searchParams, location, navigate, toast]);
+  }, [location, navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
@@ -284,11 +272,6 @@ const ConfirmEmail = () => {
                 <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
             )}
-            {status === "can_close" && (
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-white" />
-              </div>
-            )}
             {status === "error" && (
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
                 <AlertCircle className="w-8 h-8 text-white" />
@@ -298,7 +281,6 @@ const ConfirmEmail = () => {
           <CardTitle className="text-2xl font-bold">
             {status === "waiting" && "Check Your Email"}
             {status === "confirmed" && "Email Confirmed!"}
-            {status === "can_close" && "All Set!"}
             {status === "error" && "Confirmation Error"}
           </CardTitle>
           <CardDescription className="text-base">
@@ -314,13 +296,6 @@ const ConfirmEmail = () => {
                 Your email has been successfully confirmed!
                 <br />
                 Redirecting to your dashboard...
-              </>
-            )}
-            {status === "can_close" && (
-              <>
-                Your email has been confirmed in another tab.
-                <br />
-                You can safely close this tab now.
               </>
             )}
             {status === "error" && (
@@ -341,7 +316,7 @@ const ConfirmEmail = () => {
               </p>
               <div className="space-y-2 text-center">
                 <p className="text-xs text-muted-foreground">
-                  📧 Didn't receive the email? <strong>Check your spam/junk folder!</strong>
+                   Didn't receive the email? <strong>Check your spam/junk folder!</strong>
                 </p>
               </div>
             </div>
@@ -349,19 +324,9 @@ const ConfirmEmail = () => {
           {status === "confirmed" && (
             <div className="flex flex-col items-center gap-4 p-6 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
               <p className="text-sm text-center font-medium">
-                ✅ Your account has been confirmed! Redirecting...
+                 Your account has been confirmed! Redirecting...
               </p>
               <Loader2 className="w-6 h-6 animate-spin text-green-600" />
-            </div>
-          )}
-          {status === "can_close" && (
-            <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
-              <p className="text-sm text-center font-medium text-blue-700 dark:text-blue-300">
-                ✅ Email confirmed successfully in another tab!
-              </p>
-              <p className="text-xs text-center text-muted-foreground">
-                You can close this tab now. The other tab will redirect you to your dashboard.
-              </p>
             </div>
           )}
           {status === "error" && (

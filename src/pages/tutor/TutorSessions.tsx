@@ -44,6 +44,23 @@ export default function TutorSessions() {
     queryFn: async () => {
       if (!user) return [];
       
+      // First, fix any sessions where session_status is completed but status is not
+      // This handles cases where a user was disconnected when the session ended
+      const { data: mismatchedSessions } = await supabase
+        .from("sessions")
+        .select("id")
+        .eq("tutor_id", user.id)
+        .eq("session_status", "completed")
+        .neq("status", "completed");
+      
+      if (mismatchedSessions && mismatchedSessions.length > 0) {
+        console.log(" Fixing mismatched session statuses:", mismatchedSessions.length);
+        await supabase
+          .from("sessions")
+          .update({ status: "completed" })
+          .in("id", mismatchedSessions.map(s => s.id));
+      }
+      
       // Auto-update passed accepted sessions to missed (only if still waiting)
       // Sessions are missed only if: current time > (scheduled_at + duration_minutes + 20 minutes grace period)
       if (filter === "accepted") {
@@ -60,7 +77,7 @@ export default function TutorSessions() {
           const missedSessionIds = sessionsToCheck.filter(session => {
             const scheduledAt = new Date(session.scheduled_at);
             const durationMinutes = session.duration_minutes || 60; // Default 60 if not set
-            const gracePeriodMinutes = 20;
+            const gracePeriodMinutes = 10;
             const missedThreshold = new Date(scheduledAt.getTime() + (durationMinutes + gracePeriodMinutes) * 60000);
             return now > missedThreshold;
           }).map(s => s.id);
@@ -330,7 +347,7 @@ export default function TutorSessions() {
                                 const scheduledTime = new Date(session.scheduled_at);
                                 const now = new Date();
                                 const durationMinutes = session.duration_minutes || 60;
-                                const gracePeriodMinutes = 20;
+                                const gracePeriodMinutes = 10;
                                 
                                 // Session end time = scheduled + duration + grace period
                                 const sessionEndTime = new Date(scheduledTime.getTime() + (durationMinutes + gracePeriodMinutes) * 60000);

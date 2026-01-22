@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import {
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -40,41 +41,45 @@ const Login = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Check if user is active
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("is_active")
-          .eq("user_id", data.user.id)
-          .single();
+        // Fetch profile and role in parallel for faster login
+        const [profileResult, roleResult] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("is_active")
+            .eq("user_id", data.user.id)
+            .single(),
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id)
+            .single()
+        ]);
 
         // If user is not active, sign them out and show error
-        if (profileData && !profileData.is_active) {
+        if (profileResult.data && !profileResult.data.is_active) {
           await supabase.auth.signOut();
           toast({
             title: "Account Deactivated",
             description: "Your account has been deactivated. Please contact an administrator.",
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
 
-        // Get user role
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.user.id)
-          .single();
+        const userRole = roleResult.data?.role;
 
-        // Set tutor online status
-        if (roleData?.role === "tutor") {
-          const { error: updateError } = await supabase
+        // Set tutor online status in background (don't wait)
+        if (userRole === "tutor") {
+          supabase
             .from("tutor_profiles")
             .update({ is_online: true })
-            .eq("user_id", data.user.id);
-          
-          if (updateError) {
-            console.error("Error setting tutor online:", updateError);
-          }
+            .eq("user_id", data.user.id)
+            .then(({ error: updateError }) => {
+              if (updateError) {
+                console.error("Error setting tutor online:", updateError);
+              }
+            });
         }
 
         toast({
@@ -83,11 +88,11 @@ const Login = () => {
         });
 
         // Redirect based on role immediately
-        if (roleData?.role === "admin") {
+        if (userRole === "admin") {
           navigate("/admin/dashboard");
-        } else if (roleData?.role === "tutor") {
+        } else if (userRole === "tutor") {
           navigate("/tutor/dashboard");
-        } else if (roleData?.role === "learner") {
+        } else if (userRole === "learner") {
           navigate("/learner/dashboard");
         } else {
           navigate("/role-selection");
@@ -177,14 +182,30 @@ const Login = () => {
                   Forgot password?
                 </button>
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">

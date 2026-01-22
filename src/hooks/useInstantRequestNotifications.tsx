@@ -17,7 +17,7 @@ export function useInstantRequestNotifications({ userId, role }: InstantRequestN
     // Only for tutors
     if (!userId || role !== "tutor") return;
 
-    console.log("🔔 Setting up instant request notifications for tutor:", userId);
+    console.log(" Setting up instant request notifications for tutor:", userId);
 
     // Subscribe to new instant requests
     const channel = supabase
@@ -51,14 +51,14 @@ export function useInstantRequestNotifications({ userId, role }: InstantRequestN
             const learnerName = profile?.full_name || "A learner";
 
             // Just log - the widget will handle the UI
-            console.log("🔔 New instant request received:", newSession.id, "from", learnerName);
+            console.log(" New instant request received:", newSession.id, "from", learnerName);
           }
         }
       )
       .subscribe();
 
     return () => {
-      console.log("🔕 Cleaning up instant request notifications");
+      console.log(" Cleaning up instant request notifications");
       supabase.removeChannel(channel);
     };
   }, [userId, role, navigate]);

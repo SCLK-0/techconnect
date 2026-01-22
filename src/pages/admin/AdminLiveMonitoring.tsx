@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -14,6 +15,7 @@ import { seedAdminData } from "@/utils/seedAdminData";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 export default function AdminLiveMonitoring() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
@@ -23,7 +25,7 @@ export default function AdminLiveMonitoring() {
     seedAdminData();
   }, []);
 
-  const { data: stats, isLoading, isFetching } = useQuery({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ["live-stats"],
     queryFn: async () => {
       // Get tutors who are marked online and have been active in last 2 minutes
@@ -69,7 +71,8 @@ export default function AdminLiveMonitoring() {
         sessions: enrichedSessions || []
       };
     },
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 10000, // Refetch every 10 seconds (reduced frequency)
+    staleTime: 5000, // Consider data fresh for 5 seconds
   });
 
   useEffect(() => {
@@ -189,7 +192,7 @@ export default function AdminLiveMonitoring() {
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col relative">
-          <LoadingOverlay isLoading={isLoading || isFetching} message="Loading monitoring..." />
+          <LoadingOverlay isLoading={isLoading} message="Loading monitoring..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -261,7 +264,7 @@ export default function AdminLiveMonitoring() {
                               {session.session_status}
                             </Badge>
                              <button
-                              onClick={() => window.open(`/video-session/${session.id}?monitor=true`, '_blank')}
+                              onClick={() => navigate(`/admin/monitor/${session.id}`)}
                               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
                             >
                               Monitor

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Calendar, FileText, MessageSquare, Search, Video, Megaphone } from "lucide-react";
+import { Calendar, FileText, MessageSquare, Search, Video, Megaphone, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -287,6 +287,7 @@ export default function LearnerDashboard() {
                         Browse Resources
                       </NavLink>
                     </Button>
+
                   </CardContent>
                 </Card>
 

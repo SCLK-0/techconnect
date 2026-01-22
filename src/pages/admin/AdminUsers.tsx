@@ -132,7 +132,7 @@ export default function AdminUsers() {
     onSuccess: async (data) => {
       toast.success(
         data.isActive 
-          ? "✅ User activated successfully! They can now access the system." 
+          ? " User activated successfully! They can now access the system." 
           : "🚫 User deactivated successfully! Their access has been restricted.",
         { duration: 4000 }
       );

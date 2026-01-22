@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,13 +26,43 @@ export function InstantSessionWaitingModal({
   sessionId,
   tutorName,
 }: InstantSessionWaitingModalProps) {
+  const navigate = useNavigate();
   const [isCancelling, setIsCancelling] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<string>("pending");
 
   useEffect(() => {
     if (!sessionId || !open) return;
 
-    // Subscribe to session status changes
+    // Poll session status as a fallback (in case real-time doesn't work)
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from("sessions")
+        .select("status")
+        .eq("id", sessionId)
+        .single();
+
+      if (!error && data) {
+        const newStatus = data.status;
+        setSessionStatus(newStatus);
+        
+        if (newStatus === "accepted") {
+          toast.success("Session accepted!", {
+            description: `${tutorName} has accepted your instant session`,
+          });
+          onOpenChange(false);
+          navigate(`/video-session/${sessionId}`);
+          clearInterval(pollInterval);
+        } else if (newStatus === "declined") {
+          toast.error("Tutor is currently busy", {
+            description: `${tutorName} is unable to start a session right now.`,
+          });
+          onOpenChange(false);
+          clearInterval(pollInterval);
+        }
+      }
+    }, 2000); // Poll every 2 seconds
+
+    // Subscribe to session status changes (real-time)
     const channel = supabase
       .channel(`session-${sessionId}`)
       .on(
@@ -51,20 +82,24 @@ export function InstantSessionWaitingModal({
               description: `${tutorName} has accepted your instant session`,
             });
             onOpenChange(false);
+            navigate(`/video-session/${sessionId}`);
+            clearInterval(pollInterval);
           } else if (newStatus === "declined") {
             toast.error("Tutor is currently busy", {
               description: `${tutorName} is unable to start a session right now. Please try again later or book a scheduled session.`,
             });
             onOpenChange(false);
+            clearInterval(pollInterval);
           }
         }
       )
       .subscribe();
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [sessionId, open, tutorName, onOpenChange]);
+  }, [sessionId, open, tutorName, onOpenChange, navigate]);
 
   const handleCancel = async () => {
     if (!sessionId) return;

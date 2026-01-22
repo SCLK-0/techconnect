@@ -1,13 +1,38 @@
 import { Button } from "@/components/ui/button";
-import { UserCheck, X } from "lucide-react";
+import { UserCheck, X, Loader2 } from "lucide-react";
+import { useState, useRef } from "react";
 
 interface TutorAdmitControlProps {
   learnerName: string;
-  onAdmit: () => void;
+  onAdmit: () => Promise<void> | void;
   onReject: () => void;
 }
 
 export function TutorAdmitControl({ learnerName, onAdmit, onReject }: TutorAdmitControlProps) {
+  const [isAdmitting, setIsAdmitting] = useState(false);
+  const admitCalledRef = useRef(false);
+
+  const handleAdmit = async () => {
+    if (isAdmitting || admitCalledRef.current) {
+      console.log(" Admit already in progress, ignoring");
+      return; // Prevent double-click
+    }
+    
+    console.log(" TutorAdmitControl: handleAdmit called");
+    admitCalledRef.current = true;
+    setIsAdmitting(true);
+    
+    try {
+      await onAdmit();
+      console.log(" TutorAdmitControl: onAdmit completed");
+    } catch (error) {
+      console.error("Error in admit:", error);
+      setIsAdmitting(false);
+      admitCalledRef.current = false;
+    }
+    // Don't reset isAdmitting - component will unmount when admit succeeds
+  };
+
   return (
     <div className="fixed top-4 right-4 z-50 max-w-sm">
       <div className="bg-card border rounded-lg shadow-lg p-4 space-y-3 animate-in slide-in-from-top-5">
@@ -24,11 +49,20 @@ export function TutorAdmitControl({ learnerName, onAdmit, onReject }: TutorAdmit
         </div>
         
         <div className="flex gap-2">
-          <Button onClick={onAdmit} className="flex-1" size="sm">
-            <UserCheck className="w-4 h-4 mr-2" />
-            Admit
+          <Button onClick={handleAdmit} className="flex-1" size="sm" disabled={isAdmitting}>
+            {isAdmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Admitting...
+              </>
+            ) : (
+              <>
+                <UserCheck className="w-4 h-4 mr-2" />
+                Admit
+              </>
+            )}
           </Button>
-          <Button onClick={onReject} variant="outline" size="sm">
+          <Button onClick={onReject} variant="outline" size="sm" disabled={isAdmitting}>
             <X className="w-4 h-4" />
           </Button>
         </div>

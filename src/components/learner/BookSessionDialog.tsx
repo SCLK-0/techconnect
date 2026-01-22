@@ -76,7 +76,10 @@ const timeSlots = [
 ];
 
 const allDurations = [
+  { value: "10", label: "10 minutes" },
   { value: "15", label: "15 minutes" },
+  { value: "20", label: "20 minutes" },
+  { value: "25", label: "25 minutes" },
   { value: "30", label: "30 minutes" },
   { value: "45", label: "45 minutes" },
   { value: "60", label: "1 hour" },
@@ -95,6 +98,8 @@ export function BookSessionDialog({
   const [tutorAvailability, setTutorAvailability] = useState<any[]>([]);
   const [dayOverrides, setDayOverrides] = useState<any[]>([]);
   const [bookedSessions, setBookedSessions] = useState<any[]>([]);
+  const [fullyBookedDates, setFullyBookedDates] = useState<Set<string>>(new Set());
+  const [allBookedSessionsData, setAllBookedSessionsData] = useState<any[]>([]);
 
   // Helper function to get date string in local timezone (avoids UTC conversion issues)
   const getLocalDateString = (date: Date): string => {
@@ -108,8 +113,16 @@ export function BookSessionDialog({
     if (open && tutorId) {
       loadTutorAvailability();
       loadDayOverrides();
+      loadAllBookedSessionsRaw(); // Load raw booked sessions data
     }
   }, [open, tutorId]);
+
+  // Recalculate fully booked dates when booked sessions change
+  useEffect(() => {
+    if (allBookedSessionsData.length > 0) {
+      calculateFullyBookedDates();
+    }
+  }, [allBookedSessionsData]);
 
   // Disabled - causes blank screen
   // const selectedDate = form.watch("date");
@@ -138,6 +151,45 @@ export function BookSessionDialog({
     setDayOverrides(data || []);
   };
 
+  // Load all booked sessions for the next 60 days (raw data only)
+  const loadAllBookedSessionsRaw = async () => {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 60);
+    endDate.setHours(23, 59, 59, 999);
+
+    const { data: allSessions } = await supabase
+      .from("sessions")
+      .select("scheduled_at, duration_minutes")
+      .eq("tutor_id", tutorId)
+      .in("status", ["pending", "accepted", "in_progress"])
+      .gte("scheduled_at", startDate.toISOString())
+      .lte("scheduled_at", endDate.toISOString());
+
+    setAllBookedSessionsData(allSessions || []);
+    console.log(" Loaded booked sessions:", allSessions?.length || 0);
+  };
+
+  // Calculate which dates are fully booked based on availability and booked sessions
+  const calculateFullyBookedDates = () => {
+    console.log(" Calculating fully booked dates...");
+    console.log(" Booked sessions data:", allBookedSessionsData);
+    
+    // Any date with a booking is fully booked (1 session per tutor per day rule)
+    const fullyBooked = new Set<string>();
+    
+    allBookedSessionsData.forEach(session => {
+      const sessionDate = new Date(session.scheduled_at);
+      const dateStr = getLocalDateString(sessionDate);
+      fullyBooked.add(dateStr);
+      console.log(` ${dateStr}: FULLY BOOKED (has existing session)`);
+    });
+
+    setFullyBookedDates(fullyBooked);
+    console.log(" Final fully booked dates:", Array.from(fullyBooked));
+  };
+
   const loadBookedSessions = async (date: Date) => {
     const dateStr = getLocalDateString(date);
     const startOfDay = new Date(date);
@@ -145,7 +197,7 @@ export function BookSessionDialog({
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("sessions")
       .select("scheduled_at, duration_minutes")
       .eq("tutor_id", tutorId)
@@ -153,6 +205,7 @@ export function BookSessionDialog({
       .gte("scheduled_at", startOfDay.toISOString())
       .lte("scheduled_at", endOfDay.toISOString());
     
+    console.log(" Loaded booked sessions for", dateStr, ":", data, "error:", error);
     setBookedSessions(data || []);
   };
 
@@ -189,13 +242,23 @@ export function BookSessionDialog({
     const proposedStart = new Date(selectedDate);
     proposedStart.setHours(hours, minutes, 0, 0);
     
-    return bookedSessions.some(session => {
+    const hasConflict = bookedSessions.some(session => {
       const sessionStart = new Date(session.scheduled_at);
       const sessionEnd = new Date(sessionStart.getTime() + session.duration_minutes * 60000);
       
       // Check if the proposed time falls within an existing session
-      return proposedStart >= sessionStart && proposedStart < sessionEnd;
+      const conflicts = proposedStart >= sessionStart && proposedStart < sessionEnd;
+      if (conflicts) {
+        console.log(` Time ${time} conflicts with session:`, {
+          proposedStart: proposedStart.toISOString(),
+          sessionStart: sessionStart.toISOString(),
+          sessionEnd: sessionEnd.toISOString()
+        });
+      }
+      return conflicts;
     });
+    
+    return hasConflict;
   };
 
   const isTimeAvailable = (time: string, selectedDate: Date) => {
@@ -331,6 +394,24 @@ export function BookSessionDialog({
     
     // Calculate maximum available duration in minutes
     const maxDurationMinutes = endTimeInMinutes - startTimeInMinutes;
+    
+    // Debug log to understand the calculation
+    console.log(` Duration calculation for ${selectedTime}:`, {
+      startTimeInMinutes,
+      endTimeInMinutes,
+      maxDurationMinutes,
+      selectedDate: selectedDate?.toDateString(),
+      dayOverride: dayOverrides.find(d => d.date === getLocalDateString(selectedDate!)),
+      weeklySlot: tutorAvailability.find(slot => {
+        const dayOfWeek = selectedDate!.getDay();
+        if (slot.day_of_week !== dayOfWeek) return false;
+        const [slotStartHours, slotStartMinutes] = slot.start_time.split(":").map(Number);
+        const [slotEndHours, slotEndMinutes] = slot.end_time.split(":").map(Number);
+        const slotStartTimeInMinutes = slotStartHours * 60 + slotStartMinutes;
+        const slotEndTimeInMinutes = slotEndHours * 60 + slotEndMinutes;
+        return startTimeInMinutes >= slotStartTimeInMinutes && startTimeInMinutes < slotEndTimeInMinutes;
+      })
+    });
     
     // Filter durations to only show those that fit within the available window
     return allDurations.filter(duration => {
@@ -547,6 +628,9 @@ export function BookSessionDialog({
                         selected={field.value}
                         onSelect={(date) => {
                           field.onChange(date);
+                          // Reset time and duration when date changes
+                          form.setValue("time", "");
+                          form.setValue("duration", "");
                           // Load booked sessions when date is selected
                           if (date) {
                             loadBookedSessions(date);
@@ -556,7 +640,29 @@ export function BookSessionDialog({
                           const tomorrow = new Date();
                           tomorrow.setDate(tomorrow.getDate() + 1);
                           tomorrow.setHours(0, 0, 0, 0);
-                          return date < tomorrow || !isDateAvailable(date);
+                          
+                          // Disable past dates and dates without availability
+                          if (date < tomorrow || !isDateAvailable(date)) return true;
+                          
+                          // Disable dates that are fully booked
+                          const dateStr = getLocalDateString(date);
+                          if (fullyBookedDates.has(dateStr)) return true;
+                          
+                          return false;
+                        }}
+                        modifiers={{
+                          booked: (date) => {
+                            const dateStr = getLocalDateString(date);
+                            return fullyBookedDates.has(dateStr);
+                          }
+                        }}
+                        modifiersStyles={{
+                          booked: {
+                            backgroundColor: '#fee2e2',
+                            color: '#dc2626',
+                            textDecoration: 'line-through',
+                            opacity: 0.6
+                          }
                         }}
                         initialFocus
                         className="pointer-events-auto"
@@ -633,9 +739,14 @@ export function BookSessionDialog({
                     })
                   : [];
                 
-                const availableTimeSlots = allTimeSlots.filter(time => 
-                  isTimeAvailable(time, selectedDate) && !isPastDateTime(selectedDate, time)
-                );
+                const availableTimeSlots = allTimeSlots.filter(time => {
+                  const isAvailable = isTimeAvailable(time, selectedDate) && !isPastDateTime(selectedDate, time);
+                  if (!isAvailable) return false;
+                  
+                  // Also check if this time slot has any valid durations
+                  const durations = getAvailableDurations(selectedDate, time);
+                  return durations.length > 0;
+                });
                 
                 return (
                   <FormItem>
@@ -667,10 +778,12 @@ export function BookSessionDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="max-h-[200px]">
-                        {allTimeSlots.map((time) => {
+                        {availableTimeSlots.map((time) => {
                           const isOccupied = hasBookingInTimeSlot(time, selectedDate);
                           const isPast = isPastDateTime(selectedDate, time);
-                          const canSelect = !isOccupied && !isPast;
+                          const availableDurations = getAvailableDurations(selectedDate, time);
+                          const hasValidDurations = availableDurations.length > 0;
+                          const canSelect = !isOccupied && !isPast && hasValidDurations;
                           
                           return (
                             <SelectItem key={time} value={time} disabled={!canSelect}>
@@ -678,6 +791,7 @@ export function BookSessionDialog({
                                 {selectedDate ? formatTimeSlot(time, selectedDate) : time}
                                 {isOccupied && " (Occupied)"}
                                 {isPast && !isOccupied && " (Past)"}
+                                {!hasValidDurations && !isOccupied && !isPast && " (No time left)"}
                               </span>
                             </SelectItem>
                           );
@@ -755,9 +869,9 @@ export function BookSessionDialog({
                         className={cn("h-10", isInvalid && "border-red-500")}
                       />
                     </FormControl>
-                    {selectedDate && selectedTime && !isInvalid && (
+                    {selectedDate && selectedTime && !isInvalid && availableDurations.length > 0 && (
                       <FormDescription className="text-xs text-muted-foreground">
-                        Enter duration (10-{maxDuration} min) for tutor's {formatTimeSlot(selectedTime, selectedDate)} window
+                        {`Duration: ${availableDurations[0].value}-${availableDurations[availableDurations.length - 1].value} min`}
                       </FormDescription>
                     )}
                     <div className="h-5">

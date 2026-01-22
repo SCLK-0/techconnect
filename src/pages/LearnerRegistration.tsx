@@ -49,7 +49,6 @@ const LearnerRegistration = () => {
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [otherSubject, setOtherSubject] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -112,7 +111,7 @@ const LearnerRegistration = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/confirm-email`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             full_name: fullName,
             registered_year: yearLevel,
@@ -258,7 +257,7 @@ const LearnerRegistration = () => {
                 <div className="relative">
                   <Input
                     id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -270,9 +269,9 @@ const LearnerRegistration = () => {
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showConfirmPassword ? (
+                    {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
                       <Eye className="h-4 w-4 text-muted-foreground" />
@@ -299,6 +298,7 @@ const LearnerRegistration = () => {
 
             <div className="space-y-3">
               <Label className="text-sm font-semibold">Subjects of Interest</Label>
+              <p className="text-sm text-muted-foreground">You can select more than one</p>
               <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-muted/30 border border-border">
                 {subjects.map((subject) => (
                   <div key={subject} className="flex items-center space-x-2">

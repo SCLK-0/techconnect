@@ -52,6 +52,7 @@ const FindTutors = () => {
   const [tutors, setTutors] = useState<TutorProfile[]>([]);
   const [filteredTutors, setFilteredTutors] = useState<TutorProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
@@ -71,6 +72,9 @@ const FindTutors = () => {
   const [yearLevelFilter, setYearLevelFilter] = useState<string>("all");
   const [showOnlyBooked, setShowOnlyBooked] = useState<boolean>(false);
   const [bookedTutorIds, setBookedTutorIds] = useState<Set<string>>(new Set());
+  
+  // Learner's subjects of interest for priority sorting
+  const [learnerSubjectsOfInterest, setLearnerSubjectsOfInterest] = useState<string[]>([]);
   
   const allSubjects = [
     "Programming",
@@ -130,6 +134,12 @@ const FindTutors = () => {
     return similarity > 30 ? similarity : 0;
   };
 
+  // Calculate how many of the tutor's subjects match the learner's interests
+  const calculateSubjectMatchCount = (tutorSubjects: string[], learnerInterests: string[]): number => {
+    if (!tutorSubjects || !learnerInterests || learnerInterests.length === 0) return 0;
+    return tutorSubjects.filter(subject => learnerInterests.includes(subject)).length;
+  };
+
   // Rule-based matchmaking score
   const calculateMatchScore = (tutor: TutorProfile, query: string): number => {
     if (!query.trim()) return 0;
@@ -180,7 +190,7 @@ const FindTutors = () => {
     setIsInstantDialogOpen(true);
   };
 
-  const getNextAvailableTime = (tutorId: string, weeklySlots: any[], dayOverrides: any[]) => {
+  const getNextAvailableTime = (tutorId: string, weeklySlots: any[], dayOverrides: any[], bookedSessionsByDate?: Map<string, any[]>) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
@@ -203,6 +213,12 @@ const FindTutors = () => {
       const hours12 = hours % 12 || 12;
       return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
     };
+
+    // Helper to check if a date has any booking (1 session per tutor per day rule)
+    const isDateFullyBooked = (dateStr: string): boolean => {
+      if (!bookedSessionsByDate) return false;
+      return bookedSessionsByDate.has(dateStr);
+    };
     
     // Check next 14 days starting from tomorrow (since booking requires at least tomorrow)
     for (let i = 1; i <= 14; i++) {
@@ -210,6 +226,9 @@ const FindTutors = () => {
       checkDate.setDate(today.getDate() + i);
       const dateStr = getLocalDateString(checkDate);
       const dayOfWeek = checkDate.getDay();
+      
+      // Skip if date has any booking (1 session per tutor per day)
+      if (isDateFullyBooked(dateStr)) continue;
       
       // Check day-specific override first (higher priority)
       const dayOverride = dayOverrides.find(d => d.date === dateStr);
@@ -304,9 +323,23 @@ const FindTutors = () => {
   useEffect(() => {
     const fetchTutors = async () => {
       try {
+        // Fetch learner's subjects of interest for priority sorting
+        if (user) {
+          const { data: learnerProfile, error: learnerError } = await supabase
+            .from("learner_profiles")
+            .select("subjects_of_interest")
+            .eq("user_id", user.id)
+            .single();
+          
+          if (!learnerError && learnerProfile?.subjects_of_interest) {
+            console.log(" Learner subjects of interest:", learnerProfile.subjects_of_interest);
+            setLearnerSubjectsOfInterest(learnerProfile.subjects_of_interest);
+          }
+        }
+
         // Fetch tutors that the learner has had sessions with
         if (user) {
-          console.log("🔍 Fetching booked tutors for learner:", user.id);
+          console.log(" Fetching booked tutors for learner:", user.id);
           const { data: sessionsData, error: sessionsError } = await supabase
             .from("sessions")
             .select("tutor_id, status, session_type")
@@ -318,13 +351,13 @@ const FindTutors = () => {
           }
           
           if (sessionsData) {
-            console.log("📊 Found sessions:", sessionsData);
+            console.log(" Found sessions:", sessionsData);
             const uniqueTutorIds = new Set(sessionsData.map(s => s.tutor_id));
-            console.log("✅ Booked tutor IDs:", Array.from(uniqueTutorIds));
-            console.log("📈 Total unique tutors booked:", uniqueTutorIds.size);
+            console.log(" Booked tutor IDs:", Array.from(uniqueTutorIds));
+            console.log(" Total unique tutors booked:", uniqueTutorIds.size);
             setBookedTutorIds(uniqueTutorIds);
           } else {
-            console.log("⚠️ No sessions found");
+            console.log(" No sessions found");
           }
         }
 
@@ -376,6 +409,41 @@ const FindTutors = () => {
           activeSessions?.map(session => session.tutor_id) || []
         );
 
+        // Fetch all booked sessions for the next 14 days to check availability
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() + 1); // Start from tomorrow
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 14);
+        endDate.setHours(23, 59, 59, 999);
+
+        const { data: allBookedSessions } = await supabase
+          .from("sessions")
+          .select("tutor_id, scheduled_at, duration_minutes")
+          .in("tutor_id", userIds)
+          .in("status", ["pending", "accepted", "in_progress"])
+          .gte("scheduled_at", startDate.toISOString())
+          .lte("scheduled_at", endDate.toISOString());
+
+        // Group booked sessions by tutor and date
+        const bookedSessionsByTutor = new Map<string, Map<string, any[]>>();
+        (allBookedSessions || []).forEach(session => {
+          const sessionDate = new Date(session.scheduled_at);
+          const year = sessionDate.getFullYear();
+          const month = String(sessionDate.getMonth() + 1).padStart(2, '0');
+          const day = String(sessionDate.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${day}`;
+          
+          if (!bookedSessionsByTutor.has(session.tutor_id)) {
+            bookedSessionsByTutor.set(session.tutor_id, new Map());
+          }
+          const tutorSessions = bookedSessionsByTutor.get(session.tutor_id)!;
+          if (!tutorSessions.has(dateStr)) {
+            tutorSessions.set(dateStr, []);
+          }
+          tutorSessions.get(dateStr)!.push(session);
+        });
+
         // Fetch ratings for each tutor
         const tutorsWithRatings = await Promise.all(
           tutorsWithActualStatus?.map(async (tutor) => {
@@ -383,10 +451,11 @@ const FindTutors = () => {
               .rpc('get_tutor_rating', { tutor_user_id: tutor.user_id });
             const profile = profileData?.find((p) => p.user_id === tutor.user_id);
             
-            // Calculate next available time
+            // Calculate next available time (now considering booked sessions)
             const tutorWeeklySlots = weeklyAvailability?.filter(s => s.tutor_id === tutor.user_id) || [];
             const tutorDayOverrides = dayAvailability?.filter(d => d.tutor_id === tutor.user_id) || [];
-            const nextAvailable = getNextAvailableTime(tutor.user_id, tutorWeeklySlots, tutorDayOverrides);
+            const tutorBookedSessions = bookedSessionsByTutor.get(tutor.user_id);
+            const nextAvailable = getNextAvailableTime(tutor.user_id, tutorWeeklySlots, tutorDayOverrides, tutorBookedSessions);
             
             return {
               ...tutor,
@@ -402,8 +471,16 @@ const FindTutors = () => {
           }) || []
         );
 
-        setTutors(tutorsWithRatings);
-        setFilteredTutors(tutorsWithRatings);
+        // Only update state if data actually changed to prevent unnecessary re-renders
+        setTutors(prevTutors => {
+          // Compare by stringifying - if same, return previous reference to avoid re-render
+          const prevIds = prevTutors.map(t => `${t.id}-${t.is_online}-${t.is_in_session}-${t.rating}-${t.next_available}`).join(',');
+          const newIds = tutorsWithRatings.map(t => `${t.id}-${t.is_online}-${t.is_in_session}-${t.rating}-${t.next_available}`).join(',');
+          if (prevIds === newIds) {
+            return prevTutors;
+          }
+          return tutorsWithRatings;
+        });
       } catch (error: any) {
         toast({
           title: "Error loading tutors",
@@ -412,13 +489,15 @@ const FindTutors = () => {
         });
       } finally {
         setLoading(false);
+        setIsInitialLoad(false);
       }
     };
 
     fetchTutors();
     
-    // Refetch every 10 seconds to catch timeout-based offline status
-    const refetchInterval = setInterval(fetchTutors, 10000);
+    // Refetch every 30 seconds instead of 10 to reduce flickering
+    // Real-time subscriptions handle immediate status changes
+    const refetchInterval = setInterval(fetchTutors, 30000);
 
     // Set up real-time subscription for immediate tutor online status changes
     const profileChannel = supabase
@@ -493,7 +572,7 @@ const FindTutors = () => {
       supabase.removeChannel(profileChannel);
       supabase.removeChannel(sessionChannel);
     };
-  }, [toast]);
+  }, [toast, user]);
 
   // Subscribe to session status changes for instant session acceptance
   useEffect(() => {
@@ -578,10 +657,35 @@ const FindTutors = () => {
         .filter(({ score }) => score > 0)
         .sort((a, b) => b.score - a.score)
         .map(({ tutor }) => tutor);
+    } else {
+      // When not searching, sort by learner's subjects of interest (matching tutors first)
+      if (learnerSubjectsOfInterest.length > 0) {
+        console.log(" Sorting tutors by subject match. Learner interests:", learnerSubjectsOfInterest);
+        filtered.sort((a, b) => {
+          const aMatchCount = calculateSubjectMatchCount(a.subject_expertise || [], learnerSubjectsOfInterest);
+          const bMatchCount = calculateSubjectMatchCount(b.subject_expertise || [], learnerSubjectsOfInterest);
+          
+          // Log match counts for debugging
+          if (aMatchCount > 0 || bMatchCount > 0) {
+            console.log(` ${a.profiles.full_name}: ${aMatchCount} matches, ${b.profiles.full_name}: ${bMatchCount} matches`);
+          }
+          
+          // Sort by match count (descending), then by online status, then by rating
+          if (bMatchCount !== aMatchCount) {
+            return bMatchCount - aMatchCount;
+          }
+          // If same match count, prioritize online tutors
+          if (a.is_online !== b.is_online) {
+            return a.is_online ? -1 : 1;
+          }
+          // If same online status, sort by rating
+          return (b.rating || 0) - (a.rating || 0);
+        });
+      }
     }
 
     setFilteredTutors(filtered);
-  }, [searchQuery, tutors, onlineFilter, ratingFilter, subjectFilters, yearLevelFilter, showOnlyBooked, bookedTutorIds]);
+  }, [searchQuery, tutors, onlineFilter, ratingFilter, subjectFilters, yearLevelFilter, showOnlyBooked, bookedTutorIds, learnerSubjectsOfInterest]);
 
   // Reset to page 1 only when user changes filters (not when tutors update)
   useEffect(() => {
@@ -683,7 +787,7 @@ const FindTutors = () => {
         <LearnerSidebar />
         
         <div className="flex-1 flex flex-col relative">
-          <LoadingOverlay isLoading={loading} message="Loading tutors..." />
+          <LoadingOverlay isLoading={loading && isInitialLoad} message="Loading tutors..." />
           <header className="h-16 border-b flex items-center justify-center px-3 py-4">
             <div className="w-full max-w-7xl flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -807,7 +911,7 @@ const FindTutors = () => {
               </div>
             </div>
 
-              {loading ? (
+              {loading && isInitialLoad ? (
                 <div className="grid gap-2 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <Card key={i}>
@@ -940,8 +1044,9 @@ const FindTutors = () => {
                               e.stopPropagation();
                               handleBookSession(tutor);
                             }}
+                            disabled={!tutor.next_available}
                           >
-                            Book Session
+                            {tutor.next_available ? "Book Session" : "No Available Day"}
                           </Button>
                           <Button 
                             variant={tutor.is_online && !tutor.is_in_session ? "default" : "outline"}

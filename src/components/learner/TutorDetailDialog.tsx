@@ -142,8 +142,9 @@ export const TutorDetailDialog = ({
                 onOpenChange(false);
                 onBookSession();
               }}
+              disabled={!tutor.next_available}
             >
-              Book Session
+              {tutor.next_available ? "Book Session" : "No Available Day"}
             </Button>
             <Button 
               variant={tutor.is_online && !tutor.is_in_session ? "default" : "outline"}

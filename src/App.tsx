@@ -17,6 +17,7 @@ import FindTutors from "./pages/learner/FindTutors";
 import FavoriteTutors from "./pages/learner/FavoriteTutors";
 import MySessions from "./pages/learner/MySessions";
 import LearnerResources from "./pages/learner/LearnerResources";
+
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import TutorRequests from "./pages/tutor/TutorRequests";
 import TutorSessions from "./pages/tutor/TutorSessions";
@@ -34,6 +35,7 @@ import AdminSessions from "./pages/admin/AdminSessions";
 import AdminResources from "./pages/admin/AdminResources";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminLiveMonitoring from "./pages/admin/AdminLiveMonitoring";
+import AdminMonitorSession from "./pages/admin/AdminMonitorSession";
 import AdminSessionLogs from "./pages/admin/AdminSessionLogs";
 import Announcements from "./pages/Announcements";
 import EditProfile from "./pages/EditProfile";
@@ -43,6 +45,8 @@ import DemoSession from "./pages/DemoSession";
 import DemoPreview from "./pages/DemoPreview";
 import DemoAdmit from "./pages/DemoAdmit";
 import QuickStartGuide from "./pages/QuickStartGuide";
+import AuthCallback from "./pages/AuthCallback";
+// Removed GroupSessionsTest - focusing only on observer functionality
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +64,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/quick-start" element={<QuickStartGuide />} />
+          {/* Removed group-sessions-test route - focusing only on observer functionality */}
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -67,6 +72,7 @@ const App = () => {
           <Route path="/register/learner" element={<LearnerRegistration />} />
           <Route path="/register/tutor" element={<TutorRegistration />} />
           <Route path="/confirm-email" element={<ConfirmEmail />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           
           {/* Learner Routes */}
           <Route 
@@ -109,6 +115,7 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
+
           <Route 
             path="/announcements" 
             element={
@@ -253,6 +260,14 @@ const App = () => {
             } 
           />
           <Route 
+            path="/admin/monitor/:sessionId" 
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminMonitorSession />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/admin/session-logs" 
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
@@ -264,6 +279,16 @@ const App = () => {
           {/* Video Session Route */}
           <Route 
             path="/video-session/:sessionId" 
+            element={
+              <ProtectedRoute allowedRoles={["learner", "tutor", "admin"]}>
+                <VideoSession />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Observer Video Session Route */}
+          <Route 
+            path="/observer/:sessionId" 
             element={
               <ProtectedRoute allowedRoles={["learner", "tutor", "admin"]}>
                 <VideoSession />

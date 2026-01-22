@@ -116,7 +116,7 @@ export function OnlineStatusToggle() {
 
       setIsOnline(checked);
       toast.success(
-        checked ? "✅ You are now online and visible to learners" : "You are now offline",
+        checked ? " You are now online and visible to learners" : "You are now offline",
         { duration: 1500 }
       );
     } catch (error: any) {
